@@ -1,42 +1,102 @@
 package src
 
 import (
+	"context"
 	"database/sql"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
 
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/lib/pq"
-	_ "github.com/lib/pq"
+	"github.com/zoriya/kyoo/transcoder/src/storage"
 )
 
 type MetadataService struct {
 	database     *sql.DB
 	lock         RunLock[string, *MediaInfo]
-	thumbLock    RunLock[string, interface{}]
-	extractLock  RunLock[string, interface{}]
+	thumbLock    RunLock[string, any]
+	extractLock  RunLock[string, any]
 	keyframeLock RunLock[KeyframeKey, *Keyframe]
+	storage      storage.StorageBackend
 }
 
 func NewMetadataService() (*MetadataService, error) {
-	con := fmt.Sprintf(
-		"postgresql://%v:%v@%v:%v/%v?application_name=gocoder&sslmode=%s",
-		url.QueryEscape(os.Getenv("POSTGRES_USER")),
-		url.QueryEscape(os.Getenv("POSTGRES_PASSWORD")),
-		url.QueryEscape(os.Getenv("POSTGRES_SERVER")),
-		url.QueryEscape(os.Getenv("POSTGRES_PORT")),
-		url.QueryEscape(os.Getenv("POSTGRES_DB")),
-		url.QueryEscape(GetEnvOr("POSTGRES_SSLMODE", "disable")),
-	)
-	schema := GetEnvOr("POSTGRES_SCHEMA", "gocoder")
-	if schema != "disabled" {
-		con = fmt.Sprintf("%s&search_path=%s", con, url.QueryEscape(schema))
+	ctx := context.TODO()
+
+	s := &MetadataService{
+		lock:         NewRunLock[string, *MediaInfo](),
+		thumbLock:    NewRunLock[string, any](),
+		extractLock:  NewRunLock[string, any](),
+		keyframeLock: NewRunLock[KeyframeKey, *Keyframe](),
 	}
-	db, err := sql.Open("postgres", con)
+
+	db, err := s.setupDb()
+	if err != nil {
+		return nil, fmt.Errorf("failed to setup database: %w", err)
+	}
+	s.database = db
+
+	storage, err := s.setupStorage(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to setup storage: %w", err)
+	}
+	s.storage = storage
+
+	return s, nil
+}
+
+func (s *MetadataService) Close() error {
+	cleanupErrs := make([]error, 0, 2)
+	if s.database != nil {
+		err := s.database.Close()
+		if err != nil {
+			cleanupErrs = append(cleanupErrs, fmt.Errorf("failed to close database: %w", err))
+		}
+	}
+
+	if s.storage != nil {
+		if storageCloser, ok := s.storage.(storage.StorageBackendCloser); ok {
+			err := storageCloser.Close()
+			if err != nil {
+				cleanupErrs = append(cleanupErrs, fmt.Errorf("failed to close storage: %w", err))
+			}
+		}
+	}
+
+	if err := errors.Join(cleanupErrs...); err != nil {
+		return fmt.Errorf("failed to cleanup resources: %w", err)
+	}
+
+	return nil
+}
+
+func (s *MetadataService) setupDb() (*sql.DB, error) {
+	schema := GetEnvOr("POSTGRES_SCHEMA", "gocoder")
+
+	connectionString := os.Getenv("POSTGRES_URL")
+	if connectionString == "" {
+		connectionString = fmt.Sprintf(
+			"postgresql://%v:%v@%v:%v/%v?application_name=gocoder&sslmode=%s",
+			url.QueryEscape(os.Getenv("POSTGRES_USER")),
+			url.QueryEscape(os.Getenv("POSTGRES_PASSWORD")),
+			url.QueryEscape(os.Getenv("POSTGRES_SERVER")),
+			url.QueryEscape(os.Getenv("POSTGRES_PORT")),
+			url.QueryEscape(os.Getenv("POSTGRES_DB")),
+			url.QueryEscape(GetEnvOr("POSTGRES_SSLMODE", "disable")),
+		)
+		if schema != "disabled" {
+			connectionString = fmt.Sprintf("%s&search_path=%s", connectionString, url.QueryEscape(schema))
+		}
+	}
+
+	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
 		fmt.Printf("Could not connect to database, check your env variables!")
 		return nil, err
@@ -59,26 +119,44 @@ func NewMetadataService() (*MetadataService, error) {
 	}
 	m.Up()
 
-	return &MetadataService{
-		database:     db,
-		lock:         NewRunLock[string, *MediaInfo](),
-		thumbLock:    NewRunLock[string, interface{}](),
-		extractLock:  NewRunLock[string, interface{}](),
-		keyframeLock: NewRunLock[KeyframeKey, *Keyframe](),
-	}, nil
+	return db, nil
 }
 
-func (s *MetadataService) GetMetadata(path string, sha string) (*MediaInfo, error) {
+func (s *MetadataService) setupStorage(ctx context.Context) (storage.StorageBackend, error) {
+	s3BucketName := os.Getenv("S3_BUCKET_NAME")
+	if s3BucketName != "" {
+		// Use S3 storage
+		// Create the client (use all standard AWS config sources like env vars, config files, etc.)
+		awsConfig, err := config.LoadDefaultConfig(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load AWS config: %w", err)
+		}
+		s3Client := s3.NewFromConfig(awsConfig)
+
+		return storage.NewS3StorageBackend(s3Client, s3BucketName), nil
+	}
+
+	// Use local file storage
+	storageRoot := GetEnvOr("GOCODER_METADATA_ROOT", "/metadata")
+
+	localStorage, err := storage.NewFileStorageBackend(storageRoot)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create local storage backend: %w", err)
+	}
+	return localStorage, nil
+}
+
+func (s *MetadataService) GetMetadata(ctx context.Context, path string, sha string) (*MediaInfo, error) {
 	ret, err := s.getMetadata(path, sha)
 	if err != nil {
 		return nil, err
 	}
 
 	if ret.Versions.Thumbs < ThumbsVersion {
-		go s.ExtractThumbs(path, sha)
+		go s.ExtractThumbs(ctx, path, sha)
 	}
 	if ret.Versions.Extract < ExtractVersion {
-		go s.ExtractSubs(ret)
+		go s.ExtractSubs(ctx, ret)
 	}
 	if ret.Versions.Keyframes < KeyframeVersion && ret.Versions.Keyframes != 0 {
 		for _, video := range ret.Videos {
@@ -96,7 +174,7 @@ func (s *MetadataService) GetMetadata(path string, sha string) (*MediaInfo, erro
 		tx.Exec(`update info set ver_keyframes = 0 where sha = $1`, sha)
 		err = tx.Commit()
 		if err != nil {
-			fmt.Printf("error deleteing old keyframes from database: %v", err)
+			fmt.Printf("error deleting old keyframes from database: %v", err)
 		}
 	}
 
@@ -163,7 +241,7 @@ func (s *MetadataService) getMetadata(path string, sha string) (*MediaInfo, erro
 	}
 
 	rows, err = s.database.Query(
-		`select s.idx, s.title, s.language, s.codec, s.extension, s.is_default, s.is_forced, s.is_hearing_impaired
+		`select s.idx, s.title, s.language, s.codec, s.mime_codec, s.extension, s.is_default, s.is_forced, s.is_hearing_impaired
 		from subtitles as s where s.sha=$1`,
 		sha,
 	)
@@ -172,14 +250,13 @@ func (s *MetadataService) getMetadata(path string, sha string) (*MediaInfo, erro
 	}
 	for rows.Next() {
 		var s Subtitle
-		err := rows.Scan(&s.Index, &s.Title, &s.Language, &s.Codec, &s.Extension, &s.IsDefault, &s.IsForced, &s.IsHearingImpaired)
+		err := rows.Scan(&s.Index, &s.Title, &s.Language, &s.Codec, &s.MimeCodec, &s.Extension, &s.IsDefault, &s.IsForced, &s.IsHearingImpaired)
 		if err != nil {
 			return nil, err
 		}
 		if s.Extension != nil {
 			link := fmt.Sprintf(
-				"%s/%s/subtitle/%d.%s",
-				Settings.RoutePrefix,
+				"/video/%s/subtitle/%d.%s",
 				base64.RawURLEncoding.EncodeToString([]byte(ret.Path)),
 				*s.Index,
 				*s.Extension,
@@ -187,6 +264,10 @@ func (s *MetadataService) getMetadata(path string, sha string) (*MediaInfo, erro
 			s.Link = &link
 		}
 		ret.Subtitles = append(ret.Subtitles, s)
+	}
+	err = ret.SearchExternalSubtitles()
+	if err != nil {
+		fmt.Printf("Couldn't find external subtitles: %v", err)
 	}
 
 	rows, err = s.database.Query(
@@ -205,10 +286,6 @@ func (s *MetadataService) getMetadata(path string, sha string) (*MediaInfo, erro
 		}
 		ret.Chapters = append(ret.Chapters, c)
 	}
-
-	if len(ret.Videos) > 0 {
-		ret.Video = ret.Videos[0]
-	}
 	return &ret, nil
 }
 
@@ -224,6 +301,10 @@ func (s *MetadataService) storeFreshMetadata(path string, sha string) (*MediaInf
 	}
 
 	tx, err := s.database.Begin()
+	if err != nil {
+		return set(ret, err)
+	}
+
 	// it needs to be a delete instead of a on conflict do update because we want to trigger delete casquade for
 	// videos/audios & co.
 	tx.Exec(`delete from info where path = $1`, path)
@@ -274,20 +355,21 @@ func (s *MetadataService) storeFreshMetadata(path string, sha string) (*MediaInf
 	}
 	for _, s := range ret.Subtitles {
 		tx.Exec(`
-			insert into subtitles(sha, idx, title, language, codec, extension, is_default, is_forced, is_hearing_impaired)
-			values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			insert into subtitles(sha, idx, title, language, codec, mime_codec, extension, is_default, is_forced, is_hearing_impaired)
+			values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 			on conflict (sha, idx) do update set
 				sha = excluded.sha,
 				idx = excluded.idx,
 				title = excluded.title,
 				language = excluded.language,
 				codec = excluded.codec,
+				mime_codec = excluded.mime_codec,
 				extension = excluded.extension,
 				is_default = excluded.is_default,
 				is_forced = excluded.is_forced,
 				is_hearing_impaired = excluded.is_hearing_impaired
 			`,
-			ret.Sha, s.Index, s.Title, s.Language, s.Codec, s.Extension, s.IsDefault, s.IsForced, s.IsHearingImpaired,
+			ret.Sha, s.Index, s.Title, s.Language, s.Codec, s.MimeCodec, s.Extension, s.IsDefault, s.IsForced, s.IsHearingImpaired,
 		)
 	}
 	for _, c := range ret.Chapters {
@@ -305,6 +387,11 @@ func (s *MetadataService) storeFreshMetadata(path string, sha string) (*MediaInf
 		)
 	}
 	err = tx.Commit()
+	if err != nil {
+		return set(ret, err)
+	}
+
+	err = ret.SearchExternalSubtitles()
 	if err != nil {
 		return set(ret, err)
 	}

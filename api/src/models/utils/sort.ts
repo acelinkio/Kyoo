@@ -55,10 +55,11 @@ export const Sort = (
 			),
 		)
 		.Decode((sort: string[]): Sort => {
+			if (!Array.isArray(sort)) sort = [sort];
 			const random = sort.find((x) => x.startsWith("random"));
 			if (random) {
 				const seed = random.includes(":")
-					? Number.parseInt(random.substring("random:".length))
+					? Number.parseInt(random.substring("random:".length), 10)
 					: Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
 				return { tablePk, random: { seed }, sort: [] };
 			}

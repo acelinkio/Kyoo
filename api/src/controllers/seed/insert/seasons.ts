@@ -1,5 +1,5 @@
 import { db } from "~/db";
-import { seasonTranslations, seasons } from "~/db/schema";
+import { seasons, seasonTranslations } from "~/db/schema";
 import { conflictUpdateAllExcept } from "~/db/utils";
 import type { SeedSeason } from "~/models/season";
 import { enqueueOptImage } from "../images";
@@ -12,13 +12,18 @@ export const insertSeasons = async (
 	show: { pk: number; slug: string },
 	items: SeedSeason[],
 ) => {
+	if (!items.length) return [];
+
 	return db.transaction(async (tx) => {
 		const vals: SeasonI[] = items.map((x) => {
 			const { translations, ...season } = x;
 			return {
 				...season,
 				showPk: show.pk,
-				slug: `${show.slug}-s${season.seasonNumber}`,
+				slug:
+					season.seasonNumber === 0
+						? `${show.slug}-specials`
+						: `${show.slug}-s${season.seasonNumber}`,
 				nextRefresh: guessNextRefresh(season.startAir ?? new Date()),
 			};
 		});

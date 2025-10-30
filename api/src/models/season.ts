@@ -8,7 +8,7 @@ import { TranslationRecord } from "./utils/language";
 import { Resource } from "./utils/resource";
 
 export const BaseSeason = t.Object({
-	seasonNumber: t.Integer({ minimum: 1 }),
+	seasonNumber: t.Integer({ minimum: 0 }),
 	startAir: t.Nullable(t.String({ format: "date" })),
 	endAir: t.Nullable(t.String({ format: "date" })),
 
@@ -27,19 +27,28 @@ export const SeasonTranslation = t.Object({
 });
 export type SeasonTranslation = typeof SeasonTranslation.static;
 
-export const Season = t.Intersect([
+export const Season = t.Composite([
 	Resource(),
 	SeasonTranslation,
 	BaseSeason,
 	DbMetadata,
+	t.Object({
+		entriesCount: t.Integer({
+			description: "The number of episodes in this season",
+		}),
+
+		availableCount: t.Integer({
+			description: "The number of episodes that can be played right away",
+		}),
+	}),
 ]);
 export type Season = Prettify<typeof Season.static>;
 
-export const SeedSeason = t.Intersect([
+export const SeedSeason = t.Composite([
 	t.Omit(BaseSeason, ["nextRefresh"]),
 	t.Object({
 		translations: TranslationRecord(
-			t.Intersect([
+			t.Composite([
 				t.Omit(SeasonTranslation, ["poster", "thumbnail", "banner"]),
 				t.Object({
 					poster: t.Nullable(SeedImage),

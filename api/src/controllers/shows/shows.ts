@@ -8,9 +8,9 @@ import { KError } from "~/models/error";
 import { Show } from "~/models/show";
 import {
 	AcceptLanguage,
+	createPage,
 	Filter,
 	Page,
-	createPage,
 	processLanguages,
 } from "~/models/utils";
 import { desc } from "~/models/utils/descriptions";
@@ -23,14 +23,14 @@ export const showsH = new Elysia({ prefix: "/shows", tags: ["shows"] })
 	.use(auth)
 	.get(
 		"random",
-		async ({ error, redirect }) => {
+		async ({ status, redirect }) => {
 			const [show] = await db
 				.select({ kind: shows.kind, slug: shows.slug })
 				.from(shows)
 				.orderBy(sql`random()`)
 				.limit(1);
 			if (!show)
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: "No shows in the database.",
 				});
@@ -65,7 +65,7 @@ export const showsH = new Elysia({ prefix: "/shows", tags: ["shows"] })
 			},
 			headers: { "accept-language": languages },
 			request: { url },
-			jwt: { sub },
+			jwt: { sub, settings },
 		}) => {
 			const langs = processLanguages(languages);
 			const items = await getShows({
@@ -78,7 +78,7 @@ export const showsH = new Elysia({ prefix: "/shows", tags: ["shows"] })
 					filter,
 				),
 				languages: langs,
-				preferOriginal,
+				preferOriginal: preferOriginal ?? settings.preferOriginal,
 				userId: sub,
 			});
 			return createPage(items, { url, sort, limit });

@@ -1,17 +1,19 @@
 package src
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"image"
 	"image/color"
+	"io"
 	"log"
 	"math"
-	"os"
-	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/disintegration/imaging"
+	"github.com/zoriya/kyoo/transcoder/src/utils"
 	"gitlab.com/opennota/screengen"
 )
 
@@ -29,33 +31,49 @@ type Thumbnail struct {
 
 const ThumbsVersion = 1
 
-func getThumbGlob(sha string) string {
-	return fmt.Sprintf("%s/%s/thumbs-v*.*", Settings.Metadata, sha)
-}
-
 func getThumbPath(sha string) string {
-	return fmt.Sprintf("%s/%s/thumbs-v%d.png", Settings.Metadata, sha, ThumbsVersion)
+	return fmt.Sprintf("%s/thumbs-v%d.png", sha, ThumbsVersion)
 }
 
 func getThumbVttPath(sha string) string {
-	return fmt.Sprintf("%s/%s/thumbs-v%d.vtt", Settings.Metadata, sha, ThumbsVersion)
+	return fmt.Sprintf("%s/thumbs-v%d.vtt", sha, ThumbsVersion)
 }
 
-func (s *MetadataService) GetThumb(path string, sha string) (string, string, error) {
-	_, err := s.ExtractThumbs(path, sha)
+func (s *MetadataService) GetThumbVtt(ctx context.Context, path string, sha string) (io.ReadCloser, error) {
+	_, err := s.ExtractThumbs(ctx, path, sha)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
-	return getThumbPath(sha), getThumbVttPath(sha), nil
+
+	vttPath := getThumbVttPath(sha)
+	vtt, err := s.storage.GetItem(ctx, vttPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get thumbnail vtt with path %q: %w", vttPath, err)
+	}
+	return vtt, nil
 }
 
-func (s *MetadataService) ExtractThumbs(path string, sha string) (interface{}, error) {
+func (s *MetadataService) GetThumbSprite(ctx context.Context, path string, sha string) (io.ReadCloser, error) {
+	_, err := s.ExtractThumbs(ctx, path, sha)
+	if err != nil {
+		return nil, err
+	}
+
+	spritePath := getThumbPath(sha)
+	sprite, err := s.storage.GetItem(ctx, spritePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get thumbnail sprite with path %q: %w", spritePath, err)
+	}
+	return sprite, nil
+}
+
+func (s *MetadataService) ExtractThumbs(ctx context.Context, path string, sha string) (interface{}, error) {
 	get_running, set := s.thumbLock.Start(sha)
 	if get_running != nil {
 		return get_running()
 	}
 
-	err := extractThumbnail(path, sha)
+	err := s.extractThumbnail(ctx, path, sha)
 	if err != nil {
 		return set(nil, err)
 	}
@@ -63,12 +81,14 @@ func (s *MetadataService) ExtractThumbs(path string, sha string) (interface{}, e
 	return set(nil, err)
 }
 
-func extractThumbnail(path string, sha string) error {
-	defer printExecTime("extracting thumbnails for %s", path)()
+func (s *MetadataService) extractThumbnail(ctx context.Context, path string, sha string) (err error) {
+	defer utils.PrintExecTime("extracting thumbnails for %s", path)()
 
-	os.MkdirAll(fmt.Sprintf("%s/%s", Settings.Metadata, sha), 0o755)
+	vttPath := getThumbVttPath(sha)
+	spritePath := getThumbPath(sha)
 
-	if _, err := os.Stat(getThumbPath(sha)); err == nil {
+	alreadyOk, _ := s.storage.DoesItemExist(ctx, spritePath)
+	if alreadyOk {
 		return nil
 	}
 
@@ -116,10 +136,9 @@ func extractThumbnail(path string, sha string) error {
 		timestamps := ts
 		ts += interval
 		vtt += fmt.Sprintf(
-			"%s --> %s\n%s/%s/thumbnails.png#xywh=%d,%d,%d,%d\n\n",
+			"%s --> %s\n/video/%s/thumbnails.png#xywh=%d,%d,%d,%d\n\n",
 			tsToVttTime(timestamps),
 			tsToVttTime(ts),
-			Settings.RoutePrefix,
 			base64.RawURLEncoding.EncodeToString([]byte(path)),
 			x,
 			y,
@@ -128,24 +147,21 @@ func extractThumbnail(path string, sha string) error {
 		)
 	}
 
-	// Cleanup old versions of thumbnails
-	files, err := filepath.Glob(getThumbGlob(sha))
-	if err == nil {
-		for _, f := range files {
-			// ignore errors
-			os.Remove(f)
-		}
+	_ = s.storage.DeleteItem(ctx, spritePath)
+	_ = s.storage.DeleteItem(ctx, vttPath)
+
+	spriteFormat, err := imaging.FormatFromFilename(spritePath)
+	if err != nil {
+		return err
 	}
 
-	err = os.WriteFile(getThumbVttPath(sha), []byte(vtt), 0o644)
+	err = s.storage.SaveItemWithCallback(ctx, spritePath, func(_ context.Context, writer io.Writer) error {
+		return imaging.Encode(writer, sprite, spriteFormat)
+	})
 	if err != nil {
 		return err
 	}
-	err = imaging.Save(sprite, getThumbPath(sha))
-	if err != nil {
-		return err
-	}
-	return nil
+	return s.storage.SaveItem(ctx, vttPath, strings.NewReader(vtt))
 }
 
 func tsToVttTime(ts int) string {

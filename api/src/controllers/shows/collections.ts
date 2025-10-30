@@ -16,10 +16,10 @@ import { Serie } from "~/models/serie";
 import { Show } from "~/models/show";
 import {
 	AcceptLanguage,
-	Filter,
-	Page,
 	createPage,
+	Filter,
 	isUuid,
+	Page,
 	processLanguages,
 } from "~/models/utils";
 import { desc } from "~/models/utils/descriptions";
@@ -40,8 +40,8 @@ export const collections = new Elysia({
 			params: { id },
 			headers: { "accept-language": languages },
 			query: { preferOriginal, with: relations },
-			jwt: { sub },
-			error,
+			jwt: { sub, settings },
+			status,
 			set,
 		}) => {
 			const langs = processLanguages(languages);
@@ -53,18 +53,18 @@ export const collections = new Elysia({
 				),
 				languages: langs,
 				fallbackLanguage: langs.includes("*"),
-				preferOriginal,
+				preferOriginal: preferOriginal ?? settings.preferOriginal,
 				relations,
 				userId: sub,
 			});
 			if (!ret) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: "Collection not found",
 				});
 			}
 			if (!ret.language) {
-				return error(422, {
+				return status(422, {
 					status: 422,
 					message: "Accept-Language header could not be satisfied.",
 				});
@@ -109,7 +109,7 @@ export const collections = new Elysia({
 	)
 	.get(
 		"random",
-		async ({ error, redirect }) => {
+		async ({ status, redirect }) => {
 			const [serie] = await db
 				.select({ slug: shows.slug })
 				.from(shows)
@@ -117,7 +117,7 @@ export const collections = new Elysia({
 				.orderBy(sql`random()`)
 				.limit(1);
 			if (!serie)
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: "No collection in the database.",
 				});
@@ -130,7 +130,7 @@ export const collections = new Elysia({
 			response: {
 				302: t.Void({
 					description:
-						"Redirected to the [/collections/{id}](#tag/collections/GET/collections/{id}) route.",
+						"Redirected to the [/collections/{id}](#tag/collections/get/api/collections/{id}) route.",
 				}),
 				404: {
 					...KError,
@@ -144,7 +144,7 @@ export const collections = new Elysia({
 		async ({
 			query: { limit, after, query, sort, filter, preferOriginal },
 			headers: { "accept-language": languages },
-			jwt: { sub },
+			jwt: { sub, settings },
 			request: { url },
 		}) => {
 			const langs = processLanguages(languages);
@@ -155,7 +155,7 @@ export const collections = new Elysia({
 				sort,
 				filter: and(eq(shows.kind, "collection"), filter),
 				languages: langs,
-				preferOriginal,
+				preferOriginal: preferOriginal ?? settings.preferOriginal,
 				userId: sub,
 			});
 			return createPage(items, { url, sort, limit });
@@ -228,9 +228,9 @@ export const collections = new Elysia({
 			params: { id },
 			query: { limit, after, query, sort, filter, preferOriginal },
 			headers: { "accept-language": languages },
-			jwt: { sub },
+			jwt: { sub, settings },
 			request: { url },
-			error,
+			status,
 		}) => {
 			const [collection] = await db
 				.select({ pk: shows.pk })
@@ -244,7 +244,7 @@ export const collections = new Elysia({
 				.limit(1);
 
 			if (!collection) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No collection with the id or slug: '${id}'.`,
 				});
@@ -262,7 +262,7 @@ export const collections = new Elysia({
 					filter,
 				),
 				languages: langs,
-				preferOriginal,
+				preferOriginal: preferOriginal ?? settings.preferOriginal,
 				userId: sub,
 			});
 			return createPage(items, { url, sort, limit });
@@ -285,9 +285,9 @@ export const collections = new Elysia({
 			params: { id },
 			query: { limit, after, query, sort, filter, preferOriginal },
 			headers: { "accept-language": languages },
-			jwt: { sub },
+			jwt: { sub, settings },
 			request: { url },
-			error,
+			status,
 		}) => {
 			const [collection] = await db
 				.select({ pk: shows.pk })
@@ -301,7 +301,7 @@ export const collections = new Elysia({
 				.limit(1);
 
 			if (!collection) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No collection with the id or slug: '${id}'.`,
 				});
@@ -319,7 +319,7 @@ export const collections = new Elysia({
 					filter,
 				),
 				languages: langs,
-				preferOriginal,
+				preferOriginal: preferOriginal ?? settings.preferOriginal,
 				userId: sub,
 			});
 			return createPage(items, { url, sort, limit });
@@ -342,9 +342,9 @@ export const collections = new Elysia({
 			params: { id },
 			query: { limit, after, query, sort, filter, preferOriginal },
 			headers: { "accept-language": languages },
-			jwt: { sub },
+			jwt: { sub, settings },
 			request: { url },
-			error,
+			status,
 		}) => {
 			const [collection] = await db
 				.select({ pk: shows.pk })
@@ -358,7 +358,7 @@ export const collections = new Elysia({
 				.limit(1);
 
 			if (!collection) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No collection with the id or slug: '${id}'.`,
 				});
@@ -372,7 +372,7 @@ export const collections = new Elysia({
 				sort,
 				filter: and(eq(shows.collectionPk, collection.pk), filter),
 				languages: langs,
-				preferOriginal,
+				preferOriginal: preferOriginal ?? settings.preferOriginal,
 				userId: sub,
 			});
 			return createPage(items, { url, sort, limit });

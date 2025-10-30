@@ -3,17 +3,16 @@ import type { Video } from "~/models/video";
 
 export const madeInAbyssVideo: Video = {
 	id: "3cd436ee-01ff-4f45-ba98-654282531234",
-	slug: "made-in-abyss-s1e13",
 	path: "/video/Made in abyss S01E13.mkv",
 	rendering: "459429fa062adeebedcc2bb04b9965de0262bfa453369783132d261be79021bd",
 	part: null,
 	version: 1,
 	guess: {
 		title: "Made in abyss",
-		season: [1],
-		episode: [13],
+		episodes: [{ season: 1, episode: 13 }],
 		kind: "episode",
 		from: "guessit",
+		history: [],
 	},
 	createdAt: "2024-11-23T15:01:24.968Z",
 	updatedAt: "2024-11-23T15:01:24.968Z",
@@ -58,7 +57,7 @@ export const madeInAbyss = {
 				"https://image.tmdb.org/t/p/original/Df9XrvZFIeQfLKfu8evRmzvRsd.jpg",
 			logo: "https://image.tmdb.org/t/p/original/7hY3Q4GhkiYPBfn4UoVg0AO4Zgk.png",
 			banner: null,
-			trailerUrl: "https://www.youtube.com/watch?v=ePOyy6Wlk4s",
+			trailer: "https://www.youtube.com/watch?v=ePOyy6Wlk4s",
 		},
 		ja: {
 			name: "メイドインアビス",
@@ -92,7 +91,7 @@ export const madeInAbyss = {
 				"https://image.tmdb.org/t/p/original/Df9XrvZFIeQfLKfu8evRmzvRsd.jpg",
 			logo: "https://image.tmdb.org/t/p/original/7hY3Q4GhkiYPBfn4UoVg0AO4Zgk.png",
 			banner: null,
-			trailerUrl: "https://www.youtube.com/watch?v=ePOyy6Wlk4s",
+			trailer: "https://www.youtube.com/watch?v=ePOyy6Wlk4s",
 		},
 	},
 	genres: [
@@ -264,6 +263,81 @@ export const madeInAbyss = {
 					season: 2,
 					episode: 1,
 					link: "https://www.themoviedb.org/tv/72636/season/2/episode/1",
+				},
+			},
+		},
+		{
+			kind: "episode",
+			order: 15,
+			seasonNumber: 2,
+			episodeNumber: 2,
+			translations: {
+				en: {
+					name: " Resurrection Festival ",
+					description:
+						"Riko and Reg find out more about their past but the question still remains, who or what exactly is Reg?",
+				},
+			},
+			runtime: 23,
+			airDate: "2022-07-06",
+			thumbnail:
+				"https://artworks.thetvdb.com/banners/episodes/326109/6174129.jpg",
+			externalId: {
+				themoviedatabase: {
+					serieId: "72636",
+					season: 2,
+					episode: 2,
+					link: "https://www.themoviedb.org/tv/72636/season/2/episode/2",
+				},
+			},
+		},
+		{
+			kind: "episode",
+			order: 16,
+			seasonNumber: 2,
+			episodeNumber: 3,
+			translations: {
+				en: {
+					name: "Departure",
+					description:
+						"Reg goes on his first cave raid! Meanwhile, Riko makes preparations to go into the abyss to find her mother.",
+				},
+			},
+			runtime: 23,
+			airDate: "2022-07-06",
+			thumbnail:
+				"https://artworks.thetvdb.com/banners/episodes/326109/6180539.jpg",
+			externalId: {
+				themoviedatabase: {
+					serieId: "72636",
+					season: 2,
+					episode: 3,
+					link: "https://www.themoviedb.org/tv/72636/season/2/episode/4",
+				},
+			},
+		},
+		{
+			kind: "episode",
+			order: 17,
+			seasonNumber: 2,
+			episodeNumber: 4,
+			translations: {
+				en: {
+					name: "The Edge of the Abyss",
+					description:
+						"Riko and Reg start their adventure into the Abyss, while there they run into an unexpected familiar face.",
+				},
+			},
+			runtime: 23,
+			airDate: "2022-07-06",
+			thumbnail:
+				"https://artworks.thetvdb.com/banners/episodes/326109/6180540.jpg",
+			externalId: {
+				themoviedatabase: {
+					serieId: "72636",
+					season: 2,
+					episode: 4,
+					link: "https://www.themoviedb.org/tv/72636/season/2/episode/4",
 				},
 			},
 		},

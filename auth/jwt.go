@@ -10,7 +10,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
-	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwk"
 )
 
 type Jwt struct {
@@ -19,7 +19,7 @@ type Jwt struct {
 }
 
 // @Summary      Get JWT
-// @Description  Convert a session token to a short lived JWT.
+// @Description  Convert a session token or an API key to a short lived JWT.
 // @Tags         jwt
 // @Produce      json
 // @Security     Token
@@ -28,6 +28,17 @@ type Jwt struct {
 // @Header       200  {string}  Authorization  "Jwt (same value as the returned token)"
 // @Router /jwt [get]
 func (h *Handler) CreateJwt(c echo.Context) error {
+	apikey := c.Request().Header.Get("X-Api-Key")
+	if apikey != "" {
+		token, err := h.createApiJwt(apikey)
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, Jwt{
+			Token: &token,
+		})
+	}
+
 	auth := c.Request().Header.Get("Authorization")
 	var jwt *string
 
@@ -68,6 +79,7 @@ func (h *Handler) createGuestJwt() *string {
 		Time: time.Now().UTC().Add(time.Hour),
 	}
 	jwt := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	jwt.Header["kid"] = h.config.JwtKid
 	t, err := jwt.SignedString(h.config.JwtPrivateKey)
 	if err != nil {
 		return nil
@@ -85,8 +97,8 @@ func (h *Handler) createJwt(token string) (string, error) {
 	}
 
 	go func() {
-		h.db.TouchSession(context.Background(), session.Id)
-		h.db.TouchUser(context.Background(), session.User.Id)
+		h.db.TouchSession(context.Background(), session.Pk)
+		h.db.TouchUser(context.Background(), session.User.Pk)
 	}()
 
 	claims := maps.Clone(session.User.Claims)
@@ -101,6 +113,7 @@ func (h *Handler) createJwt(token string) (string, error) {
 		Time: time.Now().UTC().Add(time.Hour),
 	}
 	jwt := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	jwt.Header["kid"] = h.config.JwtKid
 	t, err := jwt.SignedString(h.config.JwtPrivateKey)
 	if err != nil {
 		return "", err
@@ -126,15 +139,16 @@ type JwkSet struct {
 // @Success      200  {object}  JwkSet  "OK"
 // @Router /.well-known/jwks.json [get]
 func (h *Handler) GetJwks(c echo.Context) error {
-	key, err := jwk.New(h.config.JwtPublicKey)
+	key, err := jwk.Import(h.config.JwtPublicKey)
 	if err != nil {
 		return err
 	}
 
 	key.Set("use", "sig")
 	key.Set("key_ops", "verify")
+	key.Set("kid", h.config.JwtKid)
 	set := jwk.NewSet()
-	set.Add(key)
+	set.AddKey(key)
 	return c.JSON(200, set)
 }
 

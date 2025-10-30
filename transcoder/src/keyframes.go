@@ -11,9 +11,14 @@ import (
 	"sync"
 
 	"github.com/lib/pq"
+	"github.com/zoriya/kyoo/transcoder/src/utils"
 )
 
-const KeyframeVersion = 1
+const (
+	KeyframeVersion        = 1
+	minParsedKeyframeTime  = 5.0 // seconds
+	minParsedKeyframeCount = 3
+)
 
 type Keyframe struct {
 	Keyframes []float64
@@ -162,7 +167,7 @@ func (s *MetadataService) GetKeyframes(info *MediaInfo, isVideo bool, idx uint32
 // Returns when all key frames are retrived (or an error occurs)
 // info.ready.Done() is called when more than 100 are retrived (or extraction is done)
 func getVideoKeyframes(path string, video_idx uint32, kf *Keyframe) error {
-	defer printExecTime("ffprobe keyframe analysis for %s video n%d", path, video_idx)()
+	defer utils.PrintExecTime("ffprobe keyframe analysis for %s video n%d", path, video_idx)()
 	// run ffprobe to return all IFrames, IFrames are points where we can split the video in segments.
 	// We ask ffprobe to return the time of each frame and it's flags
 	// We could ask it to return only i-frames (keyframes) with the -skip_frame nokey but using it is extremly slow
@@ -191,6 +196,8 @@ func getVideoKeyframes(path string, video_idx uint32, kf *Keyframe) error {
 	ret := make([]float64, 0, 1000)
 	limit := 100
 	done := 0
+	indexNotificationComplete := false
+
 	// sometimes, videos can start at a timing greater than 0:00. We need to take that into account
 	// and only list keyframes that come after the start of the video (without that, our segments count
 	// mismatch and we can have the same segment twice on the stream).
@@ -230,7 +237,8 @@ func getVideoKeyframes(path string, video_idx uint32, kf *Keyframe) error {
 
 		ret = append(ret, fpts)
 
-		if len(ret) == limit {
+		shouldNotifyIndexers := !indexNotificationComplete && fpts >= minParsedKeyframeTime && len(ret) >= minParsedKeyframeCount
+		if len(ret) == limit || shouldNotifyIndexers {
 			kf.add(ret)
 			if done == 0 {
 				kf.info.ready.Done()
@@ -240,6 +248,10 @@ func getVideoKeyframes(path string, video_idx uint32, kf *Keyframe) error {
 			done += limit
 			// clear the array without reallocing it
 			ret = ret[:0]
+
+			if shouldNotifyIndexers {
+				indexNotificationComplete = true
+			}
 		}
 	}
 	kf.add(ret)
@@ -254,7 +266,7 @@ const DummyKeyframeDuration = float64(4)
 
 // we can pretty much cut audio at any point so no need to get specific frames, just cut every 4s
 func getAudioKeyframes(info *MediaInfo, audio_idx uint32, kf *Keyframe) error {
-	defer printExecTime("ffprobe keyframe analysis for %s audio n%d", info.Path, audio_idx)()
+	defer utils.PrintExecTime("ffprobe keyframe analysis for %s audio n%d", info.Path, audio_idx)()
 	// Format's duration CAN be different than audio's duration. To make sure we do not
 	// miss a segment or make one more, we need to check the audio's duration.
 	//

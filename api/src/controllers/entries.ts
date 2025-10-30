@@ -1,4 +1,4 @@
-import { type SQL, and, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, ne, type SQL, sql } from "drizzle-orm";
 import { Elysia, t } from "elysia";
 import { auth } from "~/auth";
 import { db } from "~/db";
@@ -26,20 +26,19 @@ import {
 	ExtraType,
 	MovieEntry,
 	Special,
-	UnknownEntry,
 } from "~/models/entry";
 import { KError } from "~/models/error";
 import { madeInAbyss } from "~/models/examples";
 import {
 	AcceptLanguage,
+	createPage,
 	Filter,
 	type FilterDef,
-	Page,
-	Sort,
-	createPage,
 	isUuid,
 	keysetPaginate,
+	Page,
 	processLanguages,
+	Sort,
 	sortToSql,
 } from "~/models/utils";
 import { desc as description } from "~/models/utils/descriptions";
@@ -55,7 +54,7 @@ export const entryProgressQ = db
 	})
 	.from(history)
 	.leftJoin(videos, eq(history.videoPk, videos.pk))
-	.leftJoin(profiles, eq(history.profilePk, profiles.pk))
+	.innerJoin(profiles, eq(history.profilePk, profiles.pk))
 	.where(eq(profiles.id, sql.placeholder("userId")))
 	.orderBy(history.entryPk, desc(history.playedDate))
 	.as("progress");
@@ -73,15 +72,11 @@ export const entryFilters: FilterDef = {
 	runtime: { column: entries.runtime, type: "float" },
 	airDate: { column: entries.airDate, type: "date" },
 	playedDate: { column: entryProgressQ.playedDate, type: "date" },
+	isAvailable: { column: isNotNull(entries.availableSince), type: "bool" },
 };
 
 const extraFilters: FilterDef = {
 	kind: { column: entries.extraKind, type: "enum", values: ExtraType.enum },
-	runtime: { column: entries.runtime, type: "float" },
-	playedDate: { column: entryProgressQ.playedDate, type: "date" },
-};
-
-const unknownFilters: FilterDef = {
 	runtime: { column: entries.runtime, type: "float" },
 	playedDate: { column: entryProgressQ.playedDate, type: "date" },
 };
@@ -146,16 +141,29 @@ export const entryVideosQ = db
 	.leftJoin(videos, eq(videos.pk, entryVideoJoin.videoPk))
 	.as("videos");
 
+export const getEntryTransQ = (languages: string[]) => {
+	return db
+		.selectDistinctOn([entryTranslations.pk])
+		.from(entryTranslations)
+		.orderBy(
+			entryTranslations.pk,
+			sql`array_position(${sqlarr(languages)}, ${entryTranslations.language})`,
+		)
+		.as("entry_t");
+};
+
 export const mapProgress = ({ aliased }: { aliased: boolean }) => {
 	const { time, percent, playedDate, videoId } = getColumns(entryProgressQ);
 	const ret = {
-		time: coalesce(time, sql`0`),
-		percent: coalesce(percent, sql`0`),
-		playedDate: sql`${playedDate}`,
-		videoId: sql`${videoId}`,
+		time: coalesce(time, sql<number>`0`),
+		percent: coalesce(percent, sql<number>`0`),
+		playedDate: sql`to_char(${playedDate}, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`,
+		videoId: sql<string>`${videoId}`,
 	};
 	if (!aliased) return ret;
-	return Object.fromEntries(Object.entries(ret).map(([k, v]) => [k, v.as(k)]));
+	return Object.fromEntries(
+		Object.entries(ret).map(([k, v]) => [k, v.as(k)]),
+	) as unknown as typeof ret;
 };
 
 export async function getEntries({
@@ -176,16 +184,8 @@ export async function getEntries({
 	languages: string[];
 	userId: string;
 	progressQ?: typeof entryProgressQ;
-}): Promise<(Entry | Extra | UnknownEntry)[]> {
-	const transQ = db
-		.selectDistinctOn([entryTranslations.pk])
-		.from(entryTranslations)
-		.orderBy(
-			entryTranslations.pk,
-			sql`array_position(${sqlarr(languages)}, ${entryTranslations.language})`,
-		)
-		.as("t");
-	const { pk, name, ...transCol } = getColumns(transQ);
+}): Promise<(Entry | Extra)[]> {
+	const transQ = getEntryTransQ(languages);
 
 	const {
 		kind,
@@ -199,11 +199,11 @@ export async function getEntries({
 	return await db
 		.select({
 			...entryCol,
-			...transCol,
+			...getColumns(transQ),
 			videos: entryVideosQ.videos,
 			progress: mapProgress({ aliased: true }),
 			// specials don't have an `episodeNumber` but a `number` field.
-			number: episodeNumber,
+			number: sql<number>`${episodeNumber}`,
 
 			// merge `extraKind` into `kind`
 			kind: sql<EntryKind>`case when ${kind} = 'extra' then ${extraKind} else ${kind}::text end`.as(
@@ -215,11 +215,11 @@ export async function getEntries({
 			order: sql<number>`${order}`,
 			seasonNumber: sql<number>`${seasonNumber}`,
 			episodeNumber: sql<number>`${episodeNumber}`,
-			name: sql<string>`${name}`,
+			name: sql<string>`${transQ.name}`,
 		})
 		.from(entries)
 		.innerJoin(transQ, eq(entries.pk, transQ.pk))
-		.leftJoinLateral(entryVideosQ, sql`true`)
+		.crossJoinLateral(entryVideosQ)
 		.leftJoin(progressQ, eq(entries.pk, progressQ.entryPk))
 		.where(
 			and(
@@ -244,7 +244,6 @@ export const entriesH = new Elysia({ tags: ["series"] })
 		movie_entry: MovieEntry,
 		special: Special,
 		extra: Extra,
-		unknown_entry: UnknownEntry,
 		error: t.Object({}),
 	})
 	.model((models) => ({
@@ -260,7 +259,7 @@ export const entriesH = new Elysia({ tags: ["series"] })
 			headers: { "accept-language": languages },
 			request: { url },
 			jwt: { sub },
-			error,
+			status,
 		}) => {
 			const [serie] = await db
 				.select({ pk: shows.pk })
@@ -274,7 +273,7 @@ export const entriesH = new Elysia({ tags: ["series"] })
 				.limit(1);
 
 			if (!serie) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No serie with the id or slug: '${id}'.`,
 				});
@@ -289,7 +288,6 @@ export const entriesH = new Elysia({ tags: ["series"] })
 				filter: and(
 					eq(entries.showPk, serie.pk),
 					ne(entries.kind, "extra"),
-					ne(entries.kind, "unknown"),
 					filter,
 				),
 				languages: langs,
@@ -341,7 +339,7 @@ export const entriesH = new Elysia({ tags: ["series"] })
 			query: { limit, after, query, sort, filter },
 			request: { url },
 			jwt: { sub },
-			error,
+			status,
 		}) => {
 			const [serie] = await db
 				.select({ pk: shows.pk })
@@ -355,7 +353,7 @@ export const entriesH = new Elysia({ tags: ["series"] })
 				.limit(1);
 
 			if (!serie) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No serie with the id or slug: '${id}'.`,
 				});
@@ -408,46 +406,6 @@ export const entriesH = new Elysia({ tags: ["series"] })
 		},
 	)
 	.get(
-		"/unknowns",
-		async ({
-			query: { limit, after, query, sort, filter },
-			request: { url },
-			jwt: { sub },
-		}) => {
-			const items = (await getEntries({
-				limit,
-				after,
-				query,
-				sort: sort,
-				filter: and(eq(entries.kind, "unknown"), filter),
-				languages: ["extra"],
-				userId: sub,
-			})) as UnknownEntry[];
-
-			return createPage(items, { url, sort, limit });
-		},
-		{
-			detail: { description: "Get unknown/unmatch videos." },
-			query: t.Object({
-				sort: extraSort,
-				filter: t.Optional(Filter({ def: unknownFilters })),
-				query: t.Optional(t.String({ description: description.query })),
-				limit: t.Integer({
-					minimum: 1,
-					maximum: 250,
-					default: 50,
-					description: "Max page size.",
-				}),
-				after: t.Optional(t.String({ description: description.after })),
-			}),
-			response: {
-				200: Page(UnknownEntry),
-				422: KError,
-			},
-			tags: ["videos"],
-		},
-	)
-	.get(
 		"/news",
 		async ({
 			query: { limit, after, query, filter },
@@ -462,7 +420,6 @@ export const entriesH = new Elysia({ tags: ["series"] })
 				sort,
 				filter: and(
 					isNotNull(entries.availableSince),
-					ne(entries.kind, "unknown"),
 					ne(entries.kind, "extra"),
 					filter,
 				),
@@ -489,6 +446,6 @@ export const entriesH = new Elysia({ tags: ["series"] })
 				200: Page(Entry),
 				422: KError,
 			},
-			tags: ["videos"],
+			tags: ["shows"],
 		},
 	);

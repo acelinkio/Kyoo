@@ -3,11 +3,14 @@ package src
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/asticode/go-astisub"
+	"github.com/zoriya/kyoo/transcoder/src/utils"
 	"golang.org/x/text/language"
 )
 
@@ -30,14 +33,14 @@ outer:
 		for codec, ext := range SubtitleExtensions {
 			if strings.HasSuffix(match, ext) {
 				link := fmt.Sprintf(
-					"%s/%s/direct/%s",
-					Settings.RoutePrefix,
+					"/video/%s/subtitle/ext-%s",
 					base64.RawURLEncoding.EncodeToString([]byte(match)),
 					filepath.Base(match),
 				)
 				sub := Subtitle{
 					Index:      nil,
 					Codec:      codec,
+					MimeCodec:  OrNull(SubtitleMimes[codec]),
 					Extension:  &ext,
 					IsExternal: true,
 					Path:       &match,
@@ -72,7 +75,7 @@ outer:
 				// "hi" by itself means a language code, but when combined with other lang flags it means Hearing Impaired.
 				// In case Hindi was not detected before, but "hi" is present, assume it is Hindi.
 				if sub.Language == nil {
-					hiCount := Count(flags, "hi")
+					hiCount := utils.Count(flags, "hi")
 					if hiCount > 0 {
 						languageStr := language.Hindi.String()
 						sub.Language = &languageStr
@@ -87,5 +90,60 @@ outer:
 			}
 		}
 	}
+	return nil
+}
+
+func ConvertSubtitle(
+	format string,
+	stream io.ReadCloser,
+	outFmt string,
+	out io.WriteCloser,
+) error {
+	var s *astisub.Subtitles
+	var err error
+
+	switch format {
+	case ".srt":
+		s, err = astisub.ReadFromSRT(stream)
+	case ".ssa", ".ass":
+		s, err = astisub.ReadFromSSA(stream)
+	case ".stl":
+		s, err = astisub.ReadFromSTL(stream, astisub.STLOptions{})
+	case ".ts":
+		s, err = astisub.ReadFromTeletext(stream, astisub.TeletextOptions{})
+	case ".ttml":
+		s, err = astisub.ReadFromTTML(stream)
+	case ".vtt":
+		s, err = astisub.ReadFromWebVTT(stream)
+	default:
+		err = astisub.ErrInvalidExtension
+	}
+	if err != nil {
+		return err
+	}
+	if len(s.Items) == 0 {
+		return astisub.ErrNoSubtitlesToWrite
+	}
+
+	var convert func(io.Writer) error
+	switch outFmt {
+	case ".srt":
+		convert = s.WriteToSRT
+	case ".ssa", ".ass":
+		convert = s.WriteToSSA
+	case ".stl":
+		convert = s.WriteToSTL
+	case ".ttml":
+		convert = func(out io.Writer) error { return s.WriteToTTML(out) }
+	case ".vtt":
+		convert = s.WriteToWebVTT
+	default:
+		return astisub.ErrInvalidExtension
+	}
+
+	go func() {
+		convert(out)
+		out.Close()
+	}()
 	return nil
 }

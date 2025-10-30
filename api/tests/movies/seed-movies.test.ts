@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from "bun:test";
 import { eq } from "drizzle-orm";
 import { expectStatus } from "tests/utils";
 import { db } from "~/db";
-import { showTranslations, shows, videos } from "~/db/schema";
+import { shows, showTranslations, videos } from "~/db/schema";
 import { bubble } from "~/models/examples";
 import { dune, duneVideo } from "~/models/examples/dune-2021";
 import { createMovie, createVideo } from "../helpers";
@@ -49,7 +49,7 @@ describe("Movie seeding", () => {
 					thumbnail: null,
 					banner: null,
 					logo: null,
-					trailerUrl: null,
+					trailer: null,
 				},
 			},
 		});
@@ -154,7 +154,7 @@ describe("Movie seeding", () => {
 					poster: null,
 					thumbnail: null,
 					logo: null,
-					trailerUrl: null,
+					trailer: null,
 				},
 			},
 		});
@@ -180,7 +180,7 @@ describe("Movie seeding", () => {
 					poster: null,
 					thumbnail: null,
 					logo: null,
-					trailerUrl: null,
+					trailer: null,
 				},
 			},
 		});
@@ -308,7 +308,7 @@ describe("Movie seeding", () => {
 			part: null,
 			version: 1,
 			rendering: "oeunhtoeuth",
-			guess: { title: "bubble", from: "test" },
+			guess: { title: "bubble", from: "test", history: [] },
 		});
 		expectStatus(vresp, video).toBe(201);
 
@@ -334,7 +334,7 @@ describe("Movie seeding", () => {
 			part: null,
 			version: 2,
 			rendering: "oeunhtoeuth",
-			guess: { title: "bubble", from: "test" },
+			guess: { title: "bubble", from: "test", history: [] },
 		});
 		expectStatus(vresp, video).toBe(201);
 
@@ -359,7 +359,7 @@ describe("Movie seeding", () => {
 			part: 1,
 			version: 2,
 			rendering: "oaoeueunhtoeuth",
-			guess: { title: "bubble", from: "test" },
+			guess: { title: "bubble", from: "test", history: [] },
 		});
 		expectStatus(vresp, video).toBe(201);
 
@@ -384,15 +384,15 @@ describe("Movie seeding", () => {
 				path: "/video/bubble3.mkv",
 				part: null,
 				version: 1,
-				rendering: "oeunhtoeuth",
-				guess: { title: "bubble", from: "test" },
+				rendering: "oeunhtoeuthoeu",
+				guess: { title: "bubble", from: "test", history: [] },
 			},
 			{
 				path: "/video/bubble4.mkv",
 				part: null,
 				version: 1,
 				rendering: "aoeuaoeu",
-				guess: { title: "bubble", from: "test" },
+				guess: { title: "bubble", from: "test", history: [] },
 			},
 		]);
 		expectStatus(vresp, video).toBe(201);

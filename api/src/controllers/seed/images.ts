@@ -1,18 +1,16 @@
-import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { encode } from "blurhash";
-import { type SQL, and, eq, is, lt, sql } from "drizzle-orm";
+import { and, eq, is, lt, type SQL, sql } from "drizzle-orm";
 import { PgColumn, type PgTable } from "drizzle-orm/pg-core";
 import { version } from "package.json";
 import type { PoolClient } from "pg";
 import sharp from "sharp";
-import { type Transaction, db } from "~/db";
+import { db, type Transaction } from "~/db";
 import { mqueue } from "~/db/schema/mqueue";
 import type { Image } from "~/models/utils";
+import { getFile } from "~/utils";
 
 export const imageDir = process.env.IMAGES_PATH ?? "./images";
-await mkdir(imageDir, { recursive: true });
-
 export const defaultBlurhash = "000000";
 
 type ImageTask = {
@@ -23,7 +21,7 @@ type ImageTask = {
 };
 
 // this will only push a task to the image downloader service and not download it instantly.
-// this is both done to prevent to many requests to be sent at once and to make sure POST
+// this is both done to prevent too many requests to be sent at once and to make sure POST
 // requests are not blocked by image downloading or blurhash calculation
 export const enqueueOptImage = async (
 	tx: Transaction,
@@ -70,7 +68,7 @@ export const enqueueOptImage = async (
 		kind: "image",
 		message,
 	});
-	await tx.execute(sql`notify image`);
+	await tx.execute(sql`notify kyoo_image`);
 
 	return {
 		id,
@@ -105,8 +103,8 @@ export const processImages = async () => {
 			`);
 
 				await tx.delete(mqueue).where(eq(mqueue.id, item.id));
-			} catch (err) {
-				console.error("Failed to download image", img.url, err);
+			} catch (err: any) {
+				console.error("Failed to download image", img.url, err.message);
 				await tx
 					.update(mqueue)
 					.set({ attempt: sql`${mqueue.attempt}+1` })
@@ -130,10 +128,10 @@ export const processImages = async () => {
 
 	const client = (await db.$client.connect()) as PoolClient;
 	client.on("notification", (evt) => {
-		if (evt.channel !== "image") return;
+		if (evt.channel !== "kyoo_image") return;
 		processAll();
 	});
-	await client.query("listen image");
+	await client.query("listen kyoo_image");
 
 	// start processing old tasks
 	await processAll();
@@ -141,7 +139,13 @@ export const processImages = async () => {
 };
 
 async function downloadImage(id: string, url: string): Promise<string> {
-	// TODO: check if file exists before downloading
+	const low = await getFile(path.join(imageDir, `${id}.low.jpg`))
+		.arrayBuffer()
+		.catch(() => false as const);
+	if (low) {
+		return await getBlurhash(sharp(low));
+	}
+
 	const resp = await fetch(url, {
 		headers: { "User-Agent": `Kyoo v${version}` },
 	});
@@ -164,23 +168,20 @@ async function downloadImage(id: string, url: string): Promise<string> {
 	await Promise.all(
 		Object.entries(resolutions).map(async ([resolution, dimensions]) => {
 			const buffer = await image.clone().resize(dimensions.width).toBuffer();
-			await writeFile(path.join(imageDir, `${id}.${resolution}.jpg`), buffer);
+			const file = getFile(path.join(imageDir, `${id}.${resolution}.jpg`));
+
+			await Bun.write(file, buffer, { mode: 0o660 });
 		}),
 	);
+	return await getBlurhash(image);
+}
 
+async function getBlurhash(image: sharp.Sharp): Promise<string> {
 	const { data, info } = await image
 		.resize(32, 32, { fit: "inside" })
 		.ensureAlpha()
 		.raw()
 		.toBuffer({ resolveWithObject: true });
 
-	const blurHash = encode(
-		new Uint8ClampedArray(data),
-		info.width,
-		info.height,
-		4,
-		3,
-	);
-
-	return blurHash;
+	return encode(new Uint8ClampedArray(data), info.width, info.height, 4, 3);
 }

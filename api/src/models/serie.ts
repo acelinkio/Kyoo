@@ -58,7 +58,7 @@ export const SerieTranslation = t.Object({
 });
 export type SerieTranslation = typeof SerieTranslation.static;
 
-export const Serie = t.Intersect([
+export const Serie = t.Composite([
 	Resource(),
 	SerieTranslation,
 	BaseSerie,
@@ -81,26 +81,34 @@ export const FullSerie = t.Intersect([
 	t.Object({
 		translations: t.Optional(TranslationRecord(SerieTranslation)),
 		studios: t.Optional(t.Array(Studio)),
-		firstEntry: t.Optional(Entry),
+		firstEntry: t.Optional(t.Nullable(Entry)),
+		nextEntry: t.Optional(t.Nullable(Entry)),
 	}),
 ]);
 export type FullSerie = Prettify<typeof FullSerie.static>;
 
-export const SeedSerie = t.Intersect([
-	t.Omit(BaseSerie, ["kind", "nextRefresh"]),
+export const SeedSerie = t.Composite([
+	t.Omit(BaseSerie, ["nextRefresh"]),
 	t.Object({
 		slug: t.String({ format: "slug" }),
 		originalLanguage: Language({
 			description: "The language code this serie was made in.",
 		}),
 		translations: TranslationRecord(
-			t.Intersect([
-				t.Omit(SerieTranslation, ["poster", "thumbnail", "banner", "logo"]),
+			t.Composite([
+				t.Omit(SerieTranslation, [
+					"poster",
+					"thumbnail",
+					"banner",
+					"logo",
+					"trailerUrl",
+				]),
 				t.Object({
 					poster: t.Nullable(SeedImage),
 					thumbnail: t.Nullable(SeedImage),
 					banner: t.Nullable(SeedImage),
 					logo: t.Nullable(SeedImage),
+					trailer: t.Nullable(SeedImage),
 					latinName: t.Optional(Original.properties.latinName),
 				}),
 			]),

@@ -1,7 +1,9 @@
 import { TypeCompiler } from "@sinclair/typebox/compiler";
+import { Value } from "@sinclair/typebox/value";
 import Elysia, { t } from "elysia";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { KError } from "./models/error";
+import type { Prettify } from "./utils";
 
 const jwtSecret = process.env.JWT_SECRET
 	? new TextEncoder().encode(process.env.JWT_SECRET)
@@ -13,29 +15,39 @@ const jwks = createRemoteJWKSet(
 	),
 );
 
+const Settings = t.Object(
+	{
+		preferOriginal: t.Boolean({ default: true }),
+	},
+	{ additionalProperties: true },
+);
+type Settings = typeof Settings.static;
+
 const Jwt = t.Object({
 	sub: t.String({ description: "User id" }),
 	sid: t.String({ description: "Session id" }),
 	username: t.String(),
 	permissions: t.Array(t.String()),
+	settings: t.Optional(t.Partial(Settings, { default: {} })),
 });
+type Jwt = typeof Jwt.static;
 const validator = TypeCompiler.Compile(Jwt);
 
 export const auth = new Elysia({ name: "auth" })
 	.guard({
 		headers: t.Object(
 			{
-				authorization: t.TemplateLiteral("Bearer ${string}"),
+				authorization: t.Optional(t.TemplateLiteral("Bearer ${string}")),
 			},
 			{ additionalProperties: true },
 		),
 	})
-	.resolve(async ({ headers: { authorization }, error }) => {
+	.resolve(async ({ headers: { authorization }, status }) => {
 		const bearer = authorization?.slice(7);
 		if (!bearer) {
-			return error(500, {
-				status: 500,
-				message: "No jwt, auth server configuration error.",
+			return status(403, {
+				status: 403,
+				message: "No authorization header was found.",
 			});
 		}
 
@@ -44,11 +56,14 @@ export const auth = new Elysia({ name: "auth" })
 			const { payload } = await jwtVerify(bearer, jwtSecret ?? jwks, {
 				issuer: process.env.JWT_ISSUER,
 			});
-			const jwt = validator.Decode(payload);
+			const raw = validator.Decode(payload);
+			const jwt = Value.Default(Jwt, raw) as Prettify<
+				Jwt & { settings: Settings }
+			>;
 
 			return { jwt };
 		} catch (err) {
-			return error(403, {
+			return status(403, {
 				status: 403,
 				message: "Invalid jwt. Verification vailed",
 				details: err,
@@ -58,10 +73,10 @@ export const auth = new Elysia({ name: "auth" })
 	.macro({
 		permissions(perms: string[]) {
 			return {
-				beforeHandle: ({ jwt, error }) => {
+				beforeHandle: ({ jwt, status }) => {
 					for (const perm of perms) {
 						if (!jwt!.permissions.includes(perm)) {
-							return error(403, {
+							return status(403, {
 								status: 403,
 								message: `Missing permission: '${perm}'.`,
 								details: { current: jwt!.permissions, required: perms },
@@ -72,7 +87,7 @@ export const auth = new Elysia({ name: "auth" })
 			};
 		},
 	})
-	.as("plugin");
+	.as("scoped");
 
 const User = t.Object({
 	id: t.String({ format: "uuid" }),

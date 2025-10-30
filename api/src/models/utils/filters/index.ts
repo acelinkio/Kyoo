@@ -9,7 +9,7 @@ export type FilterDef = {
 	[key: string]:
 		| {
 				column: Column | SQLWrapper;
-				type: "int" | "float" | "date" | "string";
+				type: "int" | "float" | "date" | "string" | "bool";
 				isArray?: boolean;
 		  }
 		| {
@@ -23,7 +23,10 @@ export type FilterDef = {
 export const Filter = ({
 	def,
 	description = "Filters to apply to the query.",
-}: { def: FilterDef; description?: string }) =>
+}: {
+	def: FilterDef;
+	description?: string;
+}) =>
 	t
 		.Transform(
 			t.String({

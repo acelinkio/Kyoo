@@ -9,10 +9,10 @@ import { madeInAbyss } from "~/models/examples";
 import { FullSerie, Serie, SerieTranslation } from "~/models/serie";
 import {
 	AcceptLanguage,
-	Filter,
-	Page,
 	createPage,
+	Filter,
 	isUuid,
+	Page,
 	processLanguages,
 } from "~/models/utils";
 import { desc } from "~/models/utils/descriptions";
@@ -30,8 +30,8 @@ export const series = new Elysia({ prefix: "/series", tags: ["series"] })
 			params: { id },
 			headers: { "accept-language": languages },
 			query: { preferOriginal, with: relations },
-			jwt: { sub },
-			error,
+			jwt: { sub, settings },
+			status,
 			set,
 		}) => {
 			const langs = processLanguages(languages);
@@ -43,18 +43,18 @@ export const series = new Elysia({ prefix: "/series", tags: ["series"] })
 				),
 				languages: langs,
 				fallbackLanguage: langs.includes("*"),
-				preferOriginal,
+				preferOriginal: preferOriginal ?? settings.preferOriginal,
 				relations,
 				userId: sub,
 			});
 			if (!ret) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No serie found with the id or slug: '${id}'.`,
 				});
 			}
 			if (!ret.language) {
-				return error(422, {
+				return status(422, {
 					status: 422,
 					message: "Accept-Language header could not be satisfied.",
 				});
@@ -102,7 +102,7 @@ export const series = new Elysia({ prefix: "/series", tags: ["series"] })
 	)
 	.get(
 		"random",
-		async ({ error, redirect }) => {
+		async ({ status, redirect }) => {
 			const [serie] = await db
 				.select({ slug: shows.slug })
 				.from(shows)
@@ -110,7 +110,7 @@ export const series = new Elysia({ prefix: "/series", tags: ["series"] })
 				.orderBy(sql`random()`)
 				.limit(1);
 			if (!serie)
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: "No series in the database.",
 				});
@@ -123,7 +123,7 @@ export const series = new Elysia({ prefix: "/series", tags: ["series"] })
 			response: {
 				302: t.Void({
 					description:
-						"Redirected to the [/series/{id}](#tag/series/GET/series/{id}) route.",
+						"Redirected to the [/series/{id}](#tag/series/get/api/series/{id}) route.",
 				}),
 				404: {
 					...KError,
@@ -138,7 +138,7 @@ export const series = new Elysia({ prefix: "/series", tags: ["series"] })
 			query: { limit, after, query, sort, filter, preferOriginal },
 			headers: { "accept-language": languages },
 			request: { url },
-			jwt: { sub },
+			jwt: { sub, settings },
 		}) => {
 			const langs = processLanguages(languages);
 			const items = await getShows({
@@ -148,7 +148,7 @@ export const series = new Elysia({ prefix: "/series", tags: ["series"] })
 				sort,
 				filter: and(eq(shows.kind, "serie"), filter),
 				languages: langs,
-				preferOriginal,
+				preferOriginal: preferOriginal ?? settings.preferOriginal,
 				userId: sub,
 			});
 			return createPage(items, { url, sort, limit });

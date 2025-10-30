@@ -3,7 +3,6 @@ import type { Video } from "~/models/video";
 
 export const bubbleVideo: Video = {
 	id: "3cd436ee-01ff-4f45-ba98-62aabeb22f25",
-	slug: "bubble",
 	path: "/video/Bubble/Bubble (2022).mkv",
 	rendering: "459429fa062adeebedcc2bb04b9965de0262bfa453369783132d261be79021bd",
 	part: null,
@@ -11,8 +10,9 @@ export const bubbleVideo: Video = {
 	guess: {
 		kind: "movie",
 		title: "bubble",
-		year: [2022],
+		years: [2022],
 		from: "guessit",
+		history: [],
 	},
 	createdAt: "2024-11-23T15:01:24.968Z",
 	updatedAt: "2024-11-23T15:01:24.968Z",
@@ -34,7 +34,7 @@ export const bubble: SeedMovie = {
 				"https://image.tmdb.org/t/p/original/a8Q2g0g7XzAF6gcB8qgn37ccb9Y.jpg",
 			banner: null,
 			logo: "https://image.tmdb.org/t/p/original/ihIs7fayAmZieMlMQbs6TWM77uf.png",
-			trailerUrl: "https://www.youtube.com/watch?v=vs7zsyIZkMM",
+			trailer: "https://www.youtube.com/watch?v=vs7zsyIZkMM",
 		},
 		ja: {
 			name: "バブル：2022",
@@ -48,7 +48,7 @@ export const bubble: SeedMovie = {
 			thumbnail: "https://image.tmdb.org/t/p/original/jp.jpg",
 			banner: null,
 			logo: null,
-			trailerUrl: "https://www.youtube.com/watch?v=vs7zsyIZkMM",
+			trailer: "https://www.youtube.com/watch?v=vs7zsyIZkMM",
 		},
 	},
 	genres: ["animation", "adventure", "science-fiction", "fantasy"],

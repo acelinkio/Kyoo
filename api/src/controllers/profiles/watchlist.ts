@@ -8,19 +8,21 @@ import {
 	watchStatusQ,
 } from "~/controllers/shows/logic";
 import { db } from "~/db";
-import { shows } from "~/db/schema";
+import { entries, shows } from "~/db/schema";
 import { watchlist } from "~/db/schema/watchlist";
 import { conflictUpdateAllExcept, getColumns } from "~/db/utils";
+import { Entry } from "~/models/entry";
 import { KError } from "~/models/error";
 import { bubble, madeInAbyss } from "~/models/examples";
-import { Show } from "~/models/show";
+import { Movie } from "~/models/movie";
+import { Serie } from "~/models/serie";
 import {
 	AcceptLanguage,
+	createPage,
 	DbMetadata,
 	Filter,
-	Page,
-	createPage,
 	isUuid,
+	Page,
 	processLanguages,
 } from "~/models/utils";
 import { desc } from "~/models/utils/descriptions";
@@ -32,18 +34,38 @@ async function setWatchStatus({
 	status,
 	userId,
 }: {
-	show: { pk: number; kind: "movie" | "serie" };
-	status: SerieWatchStatus;
+	show:
+		| { pk: number; kind: "movie" }
+		| { pk: number; kind: "serie"; entriesCount: number };
+	status: Omit<SerieWatchStatus, "seenCount">;
 	userId: string;
 }) {
 	const profilePk = await getOrCreateProfile(userId);
+
+	const firstEntryQ = db
+		.select({ pk: entries.pk })
+		.from(entries)
+		.where(eq(entries.showPk, show.pk))
+		.orderBy(entries.order)
+		.limit(1);
 
 	const [ret] = await db
 		.insert(watchlist)
 		.values({
 			...status,
 			profilePk: profilePk,
+			seenCount:
+				status.status === "completed"
+					? show.kind === "movie"
+						? 100
+						: show.entriesCount
+					: 0,
 			showPk: show.pk,
+			nextEntry:
+				status.status === "watching" || status.status === "rewatching"
+					? sql`${firstEntryQ}`
+					: sql`null`,
+			lastPlayedAt: status.startedAt,
 		})
 		.onConflictDoUpdate({
 			target: [watchlist.profilePk, watchlist.showPk],
@@ -53,10 +75,32 @@ async function setWatchStatus({
 					"showPk",
 					"createdAt",
 					"seenCount",
+					"nextEntry",
+					"lastPlayedAt",
 				]),
-				// do not reset movie's progress during drop
-				...(show.kind === "movie" && status.status !== "dropped"
-					? { seenCount: sql`excluded.seen_count` }
+				...(status.status === "completed"
+					? {
+							seenCount: sql`excluded.seen_count`,
+							nextEntry: sql`null`,
+						}
+					: {}),
+				// only set seenCount & nextEntry when marking as "rewatching"
+				// if it's already rewatching, the history updates are more up-dated.
+				...(status.status === "rewatching"
+					? {
+							seenCount: sql`
+							case when ${watchlist.status} != 'rewatching'
+								then excluded.seen_count
+							else
+								${watchlist.seenCount}
+							end`,
+							nextEntry: sql`
+							case when ${watchlist.status} != 'rewatching'
+								then excluded.next_entry
+							else
+								${watchlist.nextEntry}
+							end`,
+						}
 					: {}),
 			},
 		})
@@ -100,7 +144,7 @@ export const watchlistH = new Elysia({ tags: ["profiles"] })
 						query: { limit, after, query, sort, filter, preferOriginal },
 						headers: { "accept-language": languages },
 						request: { url },
-						jwt: { sub },
+						jwt: { sub, settings },
 					}) => {
 						const langs = processLanguages(languages);
 						const items = await getShows({
@@ -114,7 +158,8 @@ export const watchlistH = new Elysia({ tags: ["profiles"] })
 								filter,
 							),
 							languages: langs,
-							preferOriginal,
+							preferOriginal: preferOriginal ?? settings.preferOriginal,
+							relations: ["nextEntry"],
 							userId: sub,
 						});
 						return createPage(items, { url, sort, limit });
@@ -128,7 +173,18 @@ export const watchlistH = new Elysia({ tags: ["profiles"] })
 							{ additionalProperties: true },
 						),
 						response: {
-							200: Page(Show),
+							200: Page(
+								t.Union([
+									t.Intersect([Movie, t.Object({ kind: t.Literal("movie") })]),
+									t.Intersect([
+										Serie,
+										t.Object({
+											kind: t.Literal("serie"),
+											nextEntry: t.Optional(t.Nullable(Entry)),
+										}),
+									]),
+								]),
+							),
 							422: KError,
 						},
 					},
@@ -138,12 +194,13 @@ export const watchlistH = new Elysia({ tags: ["profiles"] })
 					async ({
 						params: { id },
 						query: { limit, after, query, sort, filter, preferOriginal },
+						jwt: { settings },
 						headers: { "accept-language": languages, authorization },
 						request: { url },
-						error,
+						status,
 					}) => {
 						const uInfo = await getUserInfo(id, { authorization });
-						if ("status" in uInfo) return error(uInfo.status as 404, uInfo);
+						if ("status" in uInfo) return status(uInfo.status as 404, uInfo);
 
 						const langs = processLanguages(languages);
 						const items = await getShows({
@@ -157,7 +214,8 @@ export const watchlistH = new Elysia({ tags: ["profiles"] })
 								filter,
 							),
 							languages: langs,
-							preferOriginal,
+							preferOriginal: preferOriginal ?? settings.preferOriginal,
+							relations: ["nextEntry"],
 							userId: uInfo.id,
 						});
 						return createPage(items, { url, sort, limit });
@@ -178,7 +236,18 @@ export const watchlistH = new Elysia({ tags: ["profiles"] })
 							"accept-language": AcceptLanguage({ autoFallback: true }),
 						}),
 						response: {
-							200: Page(Show),
+							200: Page(
+								t.Union([
+									t.Intersect([Movie, t.Object({ kind: t.Literal("movie") })]),
+									t.Intersect([
+										Serie,
+										t.Object({
+											kind: t.Literal("serie"),
+											nextEntry: t.Optional(t.Nullable(Entry)),
+										}),
+									]),
+								]),
+							),
 							403: KError,
 							404: {
 								...KError,
@@ -192,9 +261,9 @@ export const watchlistH = new Elysia({ tags: ["profiles"] })
 	)
 	.post(
 		"/series/:id/watchstatus",
-		async ({ params: { id }, body, jwt: { sub }, error }) => {
+		async ({ params: { id }, body, jwt: { sub }, status }) => {
 			const [show] = await db
-				.select({ pk: shows.pk })
+				.select({ pk: shows.pk, entriesCount: shows.entriesCount })
 				.from(shows)
 				.where(
 					and(
@@ -204,13 +273,13 @@ export const watchlistH = new Elysia({ tags: ["profiles"] })
 				);
 
 			if (!show) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No serie found for the id/slug: '${id}'.`,
 				});
 			}
 			return await setWatchStatus({
-				show: { pk: show.pk, kind: "serie" },
+				show: { pk: show.pk, kind: "serie", entriesCount: show.entriesCount },
 				userId: sub,
 				status: body,
 			});
@@ -223,7 +292,7 @@ export const watchlistH = new Elysia({ tags: ["profiles"] })
 					example: madeInAbyss.slug,
 				}),
 			}),
-			body: SerieWatchStatus,
+			body: t.Omit(SerieWatchStatus, ["seenCount"]),
 			response: {
 				200: t.Intersect([SerieWatchStatus, DbMetadata]),
 				404: KError,
@@ -233,7 +302,7 @@ export const watchlistH = new Elysia({ tags: ["profiles"] })
 	)
 	.post(
 		"/movies/:id/watchstatus",
-		async ({ params: { id }, body, jwt: { sub }, error }) => {
+		async ({ params: { id }, body, jwt: { sub }, status }) => {
 			const [show] = await db
 				.select({ pk: shows.pk })
 				.from(shows)
@@ -245,7 +314,7 @@ export const watchlistH = new Elysia({ tags: ["profiles"] })
 				);
 
 			if (!show) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No movie found for the id/slug: '${id}'.`,
 				});
@@ -257,8 +326,6 @@ export const watchlistH = new Elysia({ tags: ["profiles"] })
 				status: {
 					...body,
 					startedAt: body.completedAt,
-					// for movies, watch-percent is stored in `seenCount`.
-					seenCount: body.status === "completed" ? 100 : 0,
 				},
 			});
 		},

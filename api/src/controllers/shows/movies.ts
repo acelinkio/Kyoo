@@ -9,10 +9,10 @@ import { bubble } from "~/models/examples";
 import { FullMovie, Movie, MovieTranslation } from "~/models/movie";
 import {
 	AcceptLanguage,
-	Filter,
-	Page,
 	createPage,
+	Filter,
 	isUuid,
+	Page,
 	processLanguages,
 } from "~/models/utils";
 import { desc } from "~/models/utils/descriptions";
@@ -30,8 +30,8 @@ export const movies = new Elysia({ prefix: "/movies", tags: ["movies"] })
 			params: { id },
 			headers: { "accept-language": languages },
 			query: { preferOriginal, with: relations },
-			jwt: { sub },
-			error,
+			jwt: { sub, settings },
+			status,
 			set,
 		}) => {
 			const langs = processLanguages(languages);
@@ -43,18 +43,18 @@ export const movies = new Elysia({ prefix: "/movies", tags: ["movies"] })
 				),
 				languages: langs,
 				fallbackLanguage: langs.includes("*"),
-				preferOriginal,
+				preferOriginal: preferOriginal ?? settings.preferOriginal,
 				relations,
 				userId: sub,
 			});
 			if (!ret) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No movie found with id or slug: '${id}'.`,
 				});
 			}
 			if (!ret.language) {
-				return error(422, {
+				return status(422, {
 					status: 422,
 					message: "Accept-Language header could not be satisfied.",
 				});
@@ -99,7 +99,7 @@ export const movies = new Elysia({ prefix: "/movies", tags: ["movies"] })
 	)
 	.get(
 		"random",
-		async ({ error, redirect }) => {
+		async ({ status, redirect }) => {
 			const [movie] = await db
 				.select({ slug: shows.slug })
 				.from(shows)
@@ -107,7 +107,7 @@ export const movies = new Elysia({ prefix: "/movies", tags: ["movies"] })
 				.orderBy(sql`random()`)
 				.limit(1);
 			if (!movie)
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: "No movies in the database.",
 				});
@@ -120,7 +120,7 @@ export const movies = new Elysia({ prefix: "/movies", tags: ["movies"] })
 			response: {
 				302: t.Void({
 					description:
-						"Redirected to the [/movies/{id}](#tag/movies/GET/movies/{id}) route.",
+						"Redirected to the [/movies/{id}](#tag/movies/get/api/movies/{id}) route.",
 				}),
 				404: {
 					...KError,
@@ -135,7 +135,7 @@ export const movies = new Elysia({ prefix: "/movies", tags: ["movies"] })
 			query: { limit, after, query, sort, filter, preferOriginal },
 			headers: { "accept-language": languages },
 			request: { url },
-			jwt: { sub },
+			jwt: { sub, settings },
 		}) => {
 			const langs = processLanguages(languages);
 			const items = await getShows({
@@ -145,7 +145,7 @@ export const movies = new Elysia({ prefix: "/movies", tags: ["movies"] })
 				sort,
 				filter: and(eq(shows.kind, "movie"), filter),
 				languages: langs,
-				preferOriginal,
+				preferOriginal: preferOriginal ?? settings.preferOriginal,
 				userId: sub,
 			});
 			return createPage(items, { url, sort, limit });

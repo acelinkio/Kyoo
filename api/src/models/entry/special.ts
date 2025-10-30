@@ -1,5 +1,5 @@
 import { t } from "elysia";
-import { type Prettify, comment } from "~/utils";
+import { comment, type Prettify } from "~/utils";
 import { bubbleImages, madeInAbyss, registerExamples } from "../examples";
 import { Progress } from "../history";
 import {
@@ -12,15 +12,14 @@ import {
 import { EmbeddedVideo } from "../video";
 import { BaseEntry, EntryTranslation } from "./base-entry";
 
-export const BaseSpecial = t.Intersect(
+export const BaseSpecial = t.Composite(
 	[
 		t.Object({
 			kind: t.Literal("special"),
 			order: t.Number({
-				minimum: 1,
 				description: "Absolute playback order. Can be mixed with episodes.",
 			}),
-			number: t.Integer({ minimum: 1 }),
+			number: t.Integer(),
 			externalId: EpisodeId,
 		}),
 		BaseEntry(),
@@ -33,7 +32,7 @@ export const BaseSpecial = t.Intersect(
 	},
 );
 
-export const Special = t.Intersect([
+export const Special = t.Composite([
 	Resource(),
 	EntryTranslation(),
 	BaseSpecial,
@@ -45,7 +44,7 @@ export const Special = t.Intersect([
 ]);
 export type Special = Prettify<typeof Special.static>;
 
-export const SeedSpecial = t.Intersect([
+export const SeedSpecial = t.Composite([
 	t.Omit(BaseSpecial, ["thumbnail", "nextRefresh"]),
 	t.Object({
 		thumbnail: t.Nullable(SeedImage),

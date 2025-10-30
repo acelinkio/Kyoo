@@ -4,7 +4,7 @@ import type { SelectResultField } from "drizzle-orm/query-builders/select.types"
 export const buildRelations = <
 	R extends string,
 	P extends object,
-	Rel extends Record<R, (languages: P) => Subquery>,
+	Rel extends Record<R, (params: P) => Subquery>,
 >(
 	enabled: R[],
 	relations: Rel,
@@ -15,7 +15,7 @@ export const buildRelations = <
 	return Object.fromEntries(
 		enabled.map((x) => [x, sql`${relations[x](params!)}`]),
 	) as {
-		[P in R]?: SQL<
+		[P in R]: SQL<
 			ReturnType<Rel[P]>["_"]["selectedFields"] extends {
 				[key: string]: infer TValue;
 			}

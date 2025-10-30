@@ -1,40 +1,37 @@
-import { stat } from "node:fs/promises";
-import type { BunFile } from "bun";
-import { type SQL, and, eq, sql } from "drizzle-orm";
+import type { Stats } from "node:fs";
+import type { S3Stats } from "bun";
+import { and, eq, type SQL, sql } from "drizzle-orm";
 import Elysia, { type Context, t } from "elysia";
 import { prefix } from "~/base";
 import { db } from "~/db";
 import {
-	showTranslations,
 	shows,
+	showTranslations,
 	staff,
-	studioTranslations,
 	studios,
+	studioTranslations,
 } from "~/db/schema";
 import { sqlarr } from "~/db/utils";
 import { KError } from "~/models/error";
 import { bubble } from "~/models/examples";
 import { AcceptLanguage, isUuid, processLanguages } from "~/models/utils";
+import { comment, getFile } from "~/utils";
 import { imageDir } from "./seed/images";
 
-function getRedirectToImageHandler({
-	filter,
-}: {
-	filter?: SQL;
-}) {
+function getRedirectToImageHandler({ filter }: { filter?: SQL }) {
 	return async function Handler({
 		params: { id, image },
 		headers: { "accept-language": languages },
 		query: { quality },
 		set,
-		error,
+		status,
 		redirect,
 	}: {
 		params: { id: string; image: "poster" | "thumbnail" | "banner" | "logo" };
 		headers: { "accept-language": string };
 		query: { quality: "high" | "medium" | "low" };
 		set: Context["set"];
-		error: Context["error"];
+		status: Context["status"];
 		redirect: Context["redirect"];
 	}) {
 		id ??= "random";
@@ -75,13 +72,13 @@ function getRedirectToImageHandler({
 			.limit(1);
 
 		if (!ret) {
-			return error(404, {
+			return status(404, {
 				status: 404,
 				message: `No item found with id or slug: '${id}'.`,
 			});
 		}
 		if (!ret.language) {
-			return error(422, {
+			return status(422, {
 				status: 422,
 				message: "Accept-Language header could not be satisfied.",
 			});
@@ -96,11 +93,30 @@ function getRedirectToImageHandler({
 export const imagesH = new Elysia({ tags: ["images"] })
 	.get(
 		"/images/:id",
-		async ({ params: { id }, query: { quality }, headers: reqHeaders }) => {
+		async ({
+			params: { id },
+			query: { quality },
+			headers: reqHeaders,
+			status,
+		}) => {
 			const path = `${imageDir}/${id}.${quality}.jpg`;
-			const file = Bun.file(path);
+			const file = getFile(path);
 
-			const etag = await generateETag(file);
+			const stat = await file.stat().catch(() => undefined);
+			if (!stat) {
+				return status(404, {
+					status: 404,
+					message: comment`
+						No image available with this ID.
+						Either the id is invalid or the image has not been downloaded yet.
+					`,
+				});
+			}
+			const etag =
+				"etag" in stat
+					? stat.etag
+					: Buffer.from(stat.mtime.toISOString(), "utf8").toString("base64");
+
 			if (await isCached(reqHeaders, etag, path))
 				return new Response(null, { status: 304 });
 
@@ -150,7 +166,7 @@ export const imagesH = new Elysia({ tags: ["images"] })
 		response: {
 			302: t.Void({
 				description:
-					"Redirected to the [/images/{id}](#tag/images/GET/images/{id}) route.",
+					"Redirected to the [/images/{id}](#tag/images/get/api/images/{id}) route.",
 			}),
 			404: {
 				...KError,
@@ -161,7 +177,7 @@ export const imagesH = new Elysia({ tags: ["images"] })
 	})
 	.get(
 		"/staff/:id/image",
-		async ({ params: { id }, query: { quality }, error, redirect }) => {
+		async ({ params: { id }, query: { quality }, status, redirect }) => {
 			const [ret] = await db
 				.select({ image: staff.image })
 				.from(staff)
@@ -176,7 +192,7 @@ export const imagesH = new Elysia({ tags: ["images"] })
 				.limit(1);
 
 			if (!ret) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No staff member found with id or slug: '${id}'.`,
 				});
@@ -210,7 +226,7 @@ export const imagesH = new Elysia({ tags: ["images"] })
 			headers: { "accept-language": languages },
 			query: { quality },
 			set,
-			error,
+			status,
 			redirect,
 		}) => {
 			const lang = processLanguages(languages);
@@ -247,13 +263,13 @@ export const imagesH = new Elysia({ tags: ["images"] })
 				.limit(1);
 
 			if (!ret) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No studio found with id or slug: '${id}'.`,
 				});
 			}
 			if (!ret.language) {
-				return error(422, {
+				return status(422, {
 					status: 422,
 					message: "Accept-Language header could not be satisfied.",
 				});
@@ -366,8 +382,13 @@ export async function isCached(
 	if (headers["if-modified-since"]) {
 		const ifModifiedSince = headers["if-modified-since"];
 		let lastModified: Date | undefined;
+		const stat = await getFile(filePath).stat();
 		try {
-			lastModified = (await stat(filePath)).mtime;
+			if ((stat as S3Stats).lastModified) {
+				lastModified = (stat as S3Stats).lastModified;
+			} else if ((stat as Stats).mtime) {
+				lastModified = (stat as Stats).mtime;
+			}
 		} catch {
 			/* empty */
 		}
@@ -380,11 +401,4 @@ export async function isCached(
 	}
 
 	return false;
-}
-
-export async function generateETag(file: BunFile) {
-	const hash = new Bun.CryptoHasher("md5");
-	hash.update(await file.arrayBuffer());
-
-	return hash.digest("base64");
 }

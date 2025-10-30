@@ -3,7 +3,6 @@ import type { Video } from "~/models/video";
 
 export const duneVideo: Video = {
 	id: "c9a0d02e-6b8e-4ac1-b431-45b022ec0708",
-	slug: "dune",
 	path: "/video/Dune/Dune (2021).mkv",
 	rendering: "f1953a4fb58247efb6c15b76468b6a9d13b4155b02094863b1a4f0c3fbb6db58",
 	part: null,
@@ -11,8 +10,9 @@ export const duneVideo: Video = {
 	guess: {
 		kind: "movie",
 		title: "dune",
-		year: [2021],
+		years: [2021],
 		from: "guessit",
+		history: [],
 	},
 	createdAt: "2024-12-02T10:10:24.968Z",
 	updatedAt: "2024-12-02T10:10:24.968Z",
@@ -34,7 +34,7 @@ export const dune: SeedMovie = {
 				"https://image.tmdb.org/t/p/original/k2ocXnNkmvE6rJomRkExIStFq3v.jpg",
 			banner: null,
 			logo: "https://image.tmdb.org/t/p/original/5nDsd3u1c6kDphbtIqkHseLg7HL.png",
-			trailerUrl: "https://www.youtube.com/watch?v=n9xhJrPXop4",
+			trailer: "https://www.youtube.com/watch?v=n9xhJrPXop4",
 		},
 	},
 	genres: ["adventure", "drama", "science-fiction", "action"],

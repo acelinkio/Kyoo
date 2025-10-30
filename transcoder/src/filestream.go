@@ -1,12 +1,15 @@
 package src
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"math"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/zoriya/kyoo/transcoder/src/utils"
 )
 
 type FileStream struct {
@@ -24,7 +27,7 @@ type VideoKey struct {
 	quality Quality
 }
 
-func (t *Transcoder) newFileStream(path string, sha string) *FileStream {
+func (t *Transcoder) newFileStream(ctx context.Context, path string, sha string) *FileStream {
 	ret := &FileStream{
 		transcoder: t,
 		Out:        fmt.Sprintf("%s/%s", Settings.Outpath, sha),
@@ -35,7 +38,7 @@ func (t *Transcoder) newFileStream(path string, sha string) *FileStream {
 	ret.ready.Add(1)
 	go func() {
 		defer ret.ready.Done()
-		info, err := t.metadataService.GetMetadata(path, sha)
+		info, err := t.metadataService.GetMetadata(ctx, path, sha)
 		ret.Info = info
 		if err != nil {
 			ret.err = err
@@ -65,7 +68,7 @@ func (fs *FileStream) Destroy() {
 	_ = os.RemoveAll(fs.Out)
 }
 
-func (fs *FileStream) GetMaster() string {
+func (fs *FileStream) GetMaster(client string) string {
 	master := "#EXTM3U\n"
 
 	// TODO: support multiples audio qualities (and original)
@@ -86,7 +89,7 @@ func (fs *FileStream) GetMaster() string {
 			master += "DEFAULT=YES,"
 		}
 		master += "CHANNELS=\"2\","
-		master += fmt.Sprintf("URI=\"audio/%d/index.m3u8\"\n", audio.Index)
+		master += fmt.Sprintf("URI=\"audio/%d/index.m3u8?clientId=%s\"\n", audio.Index, client)
 	}
 	master += "\n"
 
@@ -107,7 +110,7 @@ func (fs *FileStream) GetMaster() string {
 	}
 
 	if def_video != nil {
-		qualities := Filter(Qualities, func(quality Quality) bool {
+		qualities := utils.Filter(Qualities, func(quality Quality) bool {
 			return quality.Height() < def_video.Height
 		})
 		transcode_count := len(qualities)
@@ -136,7 +139,7 @@ func (fs *FileStream) GetMaster() string {
 				if video == *def_video {
 					master += "DEFAULT=YES\n"
 				} else {
-					master += fmt.Sprintf("URI=\"%d/%s/index.m3u8\"\n", video.Index, quality)
+					master += fmt.Sprintf("URI=\"%d/%s/index.m3u8?clientId=%s\"\n", video.Index, quality, client)
 				}
 			}
 		}
@@ -158,7 +161,7 @@ func (fs *FileStream) GetMaster() string {
 				}
 				master += "AUDIO=\"audio\","
 				master += "CLOSED-CAPTIONS=NONE\n"
-				master += fmt.Sprintf("%d/%s/index.m3u8\n", def_video.Index, quality)
+				master += fmt.Sprintf("%d/%s/index.m3u8?clientId=%s\n", def_video.Index, quality, client)
 				continue
 			}
 
@@ -169,7 +172,7 @@ func (fs *FileStream) GetMaster() string {
 			master += fmt.Sprintf("CODECS=\"%s\",", strings.Join([]string{transcode_codec, audio_codec}, ","))
 			master += "AUDIO=\"audio\","
 			master += "CLOSED-CAPTIONS=NONE\n"
-			master += fmt.Sprintf("%d/%s/index.m3u8\n", def_video.Index, quality)
+			master += fmt.Sprintf("%d/%s/index.m3u8?clientId=%s\n", def_video.Index, quality, client)
 		}
 	}
 
@@ -185,12 +188,12 @@ func (fs *FileStream) getVideoStream(idx uint32, quality Quality) (*VideoStream,
 	return stream, nil
 }
 
-func (fs *FileStream) GetVideoIndex(idx uint32, quality Quality) (string, error) {
+func (fs *FileStream) GetVideoIndex(idx uint32, quality Quality, client string) (string, error) {
 	stream, err := fs.getVideoStream(idx, quality)
 	if err != nil {
 		return "", err
 	}
-	return stream.GetIndex()
+	return stream.GetIndex(client)
 }
 
 func (fs *FileStream) GetVideoSegment(idx uint32, quality Quality, segment int32) (string, error) {
@@ -210,12 +213,12 @@ func (fs *FileStream) getAudioStream(audio uint32) (*AudioStream, error) {
 	return stream, nil
 }
 
-func (fs *FileStream) GetAudioIndex(audio uint32) (string, error) {
+func (fs *FileStream) GetAudioIndex(audio uint32, client string) (string, error) {
 	stream, err := fs.getAudioStream(audio)
 	if err != nil {
 		return "", nil
 	}
-	return stream.GetIndex()
+	return stream.GetIndex(client)
 }
 
 func (fs *FileStream) GetAudioSegment(audio uint32, segment int32) (string, error) {

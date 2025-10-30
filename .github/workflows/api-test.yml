@@ -25,7 +25,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
@@ -36,4 +36,4 @@ jobs:
         working-directory: ./api
         run: bun test
         env:
-          POSTGRES_SERVER: localhost
+          PGHOST: localhost

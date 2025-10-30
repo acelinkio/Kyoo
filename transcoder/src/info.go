@@ -12,11 +12,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/zoriya/kyoo/transcoder/src/utils"
 	"golang.org/x/text/language"
 	"gopkg.in/vansante/go-ffprobe.v2"
 )
 
-const InfoVersion = 1
+const InfoVersion = 3
 
 type Versions struct {
 	Info      int32 `json:"info"`
@@ -42,9 +43,6 @@ type MediaInfo struct {
 	Container *string `json:"container"`
 	/// Version of the metadata. This can be used to invalidate older metadata from db if the extraction code has changed.
 	Versions Versions `json:"versions"`
-
-	// TODO: remove on next major
-	Video Video `json:"video"`
 
 	/// The list of videos if there are multiples.
 	Videos []Video `json:"videos"`
@@ -103,9 +101,6 @@ type Audio struct {
 
 	/// Keyframes of this video
 	Keyframes *Keyframe `json:"-"`
-
-	//TODO: remove this in next major
-	IsForced bool `json:"isForced"`
 }
 
 type Subtitle struct {
@@ -117,6 +112,8 @@ type Subtitle struct {
 	Language *string `json:"language"`
 	/// The codec of this stream.
 	Codec string `json:"codec"`
+	/// The codec of this stream (defined as the RFC 6381).
+	MimeCodec *string `json:"mimeCodec"`
 	/// The extension for the codec.
 	Extension *string `json:"extension"`
 	/// Is this stream the default one of it's type?
@@ -141,7 +138,7 @@ type Chapter struct {
 	/// The name of this chapter. This should be a human-readable name that could be presented to the user.
 	Name string `json:"name"`
 	/// The type value is used to mark special chapters (openning/credits...)
-	Type ChapterType
+	Type ChapterType `json:"type"`
 }
 
 type ChapterType string
@@ -227,8 +224,14 @@ var SubtitleExtensions = map[string]string{
 	"vtt":    "vtt",
 }
 
+var SubtitleMimes = map[string]string{
+	"subrip": "application/x-subrip",
+	"ass":    "text/x-ssa",
+	"vtt":    "text/vtt",
+}
+
 func RetriveMediaInfo(path string, sha string) (*MediaInfo, error) {
-	defer printExecTime("mediainfo for %s", path)()
+	defer utils.PrintExecTime("mediainfo for %s", path)()
 
 	ctx, cancelFn := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancelFn()
@@ -284,7 +287,7 @@ func RetriveMediaInfo(path string, sha string) (*MediaInfo, error) {
 			extension := OrNull(SubtitleExtensions[stream.CodecName])
 			var link string
 			if extension != nil {
-				link = fmt.Sprintf("%s/%s/subtitle/%d.%s", Settings.RoutePrefix, base64.RawURLEncoding.EncodeToString([]byte(path)), i, *extension)
+				link = fmt.Sprintf("/video/%s/subtitle/%d.%s", base64.RawURLEncoding.EncodeToString([]byte(path)), i, *extension)
 			}
 			lang, _ := language.Parse(stream.Tags.Language)
 			idx := uint32(i)
@@ -293,6 +296,7 @@ func RetriveMediaInfo(path string, sha string) (*MediaInfo, error) {
 				Title:             OrNull(stream.Tags.Title),
 				Language:          NullIfUnd(lang.String()),
 				Codec:             stream.CodecName,
+				MimeCodec:         OrNull(SubtitleMimes[stream.CodecName]),
 				Extension:         extension,
 				IsDefault:         stream.Disposition.Default != 0,
 				IsForced:          stream.Disposition.Forced != 0,
@@ -311,7 +315,7 @@ func RetriveMediaInfo(path string, sha string) (*MediaInfo, error) {
 		}),
 		Fonts: MapStream(mi.Streams, ffprobe.StreamAttachment, func(stream *ffprobe.Stream, i uint32) string {
 			font, _ := stream.TagList.GetString("filename")
-			return fmt.Sprintf("%s/%s/attachment/%s", Settings.RoutePrefix, base64.RawURLEncoding.EncodeToString([]byte(path)), font)
+			return fmt.Sprintf("/video/%s/attachment/%s", base64.RawURLEncoding.EncodeToString([]byte(path)), font)
 		}),
 	}
 	var codecs []string
@@ -330,9 +334,6 @@ func RetriveMediaInfo(path string, sha string) (*MediaInfo, error) {
 		} else {
 			ret.MimeCodec = &container
 		}
-	}
-	if len(ret.Videos) > 0 {
-		ret.Video = ret.Videos[0]
 	}
 	return &ret, nil
 }

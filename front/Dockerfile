@@ -1,32 +1,32 @@
-FROM node:18-alpine AS builder
+FROM oven/bun AS builder
 WORKDIR /app
-COPY .yarn ./.yarn
-COPY .yarnrc.yml ./
-COPY package.json yarn.lock ./
-COPY apps/web/package.json apps/web/package.json
-COPY apps/mobile/package.json apps/mobile/package.json
-COPY packages/ui/package.json packages/ui/package.json
-COPY packages/primitives/package.json packages/primitives/package.json
-COPY packages/models/package.json packages/models/package.json
-RUN yarn --immutable
+
+# idk why it doesnt' build without it
+RUN apt update && apt install -y nodejs && rm /usr/local/bun-node-fallback-bin/node
+
+ENV NODE_ENV=production
+COPY package.json bun.lock scripts .
+COPY scripts scripts
+RUN bun install --production
 
 COPY . .
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-RUN yarn build:web
+RUN bun web
 
-
-FROM node:18-alpine
-WORKDIR /app
-
-COPY --from=builder /app/apps/web/.next/standalone/apps/web .
-COPY --from=builder /app/apps/web/.next/standalone/node_modules ./node_modules
-COPY --from=builder /app/apps/web/.next/static ./.next/static/
-COPY --from=builder /app/apps/web/public ./public
-
+# TODO: replace this nginx with a SSR enabled server.
+FROM nginx
 EXPOSE 8901
-ENV PORT=8901
+COPY <<EOF /etc/nginx/conf.d/default.conf
+server {
+  listen 8901;
+  charset utf-8;
 
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-CMD ["node", "server.js"]
+  root /usr/share/nginx/html;
+  index index.html;
+
+  location / {
+    try_files \$uri \$uri/ /index.html;
+  }
+}
+EOF
+
+COPY --from=builder /app/dist /usr/share/nginx/html

@@ -25,11 +25,11 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: gacts/install-hurl@v1
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: '^1.22.5'
           cache-dependency-path: ./auth/go.sum
@@ -48,13 +48,17 @@ jobs:
         working-directory: ./auth
         run: |
           ./keibi > logs &
-          wget --retry-connrefused --retry-on-http-error=502 http://localhost:4568/health
-          hurl --error-format long --variable host=http://localhost:4568 tests/*
+          wget --retry-connrefused --retry-on-http-error=502 http://localhost:4568/auth/health
+          hurl --error-format long --variable host=http://localhost:4568/auth tests/*
         env:
-          POSTGRES_SERVER: localhost
+          PGHOST: localhost
           FIRST_USER_CLAIMS: '{"permissions": ["users.read"]}'
+          KEIBI_APIKEY_HURL: 1234apikey
+          KEIBI_APIKEY_HURL_CLAIMS: '{"permissions": ["apikeys.write", "apikeys.read"]}'
+
 
       - name: Show logs
+        if: failure()
         working-directory: ./auth
         run: cat logs
 

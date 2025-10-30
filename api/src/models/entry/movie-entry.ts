@@ -1,5 +1,5 @@
 import { t } from "elysia";
-import { type Prettify, comment } from "~/utils";
+import { comment, type Prettify } from "~/utils";
 import { bubbleImages, madeInAbyss, registerExamples } from "../examples";
 import { Progress } from "../history";
 import {
@@ -13,12 +13,11 @@ import {
 import { EmbeddedVideo } from "../video";
 import { BaseEntry, EntryTranslation } from "./base-entry";
 
-export const BaseMovieEntry = t.Intersect(
+export const BaseMovieEntry = t.Composite(
 	[
 		t.Object({
 			kind: t.Literal("movie"),
 			order: t.Number({
-				minimum: 1,
 				description: "Absolute playback order. Can be mixed with episodes.",
 			}),
 			externalId: ExternalId(),
@@ -33,7 +32,7 @@ export const BaseMovieEntry = t.Intersect(
 	},
 );
 
-export const MovieEntryTranslation = t.Intersect([
+export const MovieEntryTranslation = t.Composite([
 	EntryTranslation(),
 	t.Object({
 		tagline: t.Nullable(t.String()),
@@ -41,22 +40,22 @@ export const MovieEntryTranslation = t.Intersect([
 	}),
 ]);
 
-export const MovieEntry = t.Intersect([
+export const MovieEntry = t.Composite([
 	Resource(),
 	MovieEntryTranslation,
 	BaseMovieEntry,
 	t.Object({
-		videos: t.Optional(t.Array(EmbeddedVideo)),
+		videos: t.Array(EmbeddedVideo),
 		progress: Progress,
 	}),
 	DbMetadata,
 ]);
 export type MovieEntry = Prettify<typeof MovieEntry.static>;
 
-export const SeedMovieEntry = t.Intersect([
+export const SeedMovieEntry = t.Composite([
 	t.Omit(BaseMovieEntry, ["thumbnail", "nextRefresh"]),
 	t.Object({
-		slug: t.Optional(t.String({ format: "slug" })),
+		slug: t.Optional(t.Nullable(t.String({ format: "slug" }))),
 		thumbnail: t.Nullable(SeedImage),
 		translations: TranslationRecord(
 			t.Intersect([

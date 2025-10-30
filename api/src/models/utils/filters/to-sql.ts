@@ -1,7 +1,6 @@
 import {
-	type BinaryOperator,
-	type SQL,
 	and,
+	type BinaryOperator,
 	eq,
 	gt,
 	gte,
@@ -10,6 +9,7 @@ import {
 	ne,
 	not,
 	or,
+	type SQL,
 	sql,
 } from "drizzle-orm";
 import { KErrorT } from "~/models/error";
@@ -47,6 +47,18 @@ export const toDrizzle = (expr: Expression, config: FilterDef): SQL => {
 				// promote enum to string since this is legal
 				// but parser doesn't know if an enum should be a string
 				expr.value = { type: "string", value: expr.value.value };
+			}
+			if (prop.type === "bool" && expr.value.type === "enum") {
+				if (expr.value.value !== "false" && expr.value.value !== "true") {
+					throw new KErrorT(
+						comment`
+							Invalid value for property ${expr.property}.
+							Get ${expr.value.value} but expected true or false.
+						`,
+						{ in: where },
+					);
+				}
+				expr.value = { type: "bool", value: expr.value.value === "true" };
 			}
 			if (prop.type !== expr.value.type) {
 				throw new KErrorT(

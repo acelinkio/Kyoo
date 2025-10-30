@@ -1,4 +1,4 @@
-import { type SQL, and, eq, exists, sql } from "drizzle-orm";
+import { and, eq, exists, type SQL, sql } from "drizzle-orm";
 import Elysia, { t } from "elysia";
 import { auth } from "~/auth";
 import { prefix } from "~/base";
@@ -6,8 +6,8 @@ import { db } from "~/db";
 import {
 	showStudioJoin,
 	shows,
-	studioTranslations,
 	studios,
+	studioTranslations,
 } from "~/db/schema";
 import {
 	getColumns,
@@ -22,14 +22,14 @@ import { Show } from "~/models/show";
 import { Studio, StudioTranslation } from "~/models/studio";
 import {
 	AcceptLanguage,
-	Filter,
-	Page,
-	Sort,
 	buildRelations,
 	createPage,
+	Filter,
 	isUuid,
 	keysetPaginate,
+	Page,
 	processLanguages,
+	Sort,
 	sortToSql,
 } from "~/models/utils";
 import { desc } from "~/models/utils/descriptions";
@@ -135,7 +135,7 @@ export const studiosH = new Elysia({ prefix: "/studios", tags: ["studios"] })
 			params: { id },
 			headers: { "accept-language": languages },
 			query: { with: relations },
-			error,
+			status,
 			set,
 		}) => {
 			const langs = processLanguages(languages);
@@ -147,13 +147,13 @@ export const studiosH = new Elysia({ prefix: "/studios", tags: ["studios"] })
 				relations,
 			});
 			if (!ret) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No studio found with the id or slug: '${id}'`,
 				});
 			}
 			if (!ret.language) {
-				return error(422, {
+				return status(422, {
 					status: 422,
 					message: "Accept-Language header could not be satisfied.",
 				});
@@ -195,14 +195,14 @@ export const studiosH = new Elysia({ prefix: "/studios", tags: ["studios"] })
 	)
 	.get(
 		"random",
-		async ({ error, redirect }) => {
+		async ({ status, redirect }) => {
 			const [studio] = await db
 				.select({ slug: studios.slug })
 				.from(studios)
 				.orderBy(sql`random()`)
 				.limit(1);
 			if (!studio)
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: "No studios in the database.",
 				});
@@ -215,7 +215,7 @@ export const studiosH = new Elysia({ prefix: "/studios", tags: ["studios"] })
 			response: {
 				302: t.Void({
 					description:
-						"Redirected to the [/studios/{id}](#tag/studios/GET/studios/{id}) route.",
+						"Redirected to the [/studios/{id}](#tag/studios/get/api/studios/{id}) route.",
 				}),
 				404: {
 					...KError,
@@ -303,9 +303,9 @@ export const studiosH = new Elysia({ prefix: "/studios", tags: ["studios"] })
 			params: { id },
 			query: { limit, after, query, sort, filter, preferOriginal },
 			headers: { "accept-language": languages },
-			jwt: { sub },
+			jwt: { sub, settings },
 			request: { url },
-			error,
+			status,
 		}) => {
 			const [studio] = await db
 				.select({ pk: studios.pk })
@@ -314,7 +314,7 @@ export const studiosH = new Elysia({ prefix: "/studios", tags: ["studios"] })
 				.limit(1);
 
 			if (!studio) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No studios with the id or slug: '${id}'.`,
 				});
@@ -341,7 +341,7 @@ export const studiosH = new Elysia({ prefix: "/studios", tags: ["studios"] })
 					filter,
 				),
 				languages: langs,
-				preferOriginal,
+				preferOriginal: preferOriginal ?? settings.preferOriginal,
 				userId: sub,
 			});
 			return createPage(items, { url, sort, limit });
@@ -364,9 +364,9 @@ export const studiosH = new Elysia({ prefix: "/studios", tags: ["studios"] })
 			params: { id },
 			query: { limit, after, query, sort, filter, preferOriginal },
 			headers: { "accept-language": languages },
-			jwt: { sub },
+			jwt: { sub, settings },
 			request: { url },
-			error,
+			status,
 		}) => {
 			const [studio] = await db
 				.select({ pk: studios.pk })
@@ -375,7 +375,7 @@ export const studiosH = new Elysia({ prefix: "/studios", tags: ["studios"] })
 				.limit(1);
 
 			if (!studio) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No studios with the id or slug: '${id}'.`,
 				});
@@ -403,7 +403,7 @@ export const studiosH = new Elysia({ prefix: "/studios", tags: ["studios"] })
 					filter,
 				),
 				languages: langs,
-				preferOriginal,
+				preferOriginal: preferOriginal ?? settings.preferOriginal,
 				userId: sub,
 			});
 			return createPage(items, { url, sort, limit });
@@ -426,9 +426,9 @@ export const studiosH = new Elysia({ prefix: "/studios", tags: ["studios"] })
 			params: { id },
 			query: { limit, after, query, sort, filter, preferOriginal },
 			headers: { "accept-language": languages },
-			jwt: { sub },
+			jwt: { sub, settings },
 			request: { url },
-			error,
+			status,
 		}) => {
 			const [studio] = await db
 				.select({ pk: studios.pk })
@@ -437,7 +437,7 @@ export const studiosH = new Elysia({ prefix: "/studios", tags: ["studios"] })
 				.limit(1);
 
 			if (!studio) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No studios with the id or slug: '${id}'.`,
 				});
@@ -465,7 +465,7 @@ export const studiosH = new Elysia({ prefix: "/studios", tags: ["studios"] })
 					filter,
 				),
 				languages: langs,
-				preferOriginal,
+				preferOriginal: preferOriginal ?? settings.preferOriginal,
 				userId: sub,
 			});
 			return createPage(items, { url, sort, limit });

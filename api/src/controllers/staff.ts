@@ -1,9 +1,9 @@
-import { type SQL, and, eq, sql } from "drizzle-orm";
+import { and, eq, type SQL, sql } from "drizzle-orm";
 import Elysia, { t } from "elysia";
 import { auth } from "~/auth";
 import { prefix } from "~/base";
 import { db } from "~/db";
-import { profiles, showTranslations, shows } from "~/db/schema";
+import { profiles, shows, showTranslations } from "~/db/schema";
 import { roles, staff } from "~/db/schema/staff";
 import { watchlist } from "~/db/schema/watchlist";
 import { getColumns, jsonbBuildObject, sqlarr } from "~/db/utils";
@@ -13,15 +13,15 @@ import { Role, Staff } from "~/models/staff";
 import { RoleWShow, RoleWStaff } from "~/models/staff-roles";
 import {
 	AcceptLanguage,
+	createPage,
 	Filter,
 	type FilterDef,
 	type Image,
-	Page,
-	Sort,
-	createPage,
 	isUuid,
 	keysetPaginate,
+	Page,
 	processLanguages,
+	Sort,
 	sortToSql,
 } from "~/models/utils";
 import { desc } from "~/models/utils/descriptions";
@@ -120,14 +120,14 @@ export const staffH = new Elysia({ tags: ["staff"] })
 	.use(auth)
 	.get(
 		"/staff/:id",
-		async ({ params: { id }, error }) => {
+		async ({ params: { id }, status }) => {
 			const [ret] = await db
 				.select()
 				.from(staff)
 				.where(isUuid(id) ? eq(staff.id, id) : eq(staff.slug, id))
 				.limit(1);
 			if (!ret) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No staff found with the id or slug: '${id}'`,
 				});
@@ -155,14 +155,14 @@ export const staffH = new Elysia({ tags: ["staff"] })
 	)
 	.get(
 		"/staff/random",
-		async ({ error, redirect }) => {
+		async ({ status, redirect }) => {
 			const [member] = await db
 				.select({ slug: staff.slug })
 				.from(staff)
 				.orderBy(sql`random()`)
 				.limit(1);
 			if (!member)
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: "No staff in the database.",
 				});
@@ -175,7 +175,7 @@ export const staffH = new Elysia({ tags: ["staff"] })
 			response: {
 				302: t.Void({
 					description:
-						"Redirected to the [/staff/{id}](#tag/staff/GET/staff/{id}) route.",
+						"Redirected to the [/staff/{id}](#tag/staff/get/api/staff/{id}) route.",
 				}),
 				404: {
 					...KError,
@@ -191,8 +191,8 @@ export const staffH = new Elysia({ tags: ["staff"] })
 			query: { limit, after, query, sort, filter, preferOriginal },
 			headers: { "accept-language": languages },
 			request: { url },
-			jwt: { sub },
-			error,
+			jwt: { sub, settings },
+			status,
 		}) => {
 			const [member] = await db
 				.select({ pk: staff.pk })
@@ -201,7 +201,7 @@ export const staffH = new Elysia({ tags: ["staff"] })
 				.limit(1);
 
 			if (!member) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No staff member with the id or slug: '${id}'.`,
 				});
@@ -227,7 +227,6 @@ export const staffH = new Elysia({ tags: ["staff"] })
 				.from(watchlist)
 				.leftJoin(profiles, eq(watchlist.profilePk, profiles.pk))
 				.where(and(eq(profiles.id, sub), eq(watchlist.showPk, shows.pk)))
-				.limit(1)
 				.as("watchstatus");
 
 			const items = await db
@@ -243,7 +242,7 @@ export const staffH = new Elysia({ tags: ["staff"] })
 						kind: sql<any>`${shows.kind}`,
 						isAvailable: sql<boolean>`${shows.availableCount} != 0`,
 
-						...(preferOriginal && {
+						...((preferOriginal ?? settings.preferOriginal) && {
 							poster: sql<Image>`coalesce(nullif(${shows.original}->'poster', 'null'::jsonb), ${transQ.poster})`,
 							thumbnail: sql<Image>`coalesce(nullif(${shows.original}->'thumbnail', 'null'::jsonb), ${transQ.thumbnail})`,
 							banner: sql<Image>`coalesce(nullif(${shows.original}->'banner', 'null'::jsonb), ${transQ.banner})`,
@@ -363,7 +362,7 @@ export const staffH = new Elysia({ tags: ["staff"] })
 			params: { id },
 			query: { limit, after, query, sort, filter },
 			request: { url },
-			error,
+			status,
 		}) => {
 			const [movie] = await db
 				.select({ pk: shows.pk })
@@ -377,7 +376,7 @@ export const staffH = new Elysia({ tags: ["staff"] })
 				.limit(1);
 
 			if (!movie) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No movie with the id or slug: '${id}'.`,
 				});
@@ -430,7 +429,7 @@ export const staffH = new Elysia({ tags: ["staff"] })
 			params: { id },
 			query: { limit, after, query, sort, filter },
 			request: { url },
-			error,
+			status,
 		}) => {
 			const [serie] = await db
 				.select({ pk: shows.pk })
@@ -444,7 +443,7 @@ export const staffH = new Elysia({ tags: ["staff"] })
 				.limit(1);
 
 			if (!serie) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No serie with the id or slug: '${id}'.`,
 				});

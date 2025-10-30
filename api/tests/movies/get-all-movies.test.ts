@@ -7,7 +7,7 @@ import { bubble } from "~/models/examples";
 import { dune1984 } from "~/models/examples/dune-1984";
 import { dune } from "~/models/examples/dune-2021";
 import type { Movie } from "~/models/movie";
-import { app, createMovie, getMovies } from "../helpers";
+import { createMovie, getMovies, handlers } from "../helpers";
 
 beforeAll(async () => {
 	await db.delete(shows);
@@ -58,10 +58,10 @@ describe("Get all movies", () => {
 				expect.objectContaining({ slug: bubble.slug }),
 				expect.objectContaining({ slug: dune.slug }),
 			],
-			this: "http://localhost/movies?limit=2",
+			this: "http://localhost/api/movies?limit=2",
 			// we can't have the exact after since it contains the pk that changes with every tests.
 			next: expect.stringContaining(
-				"http://localhost/movies?limit=2&after=WyJkdW5lIiw",
+				"http://localhost/api/movies?limit=2&after=WyJkdW5lIiw",
 			),
 		});
 	});
@@ -72,7 +72,7 @@ describe("Get all movies", () => {
 		});
 		expectStatus(resp, body).toBe(200);
 
-		resp = await app.handle(
+		resp = await handlers.handle(
 			new Request(body.next, { headers: await getJwtHeaders() }),
 		);
 		body = await resp.json();
@@ -81,7 +81,7 @@ describe("Get all movies", () => {
 		expect(body).toMatchObject({
 			items: [expect.objectContaining({ slug: dune1984.slug })],
 			this: expect.stringContaining(
-				"http://localhost/movies?limit=2&after=WyJkdW5lIiw",
+				"http://localhost/api/movies?limit=2&after=WyJkdW5lIiw",
 			),
 			next: null,
 		});
@@ -101,13 +101,13 @@ describe("Get all movies", () => {
 				expect.objectContaining({ slug: bubble.slug, airDate: bubble.airDate }),
 				expect.objectContaining({ slug: dune.slug, airDate: dune.airDate }),
 			],
-			this: "http://localhost/movies?limit=2&sort=-airDate",
+			this: "http://localhost/api/movies?limit=2&sort=-airDate",
 			next: expect.stringContaining(
-				"http://localhost/movies?limit=2&sort=-airDate&after=WyIyMDIxLTEwLTIyIiw",
+				"http://localhost/api/movies?limit=2&sort=-airDate&after=WyIyMDIxLTEwLTIyIiw",
 			),
 		});
 
-		resp = await app.handle(
+		resp = await handlers.handle(
 			new Request(next, { headers: await getJwtHeaders() }),
 		);
 		body = await resp.json();
@@ -165,7 +165,7 @@ describe("Get all movies", () => {
 			expect(items.length).toBe(1);
 			expect(items[0].id).toBe(expectedIds[0]);
 			// Get Second Page
-			resp = await app.handle(
+			resp = await handlers.handle(
 				new Request(body.next, { headers: await getJwtHeaders() }),
 			);
 			body = await resp.json();
@@ -182,7 +182,7 @@ describe("Get all movies", () => {
 			});
 			expectStatus(resp, body).toBe(200);
 
-			const resp2 = await app.handle(
+			const resp2 = await handlers.handle(
 				new Request(body.next, { headers: await getJwtHeaders() }),
 			);
 			const body2 = await resp2.json();
@@ -195,14 +195,14 @@ describe("Get all movies", () => {
 		});
 
 		it("Get /random", async () => {
-			const resp = await app.handle(
-				new Request("http://localhost/movies/random", {
+			const resp = await handlers.handle(
+				new Request("http://localhost/api/movies/random", {
 					headers: await getJwtHeaders(),
 				}),
 			);
 			expect(resp.status).toBe(302);
 			const location = resp.headers.get("location")!;
-			expect(location).toStartWith("/movies/");
+			expect(location).toStartWith("/api/movies/");
 		});
 	});
 	it("Limit 2, fallback lang, prefer original", async () => {

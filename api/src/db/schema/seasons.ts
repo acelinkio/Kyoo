@@ -6,11 +6,11 @@ import {
 	jsonb,
 	primaryKey,
 	text,
-	timestamp,
 	unique,
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
+import { timestamp } from "../utils";
 import { shows } from "./shows";
 import { image, language, schema } from "./utils";
 
@@ -40,15 +40,18 @@ export const seasons = schema.table(
 		startAir: date(),
 		endAir: date(),
 
+		entriesCount: integer().notNull(),
+		availableCount: integer().notNull().default(0),
+
 		externalId: season_extid(),
 
-		createdAt: timestamp({ withTimezone: true, mode: "string" })
+		createdAt: timestamp({ withTimezone: true, mode: "iso" })
 			.notNull()
-			.defaultNow(),
-		updatedAt: timestamp({ withTimezone: true, mode: "string" })
+			.default(sql`now()`),
+		updatedAt: timestamp({ withTimezone: true, mode: "iso" })
 			.notNull()
 			.$onUpdate(() => sql`now()`),
-		nextRefresh: timestamp({ withTimezone: true, mode: "string" }).notNull(),
+		nextRefresh: timestamp({ withTimezone: true, mode: "iso" }).notNull(),
 	},
 	(t) => [
 		unique().on(t.showPk, t.seasonNumber),

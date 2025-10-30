@@ -1,39 +1,19 @@
-# FROM golang:1.23 as build
-FROM debian:trixie-slim AS build
-# those were copied from https://github.com/docker-library/golang/blob/master/Dockerfile-linux.template
-ENV GOTOOLCHAIN=local
-ENV GOPATH=/go
-ENV PATH=$GOPATH/bin:/usr/local/go/bin:$PATH
-RUN set -eux; \
-	apt-get update; \
-	apt-get install -y --no-install-recommends \
-	ca-certificates openssl \
-	golang\
-	g++ \
-	gcc \
-	libc6-dev \
-	make \
-	pkg-config
-
-# https://github.com/golang/go/issues/54400
-ENV SSL_CERT_DIR=/etc/ssl/certs
-RUN update-ca-certificates
-
+FROM golang:1.25 AS build
 RUN apt-get update \
 	&& apt-get install --no-install-recommends --no-install-suggests -y \
 	ffmpeg libavformat-dev libavutil-dev libswscale-dev \
 	&& apt-get clean autoclean -y \
 	&& apt-get autoremove -y
+
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
-COPY . .
-RUN go build -o ./transcoder
 
-# debian is required for nvidia hardware acceleration
-# we use trixie (debian's testing because ffmpeg on latest is v5 and we need v6)
-# https://packages.debian.org/bookworm/ffmpeg for version tracking
-FROM debian:trixie-slim
+COPY . .
+RUN GOOS=linux go build -o ./transcoder
+
+# https://packages.debian.org/trixie/ffmpeg for version tracking
+FROM debian:trixie
 
 # read target arch from buildx or default to amd64 if using legacy builder.
 ARG TARGETARCH
@@ -47,7 +27,11 @@ RUN set -x && apt-get update \
 	# hwaccel dependencies
 	vainfo mesa-va-drivers \
 	# intel hwaccel dependencies, not available everywhere
-	$([ " $TARGETARCH" = " amd64" ] && echo "intel-media-va-driver-non-free i965-va-driver-shaders") \
+	# Install QSV packages required by ffmpeg here: https://trac.ffmpeg.org/wiki/Hardware/QuickSync
+	# libvpl2 is required for newer Intel iGPUs, such as those on Raptor Lake
+	$([ " $TARGETARCH" = " amd64" ] && echo "intel-media-va-driver-non-free i965-va-driver-shaders libmfx-gen1.2 libvpl2 libigfxcmrt7") \
+	# CA certificates for HTTPS to S3 buckets
+	ca-certificates \
 	&& apt-get clean autoclean -y \
 	&& apt-get autoremove -y \
 	&& rm -rf /var/lib/apt/lists/*

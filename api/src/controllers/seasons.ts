@@ -1,20 +1,20 @@
 import { and, eq, sql } from "drizzle-orm";
 import { Elysia, t } from "elysia";
 import { db } from "~/db";
-import { seasonTranslations, seasons, shows } from "~/db/schema";
+import { seasons, seasonTranslations, shows } from "~/db/schema";
 import { getColumns, sqlarr } from "~/db/utils";
 import { KError } from "~/models/error";
 import { madeInAbyss } from "~/models/examples";
 import {
 	AcceptLanguage,
+	createPage,
 	Filter,
 	type FilterDef,
-	Page,
-	Sort,
-	createPage,
 	isUuid,
 	keysetPaginate,
+	Page,
 	processLanguages,
+	Sort,
 	sortToSql,
 } from "~/models/utils";
 import { desc } from "~/models/utils/descriptions";
@@ -24,6 +24,8 @@ const seasonFilters: FilterDef = {
 	seasonNumber: { column: seasons.seasonNumber, type: "int" },
 	startAir: { column: seasons.startAir, type: "date" },
 	endAir: { column: seasons.endAir, type: "date" },
+	entriesCount: { column: seasons.entriesCount, type: "int" },
+	availableCount: { column: seasons.availableCount, type: "int" },
 };
 
 const seasonSort = Sort(
@@ -31,6 +33,8 @@ const seasonSort = Sort(
 		seasonNumber: seasons.seasonNumber,
 		startAir: seasons.startAir,
 		endAir: seasons.endAir,
+		entriesCount: seasons.entriesCount,
+		availableCount: seasons.availableCount,
 		nextRefresh: seasons.nextRefresh,
 	},
 	{
@@ -51,7 +55,7 @@ export const seasonsH = new Elysia({ tags: ["series"] })
 			query: { limit, after, query, sort, filter },
 			headers: { "accept-language": languages },
 			request: { url },
-			error,
+			status,
 		}) => {
 			const langs = processLanguages(languages);
 
@@ -67,7 +71,7 @@ export const seasonsH = new Elysia({ tags: ["series"] })
 				.limit(1);
 
 			if (!serie) {
-				return error(404, {
+				return status(404, {
 					status: 404,
 					message: `No serie with the id or slug: '${id}'.`,
 				});

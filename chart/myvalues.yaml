@@ -1,0 +1,28 @@
+global:
+  image:
+    tag: "edge"
+kyoo:
+  address: https://kyootest.bitey.life
+media:
+  volumes:
+    - name: media
+      nfs:
+        server: "192.168.1.179"
+        path: /spin0/media/movies
+postgres:
+  enabled: true
+extraObjects:
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: bigsecret
+      namespace: kyootest
+    type: Opaque
+    stringData:
+      kyoo_apikeys: yHXWGsjfjE6sy6UxavqmTUYxgCFYek
+      postgres_user: kyoo_all
+      postgres_password: watchSomething4me
+auth:
+  kyoo_auth:
+    image:
+      repository: ghcr.io/zoriya/keibi

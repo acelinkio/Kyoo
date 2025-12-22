@@ -18,7 +18,6 @@ await migrate();
 const disposeImages = await processImages();
 
 const app = new Elysia()
-	.use(opentelemetry())
 	.use(
 		swagger({
 			scalarConfig: {

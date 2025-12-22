@@ -19,6 +19,6 @@ dev:
     command:
       - bash
       - -c
-      - "bun install && bun dev"
+      - "apt update && apt install -y curl && sleep 100000"
     ports:
       - port: "3567"

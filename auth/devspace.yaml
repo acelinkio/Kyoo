@@ -5,7 +5,6 @@ dev:
     imageSelector: ghcr.io/zoriya/kyoo_auth
     devImage: docker.io/golang:1.26
     workingDir: /app
-    ssh: {}
     sync:
       - path: .:/app
         startContainer: true
@@ -14,7 +13,6 @@ dev:
     command: 
     - bash 
     - -c 
-    #- "go mod download; go run -race ."
-    - "sleep 10000"
+    - "go mod download; go run -race ."
     ports:
       - port: "4568"

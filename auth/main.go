@@ -355,6 +355,7 @@ func main() {
 	r.DELETE("/keys/:id", h.DeleteApiKey)
 
 	g.GET("/jwt", h.CreateJwt)
+	g.POST("/jwt", h.CreateJwt)
 	g.Any("/jwt/*", h.CreateJwt)
 	e.GET("/.well-known/jwks.json", h.GetJwks)
 	e.GET("/.well-known/openid-configuration", h.GetOidcConfig)

@@ -140,7 +140,7 @@ services:
           path: ./scanner
           target: /app
         - action: rebuild
-          path: ./scanner/pyproject.toml
+          path: ./scanner/uv.lock
 
   transcoder:
     <<: *transcoder-base

@@ -42,12 +42,15 @@ export const Episode = Base.extend({
 	episodeNumber: z.int().gte(0),
 	externalId: z.record(
 		z.string(),
-		z.object({
-			serieId: z.string(),
-			season: z.int().nullable(),
-			episode: z.int(),
-			link: z.string().nullable(),
-		}),
+		z.array(
+			z.object({
+				serieId: z.string(),
+				season: z.int().nullable(),
+				episode: z.int(),
+				link: z.string().nullable(),
+				label: z.string().optional().nullable(),
+			}),
+		),
 	),
 });
 export type Episode = z.infer<typeof Episode>;
@@ -65,12 +68,14 @@ export const Special = Base.extend({
 	number: z.int(),
 	externalId: z.record(
 		z.string(),
-		z.object({
-			serieId: z.string(),
-			season: z.int().nullable(),
-			episode: z.int(),
-			link: z.string().nullable(),
-		}),
+		z.array(
+			z.object({
+				serieId: z.string(),
+				season: z.int().nullable(),
+				episode: z.int(),
+				link: z.string().nullable(),
+			}),
+		),
 	),
 });
 export type Special = z.infer<typeof Special>;

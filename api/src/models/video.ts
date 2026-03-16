@@ -88,8 +88,8 @@ export const SeedVideo = t.Object({
 						t.String(),
 						t.Omit(
 							t.Union([
-								EpisodeId.patternProperties[PatternStringExact],
-								ExternalId().patternProperties[PatternStringExact],
+								EpisodeId.patternProperties[PatternStringExact].items,
+								ExternalId().patternProperties[PatternStringExact].items,
 							]),
 							["link"],
 						),
@@ -154,7 +154,7 @@ registerExamples(SeedVideo, {
 		{
 			externalId: {
 				themoviedatabase: {
-					dataId: bubble.externalId.themoviedatabase.dataId,
+					dataId: bubble.externalId.themoviedatabase[0].dataId,
 				},
 			},
 		},

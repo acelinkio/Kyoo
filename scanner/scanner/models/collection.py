@@ -10,7 +10,7 @@ class Collection(Model):
 	original_language: Language | None
 	genres: list[Genre]
 	rating: int | None
-	external_id: dict[str, MetadataId]
+	external_id: dict[str, list[MetadataId]]
 
 	translations: dict[Language, CollectionTranslation] = {}
 

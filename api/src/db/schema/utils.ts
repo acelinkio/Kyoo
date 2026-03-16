@@ -15,7 +15,8 @@ export const externalid = () =>
 				{
 					dataId: string;
 					link: string | null;
-				}
+					label?: string | null;
+				}[]
 			>
 		>()
 		.notNull()

@@ -44,14 +44,18 @@ export const dune1984: SeedMovie = {
 	airDate: "1984-12-14",
 	originalLanguage: "en",
 	externalId: {
-		themoviedatabase: {
-			dataId: "9495",
-			link: "https://www.themoviedb.org/movie/9495",
-		},
-		imdb: {
-			dataId: "tt0087182",
-			link: "https://www.imdb.com/title/tt0087182",
-		},
+		themoviedatabase: [
+			{
+				dataId: "9495",
+				link: "https://www.themoviedb.org/movie/9495",
+			},
+		],
+		imdb: [
+			{
+				dataId: "tt0087182",
+				link: "https://www.imdb.com/title/tt0087182",
+			},
+		],
 	},
 	videos: [dune1984Video.id],
 	studios: [],

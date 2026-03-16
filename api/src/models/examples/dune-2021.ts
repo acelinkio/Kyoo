@@ -44,14 +44,18 @@ export const dune: SeedMovie = {
 	airDate: "2021-10-22",
 	originalLanguage: "en",
 	externalId: {
-		themoviedatabase: {
-			dataId: "438631",
-			link: "https://www.themoviedb.org/movie/438631-dune",
-		},
-		imdb: {
-			dataId: "tt1160419",
-			link: "https://www.imdb.com/title/tt1160419",
-		},
+		themoviedatabase: [
+			{
+				dataId: "438631",
+				link: "https://www.themoviedb.org/movie/438631-dune",
+			},
+		],
+		imdb: [
+			{
+				dataId: "tt1160419",
+				link: "https://www.imdb.com/title/tt1160419",
+			},
+		],
 	},
 	videos: [duneVideo.id],
 	studios: [],

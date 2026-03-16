@@ -26,7 +26,7 @@ class Movie(Model):
 	runtime: int | None
 	air_date: date | None
 
-	external_id: dict[str, MetadataId]
+	external_id: dict[str, list[MetadataId]]
 	translations: dict[Language, MovieTranslation] = {}
 	collection: Collection | None = None
 	studios: list[Studio] = []
@@ -56,4 +56,4 @@ class SearchMovie(Model):
 	air_date: date | None
 	poster: str | None
 	original_language: Language | None
-	external_id: dict[str, MetadataId]
+	external_id: dict[str, list[MetadataId]]

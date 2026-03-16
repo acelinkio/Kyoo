@@ -29,18 +29,22 @@ export const entry_extid = () =>
 		.$type<
 			Record<
 				string,
-				| {
-						// used for movies
-						dataId: string;
-						link: string | null;
-				  }
-				| {
-						// used for episodes, specials & extra
-						serieId: string;
-						season: number | null;
-						episode: number;
-						link: string | null;
-				  }
+				(
+					| {
+							// used for movies
+							dataId: string;
+							link: string | null;
+							label?: string | null;
+					  }
+					| {
+							// used for episodes, specials & extra
+							serieId: string;
+							season: number | null;
+							episode: number;
+							link: string | null;
+							label?: string | null;
+					  }
+				)[]
 			>
 		>()
 		.notNull()

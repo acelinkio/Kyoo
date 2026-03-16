@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from functools import cached_property
@@ -13,7 +14,8 @@ from pydantic import field_validator
 from pydantic_xml import BaseXmlModel, attr, element, wrapped
 
 from ..cache import cache
-from ..models.metadataid import EpisodeId
+from ..models.metadataid import EpisodeId, MetadataId, SeasonId
+from ..models.serie import Serie
 from ..models.videos import Guess
 from ..providers.names import ProviderName
 
@@ -103,6 +105,8 @@ class AnimeListData:
 	titles: dict[str, str] = field(default_factory=dict)
 	# anidbid -> AnimeEntry
 	animes: dict[str, AnimeListDb.AnimeEntry] = field(default_factory=dict)
+	# tvdbid -> anidbid
+	tvdb_anidb: dict[str, list[str]] = field(default_factory=dict)
 
 
 @cache(ttl=timedelta(days=30))
@@ -122,6 +126,11 @@ async def get_data() -> AnimeListData:
 			resp.raise_for_status()
 			db = AnimeListDb.from_xml(await resp.read())
 			ret.animes = {entry.anidbid: entry for entry in db.animes}
+			ret.tvdb_anidb = defaultdict(list)
+			for entry in db.animes:
+				if not entry.tvdbid:
+					continue
+				ret.tvdb_anidb[entry.tvdbid].append(entry.anidbid)
 
 	logger.info(
 		"Loaded %d anime titles from animelist-xml.",
@@ -170,7 +179,7 @@ def anidb_to_tvdb(
 
 def tvdb_to_anidb(
 	anime: AnimeListDb.AnimeEntry,
-	tvdb_season: int | None,
+	tvdb_season: int,
 	tvdb_ep: int,
 ) -> list[int]:
 	for map in anime.mappings:
@@ -195,7 +204,7 @@ def tvdb_to_anidb(
 	return [tvdb_ep - anime.episodeoffset]
 
 
-async def anilist(_path: str, guess: Guess) -> Guess:
+async def identify_anilist(_path: str, guess: Guess) -> Guess:
 	data = await get_data()
 
 	aid = data.titles.get(guess.title)
@@ -227,53 +236,28 @@ async def anilist(_path: str, guess: Guess) -> Guess:
 
 	new_episodes: list[Guess.Episode] = []
 	for ep in guess.episodes:
-		if anime.defaulttvdbseason is None or anime.tvdbid is None:
+		if (
+			anime.tvdbid is None
+			or anime.defaulttvdbseason is None
+			or anime.defaulttvdbseason == 1
+		):
 			new_episodes.append(
 				Guess.Episode(
-					season=ep.season,
+					season=ep.season or (1 if anime.defaulttvdbseason else None),
 					episode=ep.episode,
-					external_id={
-						ProviderName.ANIDB: EpisodeId(
-							serie_id=aid,
-							season=None,
-							episode=ep.episode,
-						),
-					},
 				)
 			)
 			continue
 
 		# guess numbers are anidb-relative if defaulttvdbseason != 1 because
 		# the title already contains season information.
-		tvdb_season, tvdb_eps = (
-			(ep.season if ep.season is not None else 1, [ep.episode])
-			if anime.defaulttvdbseason == 1
-			else anidb_to_tvdb(anime, ep.episode)
-		)
-		anidb_eps = (
-			tvdb_to_anidb(anime, tvdb_season, ep.episode)
-			if anime.defaulttvdbseason == 1
-			else [ep.episode]
-		)
-
+		tvdb_season, tvdb_eps = anidb_to_tvdb(anime, ep.episode)
 		new_episodes += [
 			Guess.Episode(
 				season=tvdb_season,
 				episode=tvdb_ep,
-				external_id={
-					ProviderName.TVDB: EpisodeId(
-						serie_id=anime.tvdbid,
-						season=tvdb_season,
-						episode=tvdb_ep,
-					),
-					ProviderName.ANIDB: EpisodeId(
-						serie_id=aid,
-						season=None,
-						episode=anidb_ep,
-					),
-				},
 			)
-			for tvdb_ep, anidb_ep in zip(tvdb_eps, anidb_eps)
+			for tvdb_ep in tvdb_eps
 		]
 
 	return Guess(
@@ -287,3 +271,55 @@ async def anilist(_path: str, guess: Guess) -> Guess:
 		from_="anilist",
 		history=[*guess.history, guess],
 	)
+
+
+async def anilist_enrich_ids(serie: Serie):
+	data = await get_data()
+	animes = [
+		data.animes[aid]
+		for tvdb_id in serie.external_id[ProviderName.TVDB]
+		for aid in data.tvdb_anidb.get(tvdb_id.data_id, [])
+	]
+	if not animes:
+		return serie
+
+	serie.external_id[ProviderName.ANIDB] = [
+		MetadataId(
+			data_id=anime.anidbid,
+			link=f"https://anidb.net/anime/{anime.anidbid}",
+			label=anime.name,
+		)
+		for anime in animes
+	]
+
+	for season in serie.seasons:
+		season.external_id[ProviderName.ANIDB] = [
+			SeasonId(
+				serie_id=anime.anidbid,
+				season=1,
+				link=f"https://anidb.net/anime/{anime.anidbid}",
+				label=anime.name,
+			)
+			for anime in animes
+			if anime.defaulttvdbseason == season.season_number
+			or anime.defaulttvdbseason == "a"
+		]
+
+	for entry in serie.entries:
+		season = entry.season_number or 0
+		episode = entry.episode_number or entry.number
+		if episode is None:
+			continue
+		anime = next(
+			(x for x in animes if x.defaulttvdbseason == season),
+			next(
+				(x for x in animes if x.defaulttvdbseason == "a"),
+				animes[0],
+			),
+		)
+		adb_numbers = tvdb_to_anidb(anime, season, episode)
+		entry.external_id[ProviderName.ANIDB] = [
+			EpisodeId(serie_id=anime.anidbid, season=1, episode=x) for x in adb_numbers
+		]
+
+	return serie

@@ -6,19 +6,26 @@ from ..utils import Model
 class MetadataId(Model):
 	data_id: str
 	link: str | None = None
+	label: str | None = None
 
 	@classmethod
-	def map_dict(cls, self: dict[str, MetadataId]):
-		return {k: v.data_id for k, v in self.items()}
+	def map_dict(cls, self: dict[str, list[MetadataId]]):
+		return {k: v[0].data_id for k, v in self.items()}
 
 	@classmethod
 	def merge(
-		cls, self: dict[str, MetadataId], other: dict[str, MetadataId]
-	) -> dict[str, MetadataId]:
+		cls,
+		self: dict[str, list[MetadataId]],
+		other: dict[str, list[MetadataId]],
+	) -> dict[str, list[MetadataId]]:
 		ret = other | self
 		for k in set(self.keys()) & set(other.keys()):
-			if ret[k].data_id == other[k].data_id and ret[k].link is None:
-				ret[k].link = other[k].link
+			for x in ret[k]:
+				if x.link is not None:
+					continue
+				o = next((ox for ox in other[k] if ox.data_id == x.data_id), None)
+				if o:
+					x = o.link
 		return ret
 
 
@@ -26,6 +33,7 @@ class SeasonId(Model):
 	serie_id: str
 	season: int
 	link: str | None = None
+	label: str | None = None
 
 
 class EpisodeId(Model):

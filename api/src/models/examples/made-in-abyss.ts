@@ -109,12 +109,16 @@ export const madeInAbyss = {
 	startAir: "2017-07-07",
 	endAir: "2022-09-28",
 	externalId: {
-		themoviedatabase: {
-			dataId: "72636",
-			link: "https://www.themoviedb.org/tv/72636",
-		},
-		imdb: { dataId: "tt7222086", link: "https://www.imdb.com/title/tt7222086" },
-		tvdb: { dataId: "326109", link: null },
+		themoviedatabase: [
+			{
+				dataId: "72636",
+				link: "https://www.themoviedb.org/tv/72636",
+			},
+		],
+		imdb: [
+			{ dataId: "tt7222086", link: "https://www.imdb.com/title/tt7222086" },
+		],
+		tvdb: [{ dataId: "326109", link: null }],
 	},
 	seasons: [
 		{
@@ -133,11 +137,13 @@ export const madeInAbyss = {
 			startAir: "2017-07-07",
 			endAir: "2017-09-29",
 			externalId: {
-				themoviedatabase: {
-					serieId: "72636",
-					season: 1,
-					link: "https://www.themoviedb.org/tv/72636/season/1",
-				},
+				themoviedatabase: [
+					{
+						serieId: "72636",
+						season: 1,
+						link: "https://www.themoviedb.org/tv/72636/season/1",
+					},
+				],
 			},
 		},
 		{
@@ -156,11 +162,13 @@ export const madeInAbyss = {
 			startAir: "2022-07-06",
 			endAir: "2022-09-28",
 			externalId: {
-				themoviedatabase: {
-					serieId: "72636",
-					season: 2,
-					link: "https://www.themoviedb.org/tv/72636/season/2",
-				},
+				themoviedatabase: [
+					{
+						serieId: "72636",
+						season: 2,
+						link: "https://www.themoviedb.org/tv/72636/season/2",
+					},
+				],
 			},
 		},
 	],
@@ -182,12 +190,14 @@ export const madeInAbyss = {
 			thumbnail:
 				"https://image.tmdb.org/t/p/original/j9t1quh24suXxBetV7Q77YngID6.jpg",
 			externalId: {
-				themoviedatabase: {
-					serieId: "72636",
-					season: 1,
-					episode: 13,
-					link: "https://www.themoviedb.org/tv/72636/season/1/episode/13",
-				},
+				themoviedatabase: [
+					{
+						serieId: "72636",
+						season: 1,
+						episode: 13,
+						link: "https://www.themoviedb.org/tv/72636/season/1/episode/13",
+					},
+				],
 			},
 			videos: [madeInAbyssVideo.id],
 		},
@@ -208,12 +218,14 @@ export const madeInAbyss = {
 			thumbnail:
 				"https://image.tmdb.org/t/p/original/4cMeg2ihvACsGVaSUcQJJZd96Je.jpg",
 			externalId: {
-				themoviedatabase: {
-					serieId: "72636",
-					season: 0,
-					episode: 3,
-					link: "https://www.themoviedb.org/tv/72636/season/0/episode/3",
-				},
+				themoviedatabase: [
+					{
+						serieId: "72636",
+						season: 0,
+						episode: 3,
+						link: "https://www.themoviedb.org/tv/72636/season/0/episode/3",
+					},
+				],
 			},
 		},
 		{
@@ -235,10 +247,12 @@ export const madeInAbyss = {
 			runtime: 105,
 			airDate: "2020-01-17",
 			externalId: {
-				themoviedatabase: {
-					dataId: "72636",
-					link: "https://www.themoviedb.org/tv/72636/season/0/episode/3",
-				},
+				themoviedatabase: [
+					{
+						dataId: "72636",
+						link: "https://www.themoviedb.org/tv/72636/season/0/episode/3",
+					},
+				],
 			},
 		},
 		{
@@ -258,12 +272,14 @@ export const madeInAbyss = {
 			thumbnail:
 				"https://image.tmdb.org/t/p/original/Tgu6E3aMf7sFHFbEIMEjetnpMi.jpg",
 			externalId: {
-				themoviedatabase: {
-					serieId: "72636",
-					season: 2,
-					episode: 1,
-					link: "https://www.themoviedb.org/tv/72636/season/2/episode/1",
-				},
+				themoviedatabase: [
+					{
+						serieId: "72636",
+						season: 2,
+						episode: 1,
+						link: "https://www.themoviedb.org/tv/72636/season/2/episode/1",
+					},
+				],
 			},
 		},
 		{
@@ -283,12 +299,14 @@ export const madeInAbyss = {
 			thumbnail:
 				"https://artworks.thetvdb.com/banners/episodes/326109/6174129.jpg",
 			externalId: {
-				themoviedatabase: {
-					serieId: "72636",
-					season: 2,
-					episode: 2,
-					link: "https://www.themoviedb.org/tv/72636/season/2/episode/2",
-				},
+				themoviedatabase: [
+					{
+						serieId: "72636",
+						season: 2,
+						episode: 2,
+						link: "https://www.themoviedb.org/tv/72636/season/2/episode/2",
+					},
+				],
 			},
 		},
 		{
@@ -308,12 +326,14 @@ export const madeInAbyss = {
 			thumbnail:
 				"https://artworks.thetvdb.com/banners/episodes/326109/6180539.jpg",
 			externalId: {
-				themoviedatabase: {
-					serieId: "72636",
-					season: 2,
-					episode: 3,
-					link: "https://www.themoviedb.org/tv/72636/season/2/episode/4",
-				},
+				themoviedatabase: [
+					{
+						serieId: "72636",
+						season: 2,
+						episode: 3,
+						link: "https://www.themoviedb.org/tv/72636/season/2/episode/4",
+					},
+				],
 			},
 		},
 		{
@@ -333,12 +353,14 @@ export const madeInAbyss = {
 			thumbnail:
 				"https://artworks.thetvdb.com/banners/episodes/326109/6180540.jpg",
 			externalId: {
-				themoviedatabase: {
-					serieId: "72636",
-					season: 2,
-					episode: 4,
-					link: "https://www.themoviedb.org/tv/72636/season/2/episode/4",
-				},
+				themoviedatabase: [
+					{
+						serieId: "72636",
+						season: 2,
+						episode: 4,
+						link: "https://www.themoviedb.org/tv/72636/season/2/episode/4",
+					},
+				],
 			},
 		},
 	],
@@ -362,10 +384,12 @@ export const madeInAbyss = {
 				},
 			},
 			externalId: {
-				themoviedatabase: {
-					dataId: "16738",
-					link: "https://www.themoviedb.org/company/16738",
-				},
+				themoviedatabase: [
+					{
+						dataId: "16738",
+						link: "https://www.themoviedb.org/company/16738",
+					},
+				],
 			},
 		},
 	],
@@ -383,10 +407,12 @@ export const madeInAbyss = {
 				latinName: "Mariya Ise",
 				image: "https://cdn.myanimelist.net/images/voiceactors/2/65504.jpg",
 				externalId: {
-					themoviedatabase: {
-						dataId: "1250465",
-						link: "https://www.themoviedb.org/person/1250465",
-					},
+					themoviedatabase: [
+						{
+							dataId: "1250465",
+							link: "https://www.themoviedb.org/person/1250465",
+						},
+					],
 				},
 			},
 		},

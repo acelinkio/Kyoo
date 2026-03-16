@@ -259,11 +259,7 @@ export const UnmatchedPage = () => {
 			)}
 			Loader={() => <VideoItem.Loader />}
 			Divider
-			Empty={
-				<Container>
-					<P className="self-center py-8">{t("admin.unmatched.empty")}</P>
-				</Container>
-			}
+			Empty={<P className="self-center py-8">{t("admin.unmatched.empty")}</P>}
 		/>
 	);
 };

@@ -181,10 +181,12 @@ class TVDB(Provider):
 				poster=x["image_url"],
 				original_language=Language.get(x["primary_language"]),
 				external_id={
-					self.name: MetadataId(
-						data_id=str(x["tvdb_id"]),
-						link=f"https://thetvdb.com/series/{x['slug']}",
-					),
+					self.name: [
+						MetadataId(
+							data_id=str(x["tvdb_id"]),
+							link=f"https://thetvdb.com/series/{x['slug']}",
+						)
+					],
 				},
 			)
 			for x in ret["data"]
@@ -234,10 +236,12 @@ class TVDB(Provider):
 			start_air=datetime.strptime(ret["firstAired"], "%Y-%m-%d").date(),
 			end_air=datetime.strptime(ret["lastAired"], "%Y-%m-%d").date(),
 			external_id={
-				self.name: MetadataId(
-					data_id=ret["id"],
-					link=f"https://thetvdb.com/series/{ret['slug']}",
-				),
+				self.name: [
+					MetadataId(
+						data_id=ret["id"],
+						link=f"https://thetvdb.com/series/{ret['slug']}",
+					)
+				],
 				**self._process_remote_id(ret["remoteIds"]),
 			},
 			translations={
@@ -332,7 +336,7 @@ class TVDB(Provider):
 
 	def _process_remote_id(
 		self, ids: list[dict[str, Any]] | None
-	) -> dict[str, MetadataId]:
+	) -> dict[str, list[MetadataId]]:
 		# sometimes `remoteIds` is not even part of the response.
 		if ids is None:
 			return {}
@@ -341,11 +345,11 @@ class TVDB(Provider):
 
 		imdb = next((x["id"] for x in ids if x["sourceName"] == "IMDB"), None)
 		if imdb is not None:
-			ret[ProviderName.IMDB] = MetadataId(data_id=imdb)
+			ret[ProviderName.IMDB] = [MetadataId(data_id=imdb)]
 
 		tmdb = next((x["id"] for x in ids if x["sourceName"] == "TheMovieDB.com"), None)
 		if tmdb is not None:
-			ret[ProviderName.TMDB] = MetadataId(data_id=tmdb)
+			ret[ProviderName.TMDB] = [MetadataId(data_id=tmdb)]
 
 		return ret
 
@@ -421,10 +425,12 @@ class TVDB(Provider):
 			],
 			rating=None,
 			external_id={
-				self.name: MetadataId(
-					data_id=data["id"],
-					link=f"https://thetvdb.com/lists/{data['url']}",
-				)
+				self.name: [
+					MetadataId(
+						data_id=data["id"],
+						link=f"https://thetvdb.com/lists/{data['url']}",
+					)
+				]
 			},
 			translations={
 				Language.get(lang): tl
@@ -472,10 +478,12 @@ class TVDB(Provider):
 				default=None,
 			),
 			external_id={
-				self.name: SeasonId(
-					serie_id=info["seriesId"],
-					season=info["number"],
-				),
+				self.name: [
+					SeasonId(
+						serie_id=info["seriesId"],
+						season=info["number"],
+					)
+				],
 			},
 			translations={Language.get(lang): tl for lang, tl in zip(languages, trans)},
 			extra={},
@@ -520,12 +528,14 @@ class TVDB(Provider):
 				episode_number=entry["number"],
 				number=entry["number"],
 				external_id={
-					self.name: EpisodeId(
-						serie_id=str(serie_id),
-						season=entry["seasonNumber"],
-						episode=entry["number"],
-						link=f"https://thetvdb.com/series/{serie_id}/episodes/{entry['id']}",
-					),
+					self.name: [
+						EpisodeId(
+							serie_id=str(serie_id),
+							season=entry["seasonNumber"],
+							episode=entry["number"],
+							link=f"https://thetvdb.com/series/{serie_id}/episodes/{entry['id']}",
+						)
+					],
 				},
 				translations={
 					Language.get(lang): EntryTranslation(
@@ -672,11 +682,13 @@ class TVDB(Provider):
 			for trans in ret["translations"]["nameTranslations"]
 			if trans.get("isAlias") is None or False
 		}
-		entry.external_id = {
-			self.name: MetadataId(
-				data_id=ret["id"],
-				link=f"https://thetvdb.com/movies/{ret['slug']}",
-			),
+		entry.external_id = {  # pyright: ignore[reportAttributeAccessIssue]
+			self.name: [
+				MetadataId(
+					data_id=ret["id"],
+					link=f"https://thetvdb.com/movies/{ret['slug']}",
+				)
+			],
 			**self._process_remote_id(ret["remoteIds"]),
 		}
 
@@ -731,10 +743,12 @@ class TVDB(Provider):
 			if ret.get("first_release") and ret["first_release"].get("date")
 			else None,
 			external_id={
-				self.name: MetadataId(
-					data_id=ret["id"],
-					link=f"https://thetvdb.com/series/{ret['slug']}",
-				),
+				self.name: [
+					MetadataId(
+						data_id=ret["id"],
+						link=f"https://thetvdb.com/series/{ret['slug']}",
+					)
+				],
 				**self._process_remote_id(ret["remoteIds"]),
 			},
 			translations={

@@ -26,7 +26,7 @@ class Entry(Model):
 	# Special-specific fields
 	number: int | None
 
-	external_id: dict[str, MetadataId | EpisodeId]
+	external_id: dict[str, list[MetadataId | EpisodeId]]
 	translations: dict[Language, EntryTranslation] = {}
 	videos: list[str] = []
 	extra: dict[str, Any] = Field(exclude=True)

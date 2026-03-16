@@ -20,7 +20,7 @@ import { linkVideos } from "./video-links";
 const CreatedVideo = t.Object({
 	id: t.String({ format: "uuid" }),
 	path: t.String({ examples: [bubbleVideo.path] }),
-	guess: t.Omit(Guess, ["history"]),
+	guess: Guess,
 	entries: t.Array(
 		t.Object({
 			slug: t.String({ format: "slug", examples: ["bubble-v2"] }),
@@ -29,6 +29,7 @@ const CreatedVideo = t.Object({
 });
 
 async function createVideos(body: SeedVideo[], clearLinks: boolean) {
+	console.log(body.map((x) => x.guess.history));
 	if (body.length === 0) {
 		return { status: 422, message: "No videos" } as const;
 	}

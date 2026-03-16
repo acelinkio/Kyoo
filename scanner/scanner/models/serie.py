@@ -31,7 +31,7 @@ class Serie(Model):
 	start_air: date | None
 	end_air: date | None
 
-	external_id: dict[str, MetadataId]
+	external_id: dict[str, list[MetadataId]]
 	translations: dict[Language, SerieTranslation] = {}
 	seasons: list[Season] = []
 	entries: list[Entry] = []
@@ -64,4 +64,4 @@ class SearchSerie(Model):
 	end_air: date | None
 	poster: str | None
 	original_language: Language | None
-	external_id: dict[str, MetadataId]
+	external_id: dict[str, list[MetadataId]]

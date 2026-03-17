@@ -81,6 +81,27 @@ describe("Video seeding", () => {
 		expect(vid!.evj[0].entry.slug).toBe(`${madeInAbyss.slug}-s1e13`);
 	});
 
+	it("With history", async () => {
+		const [resp, body] = await createVideo({
+			guess: {
+				title: "mia",
+				episodes: [{ season: 1, episode: 13 }],
+				from: "test",
+				history: [{ title: "toto", from: "tata" }],
+			},
+			part: null,
+			path: "/video/mia-dup-test.mkv",
+			rendering: "oeunounthsha2",
+			version: 1,
+		});
+
+		expectStatus(resp, body).toBe(201);
+		expect(body).toBeArrayOfSize(1);
+		expect(body[0].id).toBeString();
+		expect(body[0].guess.history).toBeArrayOfSize(1);
+		expect(body[0].guess.history[0].title).toBe("toto");
+	});
+
 	it("With movie", async () => {
 		const [resp, body] = await createVideo({
 			guess: { title: "bubble", from: "test", history: [] },

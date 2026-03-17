@@ -29,7 +29,6 @@ const CreatedVideo = t.Object({
 });
 
 async function createVideos(body: SeedVideo[], clearLinks: boolean) {
-	console.log(body.map((x) => x.guess.history));
 	if (body.length === 0) {
 		return { status: 422, message: "No videos" } as const;
 	}

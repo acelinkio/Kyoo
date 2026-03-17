@@ -61,8 +61,7 @@ class CompositeProvider(Provider):
 			ret.entries, lambda x: (x.season_number, x.episode_number, x.number, x.slug)
 		)
 
-		if ProviderName.ANIDB in external_id:
-			ret = await anilist_enrich_ids(ret)
+		ret = await anilist_enrich_ids(ret)
 
 		# themoviedb has better global info than tvdb but tvdb has better entries info
 		info = await self._themoviedb.get_serie(

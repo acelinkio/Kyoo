@@ -20,7 +20,7 @@ pipeline: list[Callable[[str, Guess], Awaitable[Guess]]] = [
 
 
 async def identify(path: str) -> Video:
-	raw = guessit(path, expected_titles=[])
+	raw = guessit(path)
 
 	# guessit should only return one (according to the doc)
 	title = raw.get("title", [])[0]

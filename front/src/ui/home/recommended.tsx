@@ -56,6 +56,11 @@ export const Recommended = () => {
 									seenCount={
 										item.kind === "serie" ? item.watchStatus?.seenCount : null
 									}
+									videoSlug={
+										item.kind === "movie" && item.videos?.length === 1
+											? item.videos[0].slug
+											: null
+									}
 								/>
 							);
 						})}

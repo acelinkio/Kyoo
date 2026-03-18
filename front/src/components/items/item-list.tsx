@@ -27,6 +27,7 @@ export const ItemList = ({
 	watchStatus,
 	availableCount,
 	seenCount,
+	videoSlug,
 	className,
 	...props
 }: {
@@ -39,6 +40,7 @@ export const ItemList = ({
 	banner: KImage | null;
 	watchStatus: WatchStatusV | null;
 	availableCount?: number | null;
+	videoSlug: string | null;
 	seenCount?: number | null;
 	className?: string;
 }) => {
@@ -75,6 +77,7 @@ export const ItemList = ({
 							<ItemContext
 								kind={kind}
 								slug={slug}
+								videoSlug={videoSlug}
 								status={watchStatus}
 								isOpen={moreOpened}
 								setOpen={(v) => setMoreOpened(v)}

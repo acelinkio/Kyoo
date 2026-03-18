@@ -39,6 +39,7 @@ export const ItemGrid = ({
 	watchPercent,
 	availableCount,
 	seenCount,
+	videoSlug,
 	horizontal = false,
 	className,
 	...props
@@ -53,6 +54,7 @@ export const ItemGrid = ({
 	kind: "movie" | "serie" | "collection";
 	availableCount?: number | null;
 	seenCount?: number | null;
+	videoSlug: string | null;
 	horizontal?: boolean;
 	className?: string;
 }) => {
@@ -89,6 +91,7 @@ export const ItemGrid = ({
 					<ItemContext
 						kind={kind}
 						slug={slug}
+						videoSlug={videoSlug}
 						status={watchStatus}
 						isOpen={moreOpened}
 						setOpen={(v) => setMoreOpened(v)}

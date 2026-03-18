@@ -16,14 +16,14 @@ export const EntryContext = ({
 	kind,
 	slug,
 	serieSlug,
-	videosCount,
+	videoSlug,
 	className,
 	...props
 }: {
 	kind: "movie" | "episode" | "special";
 	serieSlug: string | null;
 	slug: string;
-	videosCount: number;
+	videoSlug: string | null;
 	className?: string;
 } & Partial<ComponentProps<typeof Menu>> &
 	Partial<ComponentProps<typeof IconButton>>) => {
@@ -50,11 +50,11 @@ export const EntryContext = ({
 			{/* 	icon={Download} */}
 			{/* 	onSelect={() => downloader(type, slug)} */}
 			{/* /> */}
-			{videosCount === 1 && (
+			{videoSlug && (
 				<Menu.Item
 					label={t("home.episodeMore.mediainfo")}
 					icon={MovieInfo}
-					href={`/info/${slug}`}
+					href={`/info/${videoSlug}`}
 				/>
 			)}
 		</Menu>
@@ -64,12 +64,14 @@ export const EntryContext = ({
 export const ItemContext = ({
 	kind,
 	slug,
+	videoSlug,
 	status,
 	className,
 	...props
 }: {
 	kind: "movie" | "serie";
 	slug: string;
+	videoSlug: string | null;
 	status: WatchStatusV | null;
 	className?: string;
 } & Partial<ComponentProps<typeof Menu>> &
@@ -123,7 +125,7 @@ export const ItemContext = ({
 					/>
 				)}
 			</Menu.Sub>
-			{kind === "movie" && (
+			{videoSlug && (
 				<>
 					{/* <Menu.Item */}
 					{/* 	label={t("home.episodeMore.download")} */}
@@ -133,7 +135,7 @@ export const ItemContext = ({
 					<Menu.Item
 						label={t("home.episodeMore.mediainfo")}
 						icon={MovieInfo}
-						href={`/info/${slug}`}
+						href={`/info/${videoSlug}`}
 					/>
 				</>
 			)}

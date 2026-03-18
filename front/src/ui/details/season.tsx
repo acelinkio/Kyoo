@@ -142,7 +142,7 @@ export const EntryList = ({
 						<EntryLine
 							{...item}
 							// Don't display "Go to serie"
-							videosCount={item.videos.length}
+							videos={item.videos}
 							serieSlug={null}
 							displayNumber={entryDisplayNumber(item)}
 							watchedPercent={item.progress.percent}

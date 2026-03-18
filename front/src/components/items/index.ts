@@ -20,6 +20,10 @@ export const itemMap = (
 		item.kind === "movie" ? (item.watchStatus?.percent ?? null) : null,
 	availableCount: item.kind === "serie" ? item.availableCount : null,
 	seenCount: item.kind === "serie" ? item.watchStatus?.seenCount : null,
+	videoSlug:
+		item.kind === "movie" && item.videos?.length === 1
+			? item.videos[0].slug
+			: null,
 });
 
 export { ItemGrid, ItemList };

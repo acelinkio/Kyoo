@@ -1,3 +1,4 @@
+import type { GestureResponderEvent } from "react-native";
 import { View } from "react-native";
 import { cn } from "~/utils";
 import { Link } from "./links";
@@ -21,6 +22,7 @@ export const Chip = ({
 	href: string | null;
 	replace?: boolean;
 	target?: string;
+	onPress?: (e: GestureResponderEvent) => void;
 	className?: string;
 }) => {
 	return (

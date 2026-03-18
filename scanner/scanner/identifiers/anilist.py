@@ -113,7 +113,11 @@ class AnimeListData:
 async def get_anilist_data() -> AnimeListData:
 	logger.info("Fetching anime-lists XML databases...")
 	ret = AnimeListData(fetched_at=datetime.now())
-	async with ClientSession() as session:
+	async with ClientSession(
+		headers={
+			"User-Agent": "kyoo scanner v5",
+		},
+	) as session:
 		async with session.get(AnimeTitlesDb.get_url()) as resp:
 			resp.raise_for_status()
 			titles = AnimeTitlesDb.from_xml(await resp.read())

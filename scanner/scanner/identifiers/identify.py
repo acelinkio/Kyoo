@@ -7,7 +7,7 @@ from typing import Callable, Literal, cast
 from rebulk.match import Match
 
 from ..models.videos import Guess, Video
-from .anilist import identify_anilist
+from .anilist import get_anilist_data, identify_anilist
 from .guess.guess import guessit
 
 logger = getLogger(__name__)
@@ -20,7 +20,10 @@ pipeline: list[Callable[[str, Guess], Awaitable[Guess]]] = [
 
 
 async def identify(path: str) -> Video:
-	raw = guessit(path)
+	raw = guessit(
+		path,
+		expected_titles=list((await get_anilist_data()).titles.keys()),
+	)
 
 	# guessit should only return one (according to the doc)
 	title = raw.get("title", [])[0]

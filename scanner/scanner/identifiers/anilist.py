@@ -236,6 +236,22 @@ async def identify_anilist(_path: str, guess: Guess) -> Guess:
 	if anime is None:
 		return guess
 
+	new_external_id = dict(guess.external_id)
+	new_external_id[ProviderName.ANIDB] = aid
+	if anime.tvdbid:
+		new_external_id[ProviderName.TVDB] = anime.tvdbid
+	# tmdbtv is for TV series, tmdbid is for standalone movies
+	if anime.tmdbtv:
+		new_external_id[ProviderName.TMDB] = anime.tmdbtv
+	elif anime.tmdbid and "," not in anime.tmdbid:
+		new_external_id[ProviderName.TMDB] = anime.tmdbid
+	if anime.imdbid and "," not in anime.imdbid:
+		new_external_id[ProviderName.IMDB] = anime.imdbid
+
+	# if we don't have a single external id, skip it and use the normal flow
+	if len(new_external_id) == 1:
+		return guess
+
 	logger.info(
 		"Matched '%s' to AniDB id %s (tvdb=%s, tmdbid=%s)",
 		guess.title,
@@ -244,17 +260,18 @@ async def identify_anilist(_path: str, guess: Guess) -> Guess:
 		anime.tmdbid,
 	)
 
-	new_external_id = dict(guess.external_id)
-	new_external_id[ProviderName.ANIDB] = aid
-	if anime.tvdbid:
-		new_external_id[ProviderName.TVDB] = anime.tvdbid
-	# tmdbtv is for TV series, tmdbid is for standalone movies
-	if anime.tmdbtv:
-		new_external_id[ProviderName.TMDB] = anime.tmdbtv
-	elif anime.tmdbid:
-		new_external_id[ProviderName.TMDB] = anime.tmdbid
-	if anime.imdbid:
-		new_external_id[ProviderName.IMDB] = anime.imdbid
+	animes = (
+		[data.animes[id] for id in data.tvdb_anidb.get(anime.tvdbid, [])]
+		if anime.tvdbid
+		else []
+	)
+	new_title = next(
+		(x.name for x in animes if x.defaulttvdbseason == 1),
+		next(
+			(x.name for x in animes if x.defaulttvdbseason == "a"),
+			anime.name,
+		),
+	)
 
 	new_episodes: list[Guess.Episode] = []
 	for ep in guess.episodes:
@@ -297,7 +314,7 @@ async def identify_anilist(_path: str, guess: Guess) -> Guess:
 		)
 
 	return Guess(
-		title=guess.title,
+		title=new_title or guess.title,
 		kind=kind,
 		extra_kind=guess.extra_kind,
 		years=guess.years,

@@ -1,6 +1,9 @@
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { EntryBox, entryDisplayNumber } from "~/components/entries";
+import { EntrySelect } from "~/components/entries/select";
 import { Entry } from "~/models";
+import { usePopup } from "~/primitives";
 import { InfiniteFetch, type QueryIdentifier } from "~/query";
 import { EmptyView } from "~/ui/empty-view";
 import { Header } from "./genre";

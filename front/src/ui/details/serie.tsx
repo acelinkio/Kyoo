@@ -45,7 +45,7 @@ export const NextUp = ({
 				<EntryLine
 					{...entry}
 					serieSlug={null}
-					videosCount={entry.videos.length}
+					videos={entry.videos}
 					watchedPercent={entry.progress.percent}
 					displayNumber={displayNumber}
 					onSelectVideos={() =>

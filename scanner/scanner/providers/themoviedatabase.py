@@ -127,10 +127,12 @@ class TheMovieDatabase(Provider):
 				poster=self._map_image(x["poster_path"]),
 				original_language=Language.get(x["original_language"]),
 				external_id={
-					self.name: MetadataId(
-						data_id=str(x["id"]),
-						link=f"https://www.themoviedb.org/movie/{x['id']}",
-					)
+					self.name: [
+						MetadataId(
+							data_id=str(x["id"]),
+							link=f"https://www.themoviedb.org/movie/{x['id']}",
+						)
+					]
 				},
 			)
 			for x in search
@@ -163,17 +165,21 @@ class TheMovieDatabase(Provider):
 			else None,
 			external_id=(
 				{
-					self.name: MetadataId(
-						data_id=str(movie["id"]),
-						link=f"https://www.themoviedb.org/movie/{movie['id']}",
-					)
+					self.name: [
+						MetadataId(
+							data_id=str(movie["id"]),
+							link=f"https://www.themoviedb.org/movie/{movie['id']}",
+						)
+					]
 				}
 				| (
 					{
-						ProviderName.IMDB: MetadataId(
-							data_id=str(movie["imdb_id"]),
-							link=f"https://www.imdb.com/title/{movie['imdb_id']}",
-						)
+						ProviderName.IMDB: [
+							MetadataId(
+								data_id=str(movie["imdb_id"]),
+								link=f"https://www.imdb.com/title/{movie['imdb_id']}",
+							)
+						]
 					}
 					if movie["imdb_id"]
 					else {}
@@ -256,10 +262,12 @@ class TheMovieDatabase(Provider):
 				poster=self._map_image(x["poster_path"]),
 				original_language=Language.get(x["original_language"]),
 				external_id={
-					self.name: MetadataId(
-						data_id=str(x["id"]),
-						link=f"https://www.themoviedb.org/tv/{x['id']}",
-					)
+					self.name: [
+						MetadataId(
+							data_id=str(x["id"]),
+							link=f"https://www.themoviedb.org/tv/{x['id']}",
+						)
+					]
 				},
 			)
 			for x in search
@@ -317,27 +325,33 @@ class TheMovieDatabase(Provider):
 			if serie["last_air_date"]
 			else None,
 			external_id={
-				self.name: MetadataId(
-					data_id=str((serie["id"])),
-					link=f"https://www.themoviedb.org/tv/{serie['id']}",
-				),
+				self.name: [
+					MetadataId(
+						data_id=str((serie["id"])),
+						link=f"https://www.themoviedb.org/tv/{serie['id']}",
+					)
+				],
 			}
 			| (
 				{
-					ProviderName.IMDB: MetadataId(
-						data_id=str(serie["external_ids"]["imdb_id"]),
-						link=f"https://www.imdb.com/title/{serie['external_ids']['imdb_id']}",
-					)
+					ProviderName.IMDB: [
+						MetadataId(
+							data_id=str(serie["external_ids"]["imdb_id"]),
+							link=f"https://www.imdb.com/title/{serie['external_ids']['imdb_id']}",
+						)
+					]
 				}
 				if serie["external_ids"]["imdb_id"]
 				else {}
 			)
 			| (
 				{
-					ProviderName.TVDB: MetadataId(
-						data_id=str(serie["external_ids"]["tvdb_id"]),
-						link=None,
-					)
+					ProviderName.TVDB: [
+						MetadataId(
+							data_id=str(serie["external_ids"]["tvdb_id"]),
+							link=None,
+						)
+					]
 				}
 				if serie["external_ids"]["tvdb_id"]
 				else {}
@@ -408,11 +422,13 @@ class TheMovieDatabase(Provider):
 			else None,
 			end_air=None,
 			external_id={
-				self.name: SeasonId(
-					serie_id=str(serie_id),
-					season=season["season_number"],
-					link=f"https://www.themoviedb.org/tv/{serie_id}/season/{season['season_number']}",
-				)
+				self.name: [
+					SeasonId(
+						serie_id=str(serie_id),
+						season=season["season_number"],
+						link=f"https://www.themoviedb.org/tv/{serie_id}/season/{season['season_number']}",
+					)
+				]
 			},
 			translations={
 				Language.get(
@@ -543,12 +559,14 @@ class TheMovieDatabase(Provider):
 			episode_number=episode["episode_number"],
 			number=episode["episode_number"],
 			external_id={
-				self.name: EpisodeId(
-					serie_id=str(serie_id),
-					season=episode["season_number"],
-					episode=episode["episode_number"],
-					link=f"https://www.themoviedb.org/tv/{serie_id}/season/{episode['season_number']}/episode/{episode['episode_number']}",
-				),
+				self.name: [
+					EpisodeId(
+						serie_id=str(serie_id),
+						season=episode["season_number"],
+						episode=episode["episode_number"],
+						link=f"https://www.themoviedb.org/tv/{serie_id}/season/{episode['season_number']}/episode/{episode['episode_number']}",
+					)
+				],
 			},
 			translations={
 				Language.get(
@@ -583,10 +601,12 @@ class TheMovieDatabase(Provider):
 				mean(float(x["vote_average"]) * 10 for x in collection["parts"])
 			),
 			external_id={
-				self.name: MetadataId(
-					data_id=str(collection["id"]),
-					link=f"https://www.themoviedb.org/collection/{collection['id']}",
-				)
+				self.name: [
+					MetadataId(
+						data_id=str(collection["id"]),
+						link=f"https://www.themoviedb.org/collection/{collection['id']}",
+					)
+				]
 			},
 			translations={
 				Language.get(
@@ -685,10 +705,12 @@ class TheMovieDatabase(Provider):
 		return Studio(
 			slug=to_slug(company["name"]),
 			external_id={
-				self.name: MetadataId(
-					data_id=str(company["id"]),
-					link=f"https://www.themoviedb.org/company/{company['id']}",
-				)
+				self.name: [
+					MetadataId(
+						data_id=str(company["id"]),
+						link=f"https://www.themoviedb.org/company/{company['id']}",
+					)
+				]
 			},
 			translations={
 				"en": StudioTranslation(
@@ -714,10 +736,12 @@ class TheMovieDatabase(Provider):
 				latin_name=person["name"],
 				image=self._map_image(person["profile_path"]),
 				external_id={
-					self.name: MetadataId(
-						data_id=str(person["id"]),
-						link=f"https://www.themoviedb.org/person/{person['id']}",
-					)
+					self.name: [
+						MetadataId(
+							data_id=str(person["id"]),
+							link=f"https://www.themoviedb.org/person/{person['id']}",
+						)
+					]
 				},
 			),
 		)

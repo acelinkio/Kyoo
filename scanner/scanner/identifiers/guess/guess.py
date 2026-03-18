@@ -21,7 +21,7 @@ def guessit(
 		{
 			"episode_prefer_number": True,
 			"excludes": "language",
-			"expected_title": expected_titles,
+			"expected_titles": expected_titles,
 			"enforce_list": True,
 			"advanced": True,
 		}

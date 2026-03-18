@@ -33,6 +33,7 @@ export const ItemDetails = ({
 	watchStatus,
 	availableCount,
 	seenCount,
+	videoSlug,
 	className,
 	...props
 }: {
@@ -49,6 +50,7 @@ export const ItemDetails = ({
 	watchStatus: WatchStatusV | null;
 	availableCount?: number | null;
 	seenCount?: number | null;
+	videoSlug: string | null;
 } & ViewProps) => {
 	const [moreOpened, setMoreOpened] = useState(false);
 	const { t } = useTranslation();
@@ -90,6 +92,7 @@ export const ItemDetails = ({
 								status={watchStatus}
 								isOpen={moreOpened}
 								setOpen={(v) => setMoreOpened(v)}
+								videoSlug={videoSlug}
 							/>
 						)}
 						{tagline && <P className="p-1">{tagline}</P>}

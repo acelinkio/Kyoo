@@ -1,7 +1,6 @@
 import { z } from "zod/v4";
 import { Show } from "./show";
 import { KImage } from "./utils/images";
-import { Metadata } from "./utils/metadata";
 import { zdate } from "./utils/utils";
 
 const Base = z.object({
@@ -42,12 +41,15 @@ export const Episode = Base.extend({
 	episodeNumber: z.int().gte(0),
 	externalId: z.record(
 		z.string(),
-		z.object({
-			serieId: z.string(),
-			season: z.int().nullable(),
-			episode: z.int(),
-			link: z.string().nullable(),
-		}),
+		z.array(
+			z.object({
+				serieId: z.string(),
+				season: z.int().nullable(),
+				episode: z.int(),
+				link: z.string().nullable(),
+				label: z.string().optional().nullable(),
+			}),
+		),
 	),
 });
 export type Episode = z.infer<typeof Episode>;
@@ -56,7 +58,25 @@ export const MovieEntry = Base.extend({
 	kind: z.literal("movie"),
 	tagline: z.string().nullable(),
 	poster: KImage.nullable(),
-	externalId: Metadata,
+	externalId: z.record(
+		z.string(),
+		z.array(
+			z.union([
+				z.object({
+					serieId: z.string(),
+					season: z.int().nullable(),
+					episode: z.int(),
+					link: z.string().nullable(),
+					label: z.string().optional().nullable(),
+				}),
+				z.object({
+					dataId: z.string(),
+					link: z.string().nullable(),
+					label: z.string().optional().nullable(),
+				}),
+			]),
+		),
+	),
 });
 export type MovieEntry = z.infer<typeof MovieEntry>;
 
@@ -65,12 +85,14 @@ export const Special = Base.extend({
 	number: z.int(),
 	externalId: z.record(
 		z.string(),
-		z.object({
-			serieId: z.string(),
-			season: z.int().nullable(),
-			episode: z.int(),
-			link: z.string().nullable(),
-		}),
+		z.array(
+			z.object({
+				serieId: z.string(),
+				season: z.int().nullable(),
+				episode: z.int(),
+				link: z.string().nullable(),
+			}),
+		),
 	),
 });
 export type Special = z.infer<typeof Special>;

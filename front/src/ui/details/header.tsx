@@ -37,6 +37,7 @@ import {
 	Link,
 	Menu,
 	P,
+	Popup,
 	Poster,
 	Skeleton,
 	tooltip,
@@ -291,6 +292,50 @@ TitleLine.Loader = ({
 	);
 };
 
+const ExternalIdChip = ({
+	name,
+	items,
+}: {
+	name: string;
+	items: Metadata[string];
+}) => {
+	const [setPopup, closePopup] = usePopup();
+
+	const withLinks = items.filter((x) => x.link);
+	if (withLinks.length === 0) return null;
+
+	return (
+		<Chip
+			label={name}
+			href={withLinks.length === 1 ? withLinks[0].link : null}
+			target="_blank"
+			size="small"
+			outline
+			className="m-1"
+			onPress={() =>
+				setPopup(
+					<Popup title={capitalize(name)} close={closePopup}>
+						{withLinks
+							.sort((a, b) =>
+								(a.label ?? a.link!).localeCompare(b.label ?? b.link!),
+							)
+							.map((x) => (
+								<A
+									key={x.dataId}
+									href={x.link!}
+									target="_blank"
+									className="rounded p-4 hover:bg-popover"
+								>
+									{x.label ?? x.link}
+								</A>
+							))}
+					</Popup>,
+				)
+			}
+		/>
+	);
+};
+
 const Description = ({
 	description,
 	tags,
@@ -364,19 +409,9 @@ const Description = ({
 			)}
 			<View className="flex-row flex-wrap items-center">
 				<P className="mr-1 text-center">{t("show.links")}:</P>
-				{Object.entries(externalIds)
-					.filter(([_, data]) => data.link)
-					.map(([name, data]) => (
-						<Chip
-							key={name}
-							label={name}
-							href={data.link}
-							target="_blank"
-							size="small"
-							outline
-							className="m-1"
-						/>
-					))}
+				{Object.entries(externalIds).map(([name, items]) => (
+					<ExternalIdChip key={name} name={name} items={items} />
+				))}
 			</View>
 		</Container>
 	);

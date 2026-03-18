@@ -96,6 +96,7 @@ export const Link = ({
 	href,
 	replace,
 	children,
+	disabled,
 	...props
 }: {
 	href?: string | null;
@@ -109,10 +110,10 @@ export const Link = ({
 		<PressableFeedback
 			{...linkProps}
 			{...props}
-			disabled={!href}
+			disabled={disabled ?? (!href && !props?.onPress)}
 			onPress={(e?: any) => {
-				if (!href) return;
 				props?.onPress?.(e);
+				if (!href) return;
 				if (e?.defaultPrevented) return;
 				else linkProps.onPress?.(e);
 			}}

@@ -175,7 +175,10 @@ export async function linkVideos(
 						),
 						and(
 							sql`j.entry ? 'externalId'`,
-							sql`j.entry->'externalId' <@ ${entriesQ.externalId}`,
+							sql`
+								(select jsonb_object_agg(key, jsonb_build_array(value))
+								from jsonb_each(j.entry->'externalId'))
+								<@ ${entriesQ.externalId}`,
 						),
 					),
 				),

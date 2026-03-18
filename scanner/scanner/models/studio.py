@@ -6,7 +6,7 @@ from .metadataid import MetadataId
 
 class Studio(Model):
 	slug: str
-	external_id: dict[str, MetadataId]
+	external_id: dict[str, list[MetadataId]]
 	translations: dict[str, StudioTranslation] = {}
 
 

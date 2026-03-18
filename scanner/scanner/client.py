@@ -54,6 +54,8 @@ class KyooClient(metaclass=Singleton):
 			return VideoInfo(**await r.json())
 
 	async def create_videos(self, videos: list[Video]) -> list[VideoCreated]:
+		if len(videos) == 0:
+			return []
 		async with self._client.post(
 			"videos",
 			data=TypeAdapter(list[Video]).dump_json(videos, by_alias=True),

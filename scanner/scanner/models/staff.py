@@ -33,4 +33,4 @@ class Person(Model):
 	name: str
 	latin_name: str | None
 	image: str | None
-	external_id: dict[str, MetadataId]
+	external_id: dict[str, list[MetadataId]]

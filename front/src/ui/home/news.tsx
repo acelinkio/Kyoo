@@ -1,12 +1,34 @@
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { EntryBox, entryDisplayNumber } from "~/components/entries";
+import { EntrySelect } from "~/components/entries/select";
 import { Entry } from "~/models";
+import { usePopup } from "~/primitives";
 import { InfiniteFetch, type QueryIdentifier } from "~/query";
 import { EmptyView } from "~/ui/empty-view";
 import { Header } from "./genre";
 
 export const NewsList = () => {
 	const { t } = useTranslation();
+	const [setPopup, closePopup] = usePopup();
+
+	const openEntrySelect = useCallback(
+		(entry: {
+			displayNumber: string;
+			name: string | null;
+			videos: Entry["videos"];
+		}) => {
+			setPopup(
+				<EntrySelect
+					displayNumber={entry.displayNumber}
+					name={entry.name ?? ""}
+					videos={entry.videos}
+					close={closePopup}
+				/>,
+			);
+		},
+		[setPopup, closePopup],
+	);
 
 	return (
 		<>
@@ -25,7 +47,14 @@ export const NewsList = () => {
 						thumbnail={item.thumbnail ?? item.show!.thumbnail}
 						href={item.href ?? "#"}
 						watchedPercent={item.progress.percent}
-						videosCount={item.videos.length}
+						videos={item.videos}
+						onSelectVideos={() =>
+							openEntrySelect({
+								displayNumber: entryDisplayNumber(item),
+								name: item.name,
+								videos: item.videos,
+							})
+						}
 					/>
 				)}
 				Loader={EntryBox.Loader}

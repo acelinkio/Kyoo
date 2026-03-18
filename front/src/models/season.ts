@@ -14,11 +14,13 @@ export const Season = z.object({
 	endAir: zdate().nullable(),
 	externalId: z.record(
 		z.string(),
-		z.object({
-			serieId: z.string(),
-			season: z.number(),
-			link: z.string().nullable(),
-		}),
+		z.array(
+			z.object({
+				serieId: z.string(),
+				season: z.number(),
+				link: z.string().nullable(),
+			}),
+		),
 	),
 
 	poster: KImage.nullable(),

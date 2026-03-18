@@ -58,14 +58,18 @@ export const bubble: SeedMovie = {
 	airDate: "2022-02-14",
 	originalLanguage: "ja",
 	externalId: {
-		themoviedatabase: {
-			dataId: "912598",
-			link: "https://www.themoviedb.org/movie/912598",
-		},
-		imdb: {
-			dataId: "tt16360006",
-			link: "https://www.imdb.com/title/tt16360006",
-		},
+		themoviedatabase: [
+			{
+				dataId: "912598",
+				link: "https://www.themoviedb.org/movie/912598",
+			},
+		],
+		imdb: [
+			{
+				dataId: "tt16360006",
+				link: "https://www.imdb.com/title/tt16360006",
+			},
+		],
 	},
 	videos: [bubbleVideo.id],
 	studios: [],

@@ -7,42 +7,52 @@ import { DbMetadata, EpisodeId, ExternalId, Resource } from "./utils";
 
 const Opt = (schema: TSchema) => t.Optional(t.Nullable(schema));
 
-export const Guess = t.Recursive((Self) =>
-	t.Object(
-		{
-			title: t.String(),
-			kind: Opt(t.UnionEnum(["episode", "movie", "extra"])),
-			extraKind: Opt(ExtraType),
-			years: Opt(t.Array(t.Integer(), { default: [] })),
-			episodes: Opt(
-				t.Array(
-					t.Object({ season: t.Nullable(t.Integer()), episode: t.Integer() }),
-					{ default: [] },
-				),
+// Workaround: t.Omit(Self, ["history"]) inside t.Recursive produces an empty
+// object schema because Self is only a $ref at construction time (typebox bug).
+// Instead, define the base properties separately and compose.
+const GuessBase = t.Object(
+	{
+		title: t.String(),
+		kind: Opt(t.UnionEnum(["episode", "movie", "extra"])),
+		extraKind: Opt(ExtraType),
+		years: Opt(t.Array(t.Integer(), { default: [] })),
+		episodes: Opt(
+			t.Array(
+				t.Object({ season: t.Nullable(t.Integer()), episode: t.Integer() }),
+				{ default: [] },
 			),
-			externalId: Opt(t.Record(t.String(), t.String())),
+		),
+		externalId: Opt(t.Record(t.String(), t.String())),
 
-			from: t.String({
-				description: "Name of the tool that made the guess",
-			}),
-			history: t.Array(t.Omit(Self, ["history"]), {
+		from: t.String({
+			description: "Name of the tool that made the guess",
+		}),
+	},
+	{ additionalProperties: true },
+);
+
+export const Guess = t.Composite(
+	[
+		GuessBase,
+		t.Object({
+			history: t.Array(GuessBase, {
 				default: [],
 				description: comment`
-					When another tool refines the guess or a user manually edit it, the history of the guesses
-					are kept in this \`history\` value.
+					When another tool refines the guess, the history of the guesses
+					is kept in this \`history\` value.
 				`,
 			}),
-		},
-		{
-			additionalProperties: true,
-			description: comment`
-				Metadata guessed from the filename. Kyoo can use those informations to bypass
-				the scanner/metadata fetching and just register videos to movies/entries that already
-				exists. If Kyoo can't find a matching movie/entry, this information will be sent to
-				the scanner.
-			`,
-		},
-	),
+		}),
+	],
+	{
+		additionalProperties: true,
+		description: comment`
+			Metadata guessed from the filename. Kyoo can use those informations to bypass
+			the scanner/metadata fetching and just register videos to movies/entries that already
+			exists. If Kyoo can't find a matching movie/entry, this information will be sent to
+			the scanner.
+		`,
+	},
 );
 export type Guess = typeof Guess.static;
 
@@ -88,8 +98,8 @@ export const SeedVideo = t.Object({
 						t.String(),
 						t.Omit(
 							t.Union([
-								EpisodeId.patternProperties[PatternStringExact],
-								ExternalId().patternProperties[PatternStringExact],
+								EpisodeId.patternProperties[PatternStringExact].items,
+								ExternalId().patternProperties[PatternStringExact].items,
 							]),
 							["link"],
 						),
@@ -154,7 +164,7 @@ registerExamples(SeedVideo, {
 		{
 			externalId: {
 				themoviedatabase: {
-					dataId: bubble.externalId.themoviedatabase.dataId,
+					dataId: bubble.externalId.themoviedatabase[0].dataId,
 				},
 			},
 		},

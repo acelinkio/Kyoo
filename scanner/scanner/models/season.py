@@ -13,7 +13,7 @@ class Season(Model):
 	season_number: int
 	start_air: date | None
 	end_air: date | None
-	external_id: dict[str, SeasonId]
+	external_id: dict[str, list[SeasonId]]
 	translations: dict[Language, SeasonTranslation] = {}
 	extra: dict[str, Any] = Field(exclude=True)
 

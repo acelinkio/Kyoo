@@ -4,39 +4,18 @@ import { comment } from "../../utils";
 export const ExternalId = () =>
 	t.Record(
 		t.String(),
-		t.Object({
-			dataId: t.String(),
-			link: t.Nullable(t.String({ format: "uri" })),
-		}),
+		t.Array(
+			t.Object({
+				dataId: t.String(),
+				link: t.Nullable(t.String({ format: "uri" })),
+				label: t.Optional(t.Nullable(t.String())),
+			}),
+		),
 	);
 
 export const EpisodeId = t.Record(
 	t.String(),
-	t.Object({
-		serieId: t.String({
-			descrpition: comment`
-				Id on the external website.
-				We store the serie's id because episode id are rarely stable.
-			`,
-		}),
-		season: t.Nullable(
-			t.Integer({
-				description: "Null if the external website uses absolute numbering.",
-			}),
-		),
-		episode: t.Integer(),
-		link: t.Nullable(t.String({ format: "uri" })),
-	}),
-);
-export type EpisodeId = typeof EpisodeId.static;
-
-export const MovieEpisodeId = t.Record(
-	t.String(),
-	t.Union([
-		t.Object({
-			dataId: t.String(),
-			link: t.Nullable(t.String({ format: "uri" })),
-		}),
+	t.Array(
 		t.Object({
 			serieId: t.String({
 				descrpition: comment`
@@ -51,21 +30,55 @@ export const MovieEpisodeId = t.Record(
 			),
 			episode: t.Integer(),
 			link: t.Nullable(t.String({ format: "uri" })),
+			label: t.Optional(t.Nullable(t.String())),
 		}),
-	]),
+	),
+);
+export type EpisodeId = typeof EpisodeId.static;
+
+export const MovieEpisodeId = t.Record(
+	t.String(),
+	t.Array(
+		t.Union([
+			t.Object({
+				dataId: t.String(),
+				link: t.Nullable(t.String({ format: "uri" })),
+				label: t.Optional(t.Nullable(t.String())),
+			}),
+			t.Object({
+				serieId: t.String({
+					descrpition: comment`
+				Id on the external website.
+				We store the serie's id because episode id are rarely stable.
+			`,
+				}),
+				season: t.Nullable(
+					t.Integer({
+						description:
+							"Null if the external website uses absolute numbering.",
+					}),
+				),
+				episode: t.Integer(),
+				link: t.Nullable(t.String({ format: "uri" })),
+				label: t.Optional(t.Nullable(t.String())),
+			}),
+		]),
+	),
 );
 
 export const SeasonId = t.Record(
 	t.String(),
-	t.Object({
-		serieId: t.String({
-			descrpition: comment`
+	t.Array(
+		t.Object({
+			serieId: t.String({
+				descrpition: comment`
 				Id on the external website.
 				We store the serie's id because episode id are rarely stable.
 			`,
+			}),
+			season: t.Integer(),
+			link: t.Nullable(t.String({ format: "uri" })),
 		}),
-		season: t.Integer(),
-		link: t.Nullable(t.String({ format: "uri" })),
-	}),
+	),
 );
 export type SeasonId = typeof SeasonId.static;

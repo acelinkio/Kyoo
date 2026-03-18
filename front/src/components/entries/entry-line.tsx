@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { type PressableProps, View } from "react-native";
 import { EntryContext } from "~/components/items/context-menus";
 import { ItemProgress } from "~/components/items/item-grid";
-import type { KImage } from "~/models";
+import type { Entry, KImage } from "~/models";
 import {
 	CroppedText,
 	Heading,
@@ -37,7 +37,7 @@ export const EntryLine = ({
 	href,
 	className,
 	onSelectVideos,
-	videosCount,
+	videos,
 	...props
 }: {
 	kind: "episode" | "movie" | "special";
@@ -55,7 +55,7 @@ export const EntryLine = ({
 	watchedPercent: number | null;
 	href: string | null;
 	onSelectVideos?: () => void;
-	videosCount: number;
+	videos: Entry["videos"];
 } & PressableProps) => {
 	const [moreOpened, setMoreOpened] = useState(false);
 	const { t } = useTranslation();
@@ -102,7 +102,7 @@ export const EntryLine = ({
 					</View>
 					<View className="flex-row">
 						<View className="flex-col-reverse justify-end md:flex-row md:items-center">
-							{videosCount > 1 && (
+							{videos.length > 1 && (
 								<PressableFeedback
 									onPress={(e) => {
 										e.preventDefault();
@@ -116,7 +116,7 @@ export const EntryLine = ({
 										className="fill-accent dark:fill-slate-400"
 									/>
 									<SubP className="ml-2">
-										{t("show.videosCount", { number: videosCount })}
+										{t("show.videosCount", { number: videos.length })}
 									</SubP>
 								</PressableFeedback>
 							)}
@@ -136,7 +136,7 @@ export const EntryLine = ({
 							kind={kind}
 							slug={slug}
 							serieSlug={serieSlug}
-							videosCount={videosCount}
+							videoSlug={videos.length === 1 ? videos[0].slug : null}
 							isOpen={moreOpened}
 							setOpen={(v) => setMoreOpened(v)}
 							className={cn(

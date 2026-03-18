@@ -22,9 +22,11 @@ export const duneCollection: SeedCollection = {
 	genres: ["adventure", "science-fiction"],
 	rating: 80,
 	externalId: {
-		themoviedatabase: {
-			dataId: "726871",
-			link: "https://www.themoviedb.org/collection/726871-dune-collection",
-		},
+		themoviedatabase: [
+			{
+				dataId: "726871",
+				link: "https://www.themoviedb.org/collection/726871-dune-collection",
+			},
+		],
 	},
 };

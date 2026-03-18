@@ -23,7 +23,7 @@ export const season_extid = () =>
 					serieId: string;
 					season: number;
 					link: string | null;
-				}
+				}[]
 			>
 		>()
 		.notNull()

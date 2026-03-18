@@ -10,7 +10,6 @@ import { z } from "zod/v4";
 import { ScanRequest, Video } from "~/models";
 import {
 	Button,
-	Container,
 	DottedSeparator,
 	HR,
 	IconButton,
@@ -259,11 +258,7 @@ export const UnmatchedPage = () => {
 			)}
 			Loader={() => <VideoItem.Loader />}
 			Divider
-			Empty={
-				<Container>
-					<P className="self-center py-8">{t("admin.unmatched.empty")}</P>
-				</Container>
-			}
+			Empty={<P className="self-center py-8">{t("admin.unmatched.empty")}</P>}
 		/>
 	);
 };

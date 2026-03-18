@@ -45,6 +45,11 @@ export const CollectionDetails = () => {
 						description={item.description}
 						genres={item.genres}
 						playHref={item.kind !== "collection" ? item.playHref : null}
+						videoSlug={
+							item.kind === "movie" && item.videos?.length === 1
+								? item.videos[0].slug
+								: null
+						}
 					/>
 				)}
 				Loader={() => <ItemDetails.Loader />}

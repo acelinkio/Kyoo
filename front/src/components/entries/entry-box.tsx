@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import type { KImage } from "~/models";
+import type { Entry, KImage } from "~/models";
 import {
 	Image,
 	Link,
@@ -25,7 +25,8 @@ export const EntryBox = ({
 	thumbnail,
 	href,
 	watchedPercent,
-	videosCount,
+	videos,
+	onSelectVideos,
 	className,
 	...props
 }: {
@@ -38,7 +39,8 @@ export const EntryBox = ({
 	href: string;
 	thumbnail: KImage | null;
 	watchedPercent: number;
-	videosCount: number;
+	videos: Entry["videos"];
+	onSelectVideos: () => void;
 	className?: string;
 }) => {
 	const [moreOpened, setMoreOpened] = useState(false);
@@ -46,7 +48,8 @@ export const EntryBox = ({
 
 	return (
 		<Link
-			href={moreOpened ? undefined : href}
+			href={moreOpened || videos.length > 1 ? undefined : href}
+			onPress={videos.length > 1 ? onSelectVideos : undefined}
 			onLongPress={() => setMoreOpened(true)}
 			className={cn("group w-[350px] items-center p-1 outline-0", className)}
 			{...props}
@@ -65,7 +68,7 @@ export const EntryBox = ({
 					kind={kind}
 					slug={slug}
 					serieSlug={serieSlug}
-					videosCount={videosCount}
+					videoSlug={videos.length === 1 ? videos[0].slug : null}
 					isOpen={moreOpened}
 					setOpen={(v) => setMoreOpened(v)}
 					className={cn(

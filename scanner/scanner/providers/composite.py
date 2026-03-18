@@ -2,7 +2,9 @@ from typing import override
 
 from langcodes import Language
 
+from scanner.identifiers.anilist import anilist_enrich_ids
 from scanner.models.metadataid import MetadataId
+from scanner.providers.names import ProviderName
 from scanner.utils import uniq_by
 
 from ..models.movie import Movie, SearchMovie
@@ -58,6 +60,8 @@ class CompositeProvider(Provider):
 		ret.entries = uniq_by(
 			ret.entries, lambda x: (x.season_number, x.episode_number, x.number, x.slug)
 		)
+
+		ret = await anilist_enrich_ids(ret)
 
 		# themoviedb has better global info than tvdb but tvdb has better entries info
 		info = await self._themoviedb.get_serie(

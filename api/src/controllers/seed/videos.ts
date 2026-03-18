@@ -20,7 +20,7 @@ import { linkVideos } from "./video-links";
 const CreatedVideo = t.Object({
 	id: t.String({ format: "uuid" }),
 	path: t.String({ examples: [bubbleVideo.path] }),
-	guess: t.Omit(Guess, ["history"]),
+	guess: Guess,
 	entries: t.Array(
 		t.Object({
 			slug: t.String({ format: "slug", examples: ["bubble-v2"] }),

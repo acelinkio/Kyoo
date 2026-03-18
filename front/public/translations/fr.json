@@ -37,7 +37,8 @@
 			"planned": "Marquer comme prévu a voir",
 			"watching": "Marquer en cours de visionnage",
 			"dropped": "Marquer comme abandonné",
-			"null": "Marquer comme non vu"
+			"null": "Marquer comme non vu",
+			"rewatching": "Marquer comme revisionnage"
 		},
 		"nextUp": "Continuer",
 		"season": "Saison {{number}}",

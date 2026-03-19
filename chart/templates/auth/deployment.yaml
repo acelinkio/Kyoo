@@ -153,7 +153,7 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.auth.kyoo_auth.containerSecurityContext }}
+          {{- with (mergeOverwrite (deepCopy .Values.global.containerSecurityContext) .Values.auth.kyoo_auth.containerSecurityContext) }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}

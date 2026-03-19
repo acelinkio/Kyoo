@@ -13,6 +13,8 @@ global:
   persistentVolumeClaimAnnotations: {}
   podAnnotations: {}
   podLabels: {}
+  securityContext: {}
+  containerSecurityContext: {}
   extraEnv: []
   extraVolumes: []
   extraVolumeMounts: []
@@ -442,14 +444,14 @@ traefikproxy:
     containerSecurityContext: {}
     extraVolumeMounts: []
     extraArgs:
-      - '--entryPoints.web.address=:80/tcp'
-      - '--entryPoints.websecure.address=:443/tcp'
-      - '--entryPoints.web.forwardedHeaders.insecure=true'
-      - '--entryPoints.websecure.forwardedHeaders.insecure=true'
-      - '--api.dashboard=true'
-      - '--api.insecure=true'
-      - '--log.level=INFO'
-      - '--providers.file.filename=/dynamic_config/dynamic_config.yaml'
+      - "--entryPoints.web.address=:80/tcp"
+      - "--entryPoints.websecure.address=:443/tcp"
+      - "--entryPoints.web.forwardedHeaders.insecure=true"
+      - "--entryPoints.websecure.forwardedHeaders.insecure=true"
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--log.level=INFO"
+      - "--providers.file.filename=/dynamic_config/dynamic_config.yaml"
     extraEnv: []
     image:
       repository: docker.io/traefik

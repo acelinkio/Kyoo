@@ -118,7 +118,7 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.scanner.kyoo_scanner.containerSecurityContext }}
+          {{- with (mergeOverwrite (deepCopy .Values.global.containerSecurityContext) .Values.scanner.kyoo_scanner.containerSecurityContext) }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}

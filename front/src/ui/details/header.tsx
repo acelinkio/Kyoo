@@ -312,25 +312,28 @@ const ExternalIdChip = ({
 			size="small"
 			outline
 			className="m-1"
-			onPress={() =>
-				setPopup(
-					<Popup title={capitalize(name)} close={closePopup}>
-						{withLinks
-							.sort((a, b) =>
-								(a.label ?? a.link!).localeCompare(b.label ?? b.link!),
+			onPress={
+				withLinks.length > 1
+					? () =>
+							setPopup(
+								<Popup title={capitalize(name)} close={closePopup}>
+									{withLinks
+										.sort((a, b) =>
+											(a.label ?? a.link!).localeCompare(b.label ?? b.link!),
+										)
+										.map((x) => (
+											<A
+												key={x.dataId}
+												href={x.link!}
+												target="_blank"
+												className="rounded p-4 hover:bg-popover"
+											>
+												{x.label ?? x.link}
+											</A>
+										))}
+								</Popup>,
 							)
-							.map((x) => (
-								<A
-									key={x.dataId}
-									href={x.link!}
-									target="_blank"
-									className="rounded p-4 hover:bg-popover"
-								>
-									{x.label ?? x.link}
-								</A>
-							))}
-					</Popup>,
-				)
+					: undefined
 			}
 		/>
 	);

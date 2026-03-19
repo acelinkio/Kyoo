@@ -87,7 +87,7 @@ spec:
             - name: PGPORT
               value: {{ default .Values.global.postgres.shared.port .Values.global.postgres.kyoo_api.port | quote }}
             - name: PGSSLMODE
-              value: {{ .Values.global.postgres.kyoo_api.sslmode | quote  }}
+              value: {{ default .Values.global.postgres.kyoo_api.sslmode .Values.global.postgres.shared.sslmodeOverride | quote }}
             {{- with (concat .Values.global.extraEnv .Values.api.kyoo_api.extraEnv) }}
               {{- toYaml . | nindent 12 }}
             {{- end }}

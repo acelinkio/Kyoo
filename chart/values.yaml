@@ -37,6 +37,7 @@ global:
       databaseOverride: ~
       userOverride: ~
       passwordOverride: ~
+      sslmodeOverride: ~
       # base setting for specifying existingSecret for all kyoo workloads
       existingSecret: bigsecret
       # base setting for specifying userKey for all kyoo workloads

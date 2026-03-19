@@ -14,7 +14,7 @@ metadata:
 spec:
   replicas: {{ .Values.api.replicaCount }}
   {{- with .Values.api.updateStrategy }}
-  strategy: 
+  strategy:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
@@ -63,15 +63,23 @@ spec:
             - name: IMAGES_PATH
               value: "/images"
             - name: PGUSER
+              {{- if .Values.global.postgres.shared.userOverride }}
+              value: {{ .Values.global.postgres.shared.userOverride | quote }}
+              {{- else }}
               valueFrom:
                 secretKeyRef:
                   key: {{ default .Values.global.postgres.shared.userKey .Values.global.postgres.kyoo_api.kyoo_api.userKey }}
                   name: {{ default .Values.global.postgres.shared.existingSecret .Values.global.postgres.kyoo_api.kyoo_api.existingSecret }}
+              {{- end }}
             - name: PGPASSWORD
+              {{- if .Values.global.postgres.shared.passwordOverride }}
+              value: {{ .Values.global.postgres.shared.passwordOverride | quote }}
+              {{- else }}
               valueFrom:
                 secretKeyRef:
                   key: {{ default .Values.global.postgres.shared.passwordKey .Values.global.postgres.kyoo_api.kyoo_api.passwordKey }}
                   name: {{ default .Values.global.postgres.shared.existingSecret .Values.global.postgres.kyoo_api.kyoo_api.existingSecret }}
+              {{- end }}
             - name: PGDATABASE
               value: {{ default .Values.global.postgres.kyoo_api.database .Values.global.postgres.shared.databaseOverride | quote }}
             - name: PGHOST
@@ -108,6 +116,9 @@ spec:
             - name: apiimagedata
               mountPath: /images
             {{- end }}
+            {{- with .Values.global.extraVolumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
             {{- with .Values.api.kyoo_api.volumeMounts }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -128,6 +139,9 @@ spec:
           persistentVolumeClaim:
             claimName: {{ include "kyoo.apiimagedata.fullname" . }}
         {{- end }}
+        {{- end }}
+        {{- with .Values.global.extraVolumes }}
+          {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- with .Values.api.volumes }}
           {{- toYaml . | nindent 8 }}

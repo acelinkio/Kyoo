@@ -14,7 +14,7 @@ metadata:
 spec:
   replicas: {{ .Values.front.replicaCount }}
   {{- with .Values.front.updateStrategy }}
-  strategy: 
+  strategy:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
@@ -77,9 +77,14 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.front.kyoo_front.extraVolumeMounts }}
+          {{- if or .Values.global.extraVolumeMounts .Values.front.kyoo_front.extraVolumeMounts }}
           volumeMounts:
-            {{- toYaml . | nindent 12 }}
+            {{- with .Values.global.extraVolumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- with .Values.front.kyoo_front.extraVolumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
         {{- with .Values.front.extraContainers }}
           {{- tpl (toYaml .) $ | nindent 8 }}
@@ -88,7 +93,12 @@ spec:
       initContainers:
         {{- tpl (toYaml .) $ | nindent 6 }}
       {{- end }}
-      {{- with .Values.front.extraVolumes }}
+      {{- if or .Values.global.extraVolumes .Values.front.extraVolumes }}
       volumes:
-        {{- toYaml . | nindent 8 }}
+        {{- with .Values.global.extraVolumes }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.front.extraVolumes }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}

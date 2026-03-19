@@ -81,15 +81,23 @@ spec:
             - name: GOCODER_SAFE_PATH
               value: {{ .Values.media.baseMountPath | quote }}
             - name: PGUSER
+              {{- if .Values.global.postgres.shared.userOverride }}
+              value: {{ .Values.global.postgres.shared.userOverride | quote }}
+              {{- else }}
               valueFrom:
                 secretKeyRef:
                   key: {{ default .Values.global.postgres.shared.userKey .Values.global.postgres.kyoo_transcoder.kyoo_transcoder.userKey }}
                   name: {{ default .Values.global.postgres.shared.existingSecret .Values.global.postgres.kyoo_transcoder.kyoo_transcoder.existingSecret }}
+              {{- end }}
             - name: PGPASSWORD
+              {{- if .Values.global.postgres.shared.passwordOverride }}
+              value: {{ .Values.global.postgres.shared.passwordOverride | quote }}
+              {{- else }}
               valueFrom:
                 secretKeyRef:
                   key: {{ default .Values.global.postgres.shared.passwordKey .Values.global.postgres.kyoo_transcoder.kyoo_transcoder.passwordKey }}
                   name: {{ default .Values.global.postgres.shared.existingSecret .Values.global.postgres.kyoo_transcoder.kyoo_transcoder.existingSecret }}
+              {{- end }}
             - name: PGDATABASE
               value: {{ default .Values.global.postgres.kyoo_transcoder.database .Values.global.postgres.shared.databaseOverride | quote }}
             - name: PGHOST
@@ -122,6 +130,9 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
+            {{- with .Values.global.extraVolumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
             {{- with .Values.media.volumeMounts }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -143,6 +154,9 @@ spec:
         {{- tpl (toYaml .) $ | nindent 6 }}
       {{- end }}
       volumes:
+        {{- with .Values.global.extraVolumes }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
         {{- with .Values.media.volumes }}
           {{- toYaml . | nindent 8 }}
         {{- end }}

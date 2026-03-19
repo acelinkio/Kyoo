@@ -14,6 +14,8 @@ global:
   podAnnotations: {}
   podLabels: {}
   extraEnv: []
+  extraVolumes: []
+  extraVolumeMounts: []
 
   # kyoo connectivity & subchart settings for postgres
   # subchart configuration can be found at .postgresql
@@ -33,6 +35,8 @@ global:
       port: 5432
       # setting the database here will override the other database settings
       databaseOverride: ~
+      userOverride: ~
+      passwordOverride: ~
       # base setting for specifying existingSecret for all kyoo workloads
       existingSecret: bigsecret
       # base setting for specifying userKey for all kyoo workloads

@@ -52,6 +52,8 @@ jobs:
           hurl --error-format long --variable host=http://localhost:4568/auth tests/*
         env:
           PGHOST: localhost
+          PGUSER: kyoo
+          PGPASSWORD: password
           FIRST_USER_CLAIMS: '{"permissions": ["users.read"]}'
           KEIBI_APIKEY_HURL: 1234apikey
           KEIBI_APIKEY_HURL_CLAIMS: '{"permissions": ["apikeys.write", "apikeys.read"]}'

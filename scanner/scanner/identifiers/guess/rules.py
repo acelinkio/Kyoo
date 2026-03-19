@@ -4,7 +4,7 @@ from copy import copy
 from logging import getLogger
 from typing import Any, cast, override
 
-from rebulk import POST_PROCESS, AppendMatch, RemoveMatch, Rule
+from rebulk import POST_PROCESS, AppendMatch, RemoveMatch, RenameMatch, Rule
 from rebulk.match import Match, Matches
 
 logger = getLogger(__name__)
@@ -261,7 +261,8 @@ class PreferFilenameOverDirectory(Rule):
 	"""
 
 	priority = POST_PROCESS
-	consequence = RemoveMatch
+	# rename to prevent them from being merged to other guesses
+	consequence = RenameMatch("removed")
 
 	@override
 	def when(self, matches: Matches, context) -> Any:
@@ -273,7 +274,7 @@ class PreferFilenameOverDirectory(Rule):
 		filename = fileparts[-1]
 
 		to_remove = []
-		for prop in {"season", "episode"}:
+		for prop in {"season", "episode", "title"}:
 			all_matches: list[Match] = matches.named(prop)  # type: ignore
 			if not all_matches:
 				continue

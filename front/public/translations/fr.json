@@ -37,10 +37,17 @@
 			"planned": "Marquer comme prévu a voir",
 			"watching": "Marquer en cours de visionnage",
 			"dropped": "Marquer comme abandonné",
-			"null": "Marquer comme non vu"
+			"null": "Marquer comme non vu",
+			"rewatching": "Marquer comme revisionnage"
 		},
 		"nextUp": "Continuer",
-		"season": "Saison {{number}}"
+		"season": "Saison {{number}}",
+		"tags-none": "Pas d'étiquette disponible",
+		"multiVideos": "Plusieurs fichiers vidéo sont disponibles",
+		"videosCount": "{{number}} vidéos",
+		"version": "Version {{number}}",
+		"part": "Partie {{number}}",
+		"videos-map": "Modifier les correspondances vidéos"
 	},
 	"browse": {
 		"sortby": "Trier par {{key}}",
@@ -49,7 +56,7 @@
 			"relevance": "Pertinence",
 			"name": "Nom",
 			"airDate": "Date de sortie",
-			"startAir": "Date de sortie",
+			"startAir": "Première diffusion",
 			"endAir": "Date de fin de sortie",
 			"createdAt": "Date d'ajout",
 			"rating": "Notes"
@@ -177,7 +184,8 @@
 		"transmux": "Original",
 		"auto": "Auto",
 		"notInPristine": "Non disponible en pristine",
-		"unsupportedError": "Le codec vidéo n'est pas pris en charge, transcode en cours…"
+		"unsupportedError": "Le codec vidéo n'est pas pris en charge, transcode en cours…",
+		"videos": "Vidéo"
 	},
 	"search": {
 		"empty": "Aucun résultat trouvé. Essayer avec une autre recherche."
@@ -223,7 +231,8 @@
 		"setup": {
 			"NoVideoFound": "Aucune vidéo n'a été trouvée pour le moment. Ajoutez des films ou des séries dans votre librairie afin qu'ils puissent s'afficher ici !",
 			"MissingAdminAccount": "Aucun compte administrateur n'a été créé. Veuillez en créer un, s'il vous plaît."
-		}
+		},
+		"invalid-server": "Impossible de joindre le serveur de Kyoo."
 	},
 	"mediainfo": {
 		"file": "Fichier",
@@ -239,7 +248,9 @@
 		"nocontainer": "Conteneur invalide",
 		"external": "Externe",
 		"hearing-impaired": "ST",
-		"unknown": "Inconnu"
+		"unknown": "Inconnu",
+		"title": "Infos du fichier",
+		"noaudio": "Aucune piste audio"
 	},
 	"admin": {
 		"users": {
@@ -255,6 +266,18 @@
 			"label": "Scanner",
 			"scan": "Déclencher le scan de la bibliothèque",
 			"empty": "Aucun problème trouvé. Toutes vos vidéos sont enregistrés."
+		},
+		"unmatched": {
+			"label": "Non identifié",
+			"rescan": "Re-scanner la bibliothèque",
+			"empty": "Toutes les vidéos sont identifiées !",
+			"search": "Rechercher des vidéos...",
+			"status-pending": "En attente",
+			"status-running": "Analyse en cours",
+			"status-failed": "Échec",
+			"progress-running": "{{count}} en cours d'analyse",
+			"progress-pending": "{{count}} en attente",
+			"progress-failed": "{{count}} en échec"
 		}
 	},
 	"genres": {
@@ -281,5 +304,16 @@
 		"talk": "Talkshow",
 		"animation": "Animation",
 		"reality": "Télé-réalité"
+	},
+	"videos-map": {
+		"none": "NONE",
+		"add": "Ajouter une autre vidéo",
+		"delete": "Retirer une vidéo de la série",
+		"no-guess": "Cette vidéo a été détectée comme faisant partie de cette série, mais l'épisode est inconnu",
+		"validate": "Valider et ajouter la vidéo à la série",
+		"related": "Ajout de vidéos liées au titre {{title}}",
+		"sort-path": "Chemin",
+		"sort-entry": "Ordre des épisodes",
+		"no-video": "Aucun fichier vidéo lié à cette série."
 	}
 }

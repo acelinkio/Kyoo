@@ -67,7 +67,7 @@ class AnimeListDb(BaseXmlModel, tag="anime-list"):
 		@classmethod
 		def _empty_to_none(cls, v: str | None) -> str | None:
 			# pornographic titles have this id.
-			if v == "hentai" or v == "":
+			if v == "hentai" or v == "movie" or v == "":
 				return None
 			return v
 

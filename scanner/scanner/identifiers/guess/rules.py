@@ -1,5 +1,6 @@
 # Read that for examples/rules: https://github.com/pymedusa/Medusa/blob/master/medusa/name_parser/rules/rules.py
 
+import re
 from copy import copy
 from logging import getLogger
 from typing import Any, cast, override
@@ -74,6 +75,62 @@ class UnlistTitles(Rule):
 				title.end = nmatch.end
 
 			return [titles, [title]]
+
+
+class OrdinalSeasonRule(Rule):
+	"""Parse ordinal season patterns like "2nd Season" from the title.
+
+	Example: '[Erai-raws] Oshi no Ko 2nd Season - 12 [1080p AMZN WEB-DL AVC EAC3][MultiSub][CB69AB71].mkv'
+	Default:
+	```json
+	{
+		"title": "Oshi no Ko 2nd Season",
+		"season": 1,
+		"episode": 12
+	}
+	```
+	Expected:
+	```json
+	{
+		"title": "Oshi no Ko",
+		"season": 2,
+		"episode": 12
+	}
+	```
+	"""
+
+	priority = POST_PROCESS
+	consequence = [RemoveMatch, AppendMatch]
+
+	ORDINAL_SEASON_RE = re.compile(
+		r"(\d+)\s*(?:st|nd|rd|th)\s+season",
+		re.IGNORECASE,
+	)
+
+	@override
+	def when(self, matches: Matches, context) -> Any:
+		titles: list[Match] = matches.named("title")  # type: ignore
+
+		to_remove = []
+		to_add = []
+
+		for title in titles:
+			title_value = str(title.value)
+			m = self.ORDINAL_SEASON_RE.search(title_value)
+			if not m:
+				continue
+
+			to_remove.append(title)
+			new_title = copy(title)
+			new_title.value = title_value[: m.start()].strip()
+			to_add.append(new_title)
+
+			season = copy(title)
+			season.name = "season"
+			season.start += m.start()
+			season.value = int(m.group(1))
+			to_add.append(season)
+		return [to_remove, to_add]
 
 
 class ExpectedTitles(Rule):

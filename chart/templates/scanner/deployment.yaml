@@ -38,7 +38,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.global.securityContext }}
+      {{- with (mergeOverwrite (deepCopy .Values.global.securityContext) .Values.scanner.securityContext) }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}

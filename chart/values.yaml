@@ -210,6 +210,7 @@ api:
   # default to recreate for better user experience with ReadWriteOnce volumes
   updateStrategy:
     type: Recreate
+  securityContext: {}
   podLabels: {}
   deploymentAnnotations: {}
   podAnnotations: {}
@@ -260,6 +261,7 @@ auth:
       tag: ~
   replicaCount: 1
   updateStrategy: ~
+  securityContext: {}
   podLabels: {}
   deploymentAnnotations: {}
   podAnnotations: {}
@@ -294,6 +296,7 @@ front:
       tag: ~
   replicaCount: 1
   updateStrategy: ~
+  securityContext: {}
   podLabels: {}
   deploymentAnnotations: {}
   podAnnotations: {}
@@ -335,6 +338,7 @@ scanner:
   # scanner does not support multiple replicas
   replicaCount: 1
   updateStrategy: ~
+  securityContext: {}
   podLabels: {}
   deploymentAnnotations: {}
   podAnnotations: {}
@@ -395,6 +399,7 @@ transcoder:
   # default to recreate for better user experience with ReadWriteOnce volumes & hardware resources
   updateStrategy:
     type: Recreate
+  securityContext: {}
   podLabels: {}
   deploymentAnnotations: {}
   podAnnotations: {}
@@ -458,6 +463,7 @@ traefikproxy:
       tag: v3.6.10
   replicaCount: 1
   updateStrategy: ~
+  securityContext: {}
   podLabels: {}
   configmapAnnotations: {}
   deploymentAnnotations: {}

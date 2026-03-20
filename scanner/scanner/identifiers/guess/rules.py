@@ -193,6 +193,7 @@ class ExpectedTitles(Rule):
 			if not nmatch or not (
 				nmatch[0].tagged("title")
 				or nmatch[0].named("season")
+				or nmatch[0].named("episode")
 				or nmatch[0].named("part")
 			):
 				break
@@ -209,8 +210,9 @@ class ExpectedTitles(Rule):
 			prev = title
 			for m in candidate_matches:
 				holes: list[Match] = matches.holes(prev.end, m.start)  # type: ignore
-				hole = "".join(
-					f" {h.value}" if h.value != "-" else " - " for h in holes
+				hole = (
+					"".join(f" {h.value}" if h.value != "-" else " - " for h in holes)
+					or " "
 				)
 				mtitle = f"{mtitle}{hole}{m.value}"
 				prev = m

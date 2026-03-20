@@ -147,7 +147,7 @@ def normalize_title(title: str) -> str:
 	title = unicodedata.normalize("NFD", title)
 	title = "".join(c for c in title if unicodedata.category(c) != "Mn")
 	title = title.lower()
-	title = re.sub(r"[^\w\s]", "", title)
+	title = re.sub(r"[^\w\s]", " ", title)
 	title = re.sub(r"\s+", " ", title).strip()
 	return title
 

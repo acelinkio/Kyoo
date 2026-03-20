@@ -13,7 +13,6 @@ import type { Chapter, KImage } from "~/models";
 import {
 	H2,
 	IconButton,
-	Link,
 	type Menu,
 	Poster,
 	Skeleton,
@@ -31,8 +30,8 @@ export const BottomControls = ({
 	poster,
 	name,
 	chapters,
-	previous,
-	next,
+	playPrev,
+	playNext,
 	setMenu,
 	className,
 	...props
@@ -41,8 +40,8 @@ export const BottomControls = ({
 	poster?: KImage | null;
 	name?: string;
 	chapters: Chapter[];
-	previous?: string | null;
-	next?: string | null;
+	playPrev: (() => boolean) | null;
+	playNext: (() => boolean) | null;
 	setMenu: (isOpen: boolean) => void;
 } & ViewProps) => {
 	const [seek, setSeek] = useState<number | null>(null);
@@ -88,8 +87,8 @@ export const BottomControls = ({
 				) : (
 					<ControlButtons
 						player={player}
-						previous={previous}
-						next={next}
+						playPrev={playPrev}
+						playNext={playNext}
 						setMenu={setMenu}
 					/>
 				)}
@@ -100,15 +99,15 @@ export const BottomControls = ({
 
 const ControlButtons = ({
 	player,
-	previous,
-	next,
+	playPrev,
+	playNext,
 	setMenu,
 	className,
 	...props
 }: {
 	player: VideoPlayer;
-	previous?: string | null;
-	next?: string | null;
+	playPrev: (() => boolean) | null;
+	playNext: (() => boolean) | null;
 	setMenu: (isOpen: boolean) => void;
 	className?: string;
 }) => {
@@ -134,12 +133,10 @@ const ControlButtons = ({
 			<View className="flex-row items-center">
 				{!isTouch && (
 					<View className="flex-row">
-						{previous && (
+						{playPrev && (
 							<IconButton
 								icon={SkipPrevious}
-								as={Link}
-								href={`/watch/${previous}`}
-								replace
+								onPress={() => playPrev()}
 								className="mr-4"
 								iconClassName="fill-slate-200 dark:fill-slate-200"
 								{...tooltip(t("player.previous"), true)}
@@ -150,12 +147,10 @@ const ControlButtons = ({
 							className="mr-4"
 							iconClassName="fill-slate-200 dark:fill-slate-200"
 						/>
-						{next && (
+						{playNext && (
 							<IconButton
 								icon={SkipNext}
-								as={Link}
-								href={`/watch/${next}`}
-								replace
+								onPress={() => playNext()}
 								className="mr-4"
 								iconClassName="fill-slate-200 dark:fill-slate-200"
 								{...tooltip(t("player.next"), true)}

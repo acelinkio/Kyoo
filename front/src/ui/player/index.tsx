@@ -199,8 +199,8 @@ export const Player = () => {
 							: data?.path
 					}
 					chapters={info?.chapters ?? []}
-					previous={data?.previous?.video}
-					next={data?.next?.video}
+					playPrev={data?.previous?.video ? playPrev : null}
+					playNext={data?.next?.video ? playNext : null}
 				/>
 			</PlayModeContext.Provider>
 		</View>

@@ -95,7 +95,9 @@ export const Player = () => {
 
 	// we'll also want to replace source here once https://github.com/TheWidlarzGroup/react-native-video/issues/4722 is ready
 	useEffect(() => {
-		if (Platform.OS === "web") player.__ass.fonts = info?.fonts ?? [];
+		if (Platform.OS !== "web") return;
+		enhanceSubtitles(player);
+		player.__ass.fonts = info?.fonts ?? [];
 	}, [player, info?.fonts]);
 
 	const router = useRouter();
@@ -180,7 +182,7 @@ export const Player = () => {
 				pictureInPicture
 				autoEnterPictureInPicture
 				resizeMode={"contain"}
-				style={StyleSheet.absoluteFillObject}
+				style={StyleSheet.absoluteFill}
 			/>
 			<LoadingIndicator player={player} />
 			<PlayModeContext.Provider value={playModeState}>

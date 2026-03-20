@@ -2,11 +2,11 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Security
 
-from scanner.models.request import RequestRet
-from scanner.status import StatusService
-
 from ..fsscan import create_scanner
+from ..identifiers.identify import identify
 from ..jwt import validate_bearer
+from ..models.request import RequestRet
+from ..status import StatusService
 
 router = APIRouter()
 
@@ -42,3 +42,19 @@ async def trigger_scan(
 			await scanner.scan()
 
 	tasks.add_task(run)
+
+
+@router.get(
+	"/guess",
+	status_code=200,
+	response_description="Identify a path",
+)
+async def get_guess(
+	path: str,
+	_: Annotated[None, Security(validate_bearer, scopes=["scanner.guess"])],
+):
+	"""
+	Identify a video path and return a serie/movie guess.
+	"""
+
+	return await identify(path)

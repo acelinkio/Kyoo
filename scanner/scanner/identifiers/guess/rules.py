@@ -133,97 +133,6 @@ class OrdinalSeasonRule(Rule):
 		return [to_remove, to_add]
 
 
-class ExpectedTitles(Rule):
-	"""Fix both alternate names and seasons that are known titles but parsed differently by guessit
-
-	Example: "JoJo's Bizarre Adventure - Diamond is Unbreakable - 12.mkv"
-	Default:
-	```json
-	{
-		"title": "JoJo's Bizarre Adventure",
-		"alternative_title": "Diamond is Unbreakable",
-		"episode": 12,
-	}
-	```
-	Expected:
-	```json
-	{
-		"title": "JoJo's Bizarre Adventure - Diamond is Unbreakable",
-		"episode": 12,
-	}
-	```
-
-	Or
-	Example: 'Owarimonogatari S2 E15.mkv'
-	Default:
-	```json
-	{
-		"title": "Owarimonogatari",
-		"season": 2,
-		"episode": 15
-	}
-	```
-	Expected:
-	```json
-	{
-		"title": "Owarimonogatari S2",
-		"episode": 15
-	}
-	```
-	"""
-
-	priority = POST_PROCESS
-	consequence = [RemoveMatch, AppendMatch]
-
-	@override
-	def when(self, matches: Matches, context) -> Any:
-		from ..anilist import normalize_title
-
-		titles: list[Match] = matches.named("title", lambda m: m.tagged("title"))  # type: ignore
-
-		if not titles or not context["expected_titles"]:
-			return
-		title = titles[0]
-
-		# Greedily collect all adjacent matches that could be part of the title
-		absorbed: list[Match] = []
-		current = title
-		while True:
-			nmatch: list[Match] = matches.next(current)
-			if not nmatch or not (
-				nmatch[0].tagged("title")
-				or nmatch[0].named("season")
-				or nmatch[0].named("episode")
-				or nmatch[0].named("part")
-			):
-				break
-			absorbed.append(nmatch[0])
-			current = nmatch[0]
-		if not absorbed:
-			return
-
-		# Try longest combined title first, then progressively shorter ones
-		for end in range(len(absorbed), 0, -1):
-			candidate_matches = absorbed[:end]
-
-			mtitle = f"{title.value}"
-			prev = title
-			for m in candidate_matches:
-				holes: list[Match] = matches.holes(prev.end, m.start)  # type: ignore
-				hole = (
-					"".join(f" {h.value}" if h.value != "-" else " - " for h in holes)
-					or " "
-				)
-				mtitle = f"{mtitle}{hole}{m.value}"
-				prev = m
-
-			if normalize_title(mtitle) in context["expected_titles"]:
-				new_title = copy(title)
-				new_title.end = candidate_matches[-1].end
-				new_title.value = mtitle
-				return [[title] + candidate_matches, [new_title]]
-
-
 class MultipleSeasonRule(Rule):
 	"""Understand `abcd Season 2 - 5.mkv` as S2E5
 
@@ -350,6 +259,98 @@ class PreferFilenameOverDirectory(Rule):
 		return to_remove if to_remove else None
 
 
+class ExpectedTitles(Rule):
+	"""Fix both alternate names and seasons that are known titles but parsed differently by guessit
+
+	Example: "JoJo's Bizarre Adventure - Diamond is Unbreakable - 12.mkv"
+	Default:
+	```json
+	{
+		"title": "JoJo's Bizarre Adventure",
+		"alternative_title": "Diamond is Unbreakable",
+		"episode": 12,
+	}
+	```
+	Expected:
+	```json
+	{
+		"title": "JoJo's Bizarre Adventure - Diamond is Unbreakable",
+		"episode": 12,
+	}
+	```
+
+	Or
+	Example: 'Owarimonogatari S2 E15.mkv'
+	Default:
+	```json
+	{
+		"title": "Owarimonogatari",
+		"season": 2,
+		"episode": 15
+	}
+	```
+	Expected:
+	```json
+	{
+		"title": "Owarimonogatari S2",
+		"episode": 15
+	}
+	```
+	"""
+
+	priority = POST_PROCESS
+	consequence = [RemoveMatch, AppendMatch]
+
+	@override
+	def when(self, matches: Matches, context) -> Any:
+		from ..anilist import normalize_title
+
+		titles: list[Match] = matches.named("title", lambda m: m.tagged("title"))  # type: ignore
+
+		if not titles or not context["expected_titles"]:
+			return
+		title = titles[0]
+
+		# Greedily collect all adjacent matches that could be part of the title
+		absorbed: list[Match] = []
+		current = title
+		while True:
+			nmatch: list[Match] = matches.next(current)
+			if not nmatch or not (
+				nmatch[0].tagged("title")
+				or nmatch[0].named("season")
+				or nmatch[0].named("episode")
+				or nmatch[0].named("part")
+				or nmatch[0].named("year")
+			):
+				break
+			absorbed.append(nmatch[0])
+			current = nmatch[0]
+		if not absorbed:
+			return
+
+		# Try longest combined title first, then progressively shorter ones
+		for end in range(len(absorbed), 0, -1):
+			candidate_matches = absorbed[:end]
+
+			mtitle = f"{title.value}"
+			prev = title
+			for m in candidate_matches:
+				holes: list[Match] = matches.holes(prev.end, m.start)  # type: ignore
+				hole = (
+					"".join(f" {h.value}" if h.value != "-" else " - " for h in holes)
+					or " "
+				)
+				mtitle = f"{mtitle}{hole}{m.value}"
+				prev = m
+
+			if normalize_title(mtitle) in context["expected_titles"]:
+				new_title = copy(title)
+				new_title.end = candidate_matches[-1].end
+				new_title.value = mtitle
+				return [[title] + candidate_matches, [new_title]]
+
+
 class SeasonYearDedup(Rule):
 	"""Remove "season" when it's the same as "year"
 
@@ -388,5 +389,8 @@ class SeasonYearDedup(Rule):
 	def when(self, matches: Matches, context) -> Any:
 		season: list[Match] = matches.named("season")  # type: ignore
 		year: list[Match] = matches.named("year")  # type: ignore
-		if len(season) == 1 and len(year) == 1 and season[0].value == year[0].value:
-			return season
+
+		to_remove = []
+		for y in year:
+			to_remove += [x for x in season if x.value == y.value]
+		return to_remove

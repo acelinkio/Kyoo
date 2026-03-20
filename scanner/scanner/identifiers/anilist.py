@@ -63,13 +63,17 @@ class AnimeListDb(BaseXmlModel, tag="anime-list"):
 			"mapping-list", element(default=[], tag="mapping")
 		)
 
+		@field_validator("tvdbid")
+		@classmethod
+		def _tvdb_validator(cls, v: str | None) -> str | None:
+			# animes that don't match on tvdb can have a string explaining why it doesn't match
+			# for example `movie`, `music video`, `OAV` or `hentai`
+			return v if v and v.isdigit() else None
+
 		@field_validator("tvdbid", "tmdbtv", "tmdbid", "imdbid", "defaulttvdbseason")
 		@classmethod
 		def _empty_to_none(cls, v: str | None) -> str | None:
-			# pornographic titles have this id.
-			if v == "hentai" or v == "movie" or v == "":
-				return None
-			return v
+			return v or None
 
 		class EpisodeMapping(BaseXmlModel):
 			anidbseason: int = attr()
@@ -312,6 +316,8 @@ async def identify_anilist(_path: str, guess: Guess) -> Guess:
 				episode=1 + anime.episodeoffset,
 			)
 		)
+	elif guess.kind == "episode" and anime.tmdbid:
+		kind = "movie"
 
 	return Guess(
 		title=new_title or guess.title,

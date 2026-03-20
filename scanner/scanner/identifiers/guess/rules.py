@@ -1,10 +1,11 @@
 # Read that for examples/rules: https://github.com/pymedusa/Medusa/blob/master/medusa/name_parser/rules/rules.py
 
+import re
 from copy import copy
 from logging import getLogger
 from typing import Any, cast, override
 
-from rebulk import POST_PROCESS, AppendMatch, RemoveMatch, Rule
+from rebulk import POST_PROCESS, AppendMatch, RemoveMatch, RenameMatch, Rule
 from rebulk.match import Match, Matches
 
 logger = getLogger(__name__)
@@ -76,6 +77,62 @@ class UnlistTitles(Rule):
 			return [titles, [title]]
 
 
+class OrdinalSeasonRule(Rule):
+	"""Parse ordinal season patterns like "2nd Season" from the title.
+
+	Example: '[Erai-raws] Oshi no Ko 2nd Season - 12 [1080p AMZN WEB-DL AVC EAC3][MultiSub][CB69AB71].mkv'
+	Default:
+	```json
+	{
+		"title": "Oshi no Ko 2nd Season",
+		"season": 1,
+		"episode": 12
+	}
+	```
+	Expected:
+	```json
+	{
+		"title": "Oshi no Ko",
+		"season": 2,
+		"episode": 12
+	}
+	```
+	"""
+
+	priority = POST_PROCESS
+	consequence = [RemoveMatch, AppendMatch]
+
+	ORDINAL_SEASON_RE = re.compile(
+		r"(\d+)\s*(?:st|nd|rd|th)\s+season",
+		re.IGNORECASE,
+	)
+
+	@override
+	def when(self, matches: Matches, context) -> Any:
+		titles: list[Match] = matches.named("title")  # type: ignore
+
+		to_remove = []
+		to_add = []
+
+		for title in titles:
+			title_value = str(title.value)
+			m = self.ORDINAL_SEASON_RE.search(title_value)
+			if not m:
+				continue
+
+			to_remove.append(title)
+			new_title = copy(title)
+			new_title.value = title_value[: m.start()].strip()
+			to_add.append(new_title)
+
+			season = copy(title)
+			season.name = "season"
+			season.start += m.start()
+			season.value = int(m.group(1))
+			to_add.append(season)
+		return [to_remove, to_add]
+
+
 class ExpectedTitles(Rule):
 	"""Fix both alternate names and seasons that are known titles but parsed differently by guessit
 
@@ -136,6 +193,7 @@ class ExpectedTitles(Rule):
 			if not nmatch or not (
 				nmatch[0].tagged("title")
 				or nmatch[0].named("season")
+				or nmatch[0].named("episode")
 				or nmatch[0].named("part")
 			):
 				break
@@ -152,8 +210,9 @@ class ExpectedTitles(Rule):
 			prev = title
 			for m in candidate_matches:
 				holes: list[Match] = matches.holes(prev.end, m.start)  # type: ignore
-				hole = "".join(
-					f" {h.value}" if h.value != "-" else " - " for h in holes
+				hole = (
+					"".join(f" {h.value}" if h.value != "-" else " - " for h in holes)
+					or " "
 				)
 				mtitle = f"{mtitle}{hole}{m.value}"
 				prev = m
@@ -261,7 +320,8 @@ class PreferFilenameOverDirectory(Rule):
 	"""
 
 	priority = POST_PROCESS
-	consequence = RemoveMatch
+	# rename to prevent them from being merged to other guesses
+	consequence = RenameMatch("removed")
 
 	@override
 	def when(self, matches: Matches, context) -> Any:
@@ -273,7 +333,7 @@ class PreferFilenameOverDirectory(Rule):
 		filename = fileparts[-1]
 
 		to_remove = []
-		for prop in {"season", "episode"}:
+		for prop in {"season", "episode", "title"}:
 			all_matches: list[Match] = matches.named(prop)  # type: ignore
 			if not all_matches:
 				continue

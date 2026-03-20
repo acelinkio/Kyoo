@@ -67,7 +67,7 @@ class AnimeListDb(BaseXmlModel, tag="anime-list"):
 		@classmethod
 		def _empty_to_none(cls, v: str | None) -> str | None:
 			# pornographic titles have this id.
-			if v == "hentai" or v == "":
+			if v == "hentai" or v == "movie" or v == "":
 				return None
 			return v
 
@@ -147,7 +147,7 @@ def normalize_title(title: str) -> str:
 	title = unicodedata.normalize("NFD", title)
 	title = "".join(c for c in title if unicodedata.category(c) != "Mn")
 	title = title.lower()
-	title = re.sub(r"[^\w\s]", "", title)
+	title = re.sub(r"[^\w\s]", " ", title)
 	title = re.sub(r"\s+", " ", title).strip()
 	return title
 

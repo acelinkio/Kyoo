@@ -34,8 +34,8 @@ async def identify(path: str) -> Video:
 	part = next(iter(raw.get("part", [])), None)
 
 	years = raw.get("year", [])
-	seasons = raw.get("season", [])
-	episodes = raw.get("episode", [])
+	seasons = list(set(cast(int, x.value) for x in raw.get("season", [])))
+	episodes = list(set(cast(int, x.value) for x in raw.get("episode", [])))
 
 	# just strip the version & part number from the path
 	rendering_path = "".join(
@@ -52,11 +52,11 @@ async def identify(path: str) -> Video:
 		years=list(set(cast(int, y.value) for y in years)),
 		episodes=list(
 			set(
-				Guess.Episode(season=cast(int, s.value), episode=cast(int, e.value))
+				Guess.Episode(season=s, episode=e)
 				for s, e in zip_longest(
 					seasons,
 					episodes,
-					fillvalue=seasons[-1] if any(seasons) else Match(0, 0, value=1),
+					fillvalue=seasons[-1] if any(seasons) else 1,
 				)
 			)
 		),

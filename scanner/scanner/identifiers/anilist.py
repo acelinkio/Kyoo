@@ -316,6 +316,8 @@ async def identify_anilist(_path: str, guess: Guess) -> Guess:
 				episode=1 + anime.episodeoffset,
 			)
 		)
+	elif guess.kind == "episode" and anime.tmdbid:
+		kind = "movie"
 
 	return Guess(
 		title=new_title or guess.title,

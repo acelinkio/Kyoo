@@ -388,5 +388,8 @@ class SeasonYearDedup(Rule):
 	def when(self, matches: Matches, context) -> Any:
 		season: list[Match] = matches.named("season")  # type: ignore
 		year: list[Match] = matches.named("year")  # type: ignore
-		if len(season) == 1 and len(year) == 1 and season[0].value == year[0].value:
-			return season
+
+		to_remove = []
+		for y in year:
+			to_remove += [x for x in season if x.value == y.value]
+		return to_remove

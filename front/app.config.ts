@@ -22,7 +22,6 @@ export const expo: ExpoConfig = {
 			foregroundImage: "./public/android-adaptive-icon.png",
 			backgroundColor: "#6b00b8",
 		},
-		edgeToEdgeEnabled: true,
 	},
 	web: {
 		bundler: "metro",

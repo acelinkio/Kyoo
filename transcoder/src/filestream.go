@@ -76,8 +76,8 @@ func (fs *FileStream) Destroy() {
 func (fs *FileStream) GetMaster(client string) string {
 	master := "#EXTM3U\n"
 
-	for _, quality := range AudioQualities {
-		for _, audio := range fs.Info.Audios {
+	for _, audio := range fs.Info.Audios {
+		for _, quality := range AudioQualities {
 			master += "#EXT-X-MEDIA:TYPE=AUDIO,"
 			master += fmt.Sprintf("GROUP-ID=\"audio-%s\",", quality)
 			if audio.Language != nil {
@@ -96,7 +96,23 @@ func (fs *FileStream) GetMaster(client string) string {
 			master += "CHANNELS=\"2\","
 			master += fmt.Sprintf("URI=\"audio/%d/%s/index.m3u8?clientId=%s\"\n", audio.Index, quality, client)
 		}
-		master += "\n"
+		master += "#EXT-X-MEDIA:TYPE=AUDIO,"
+		master += fmt.Sprintf("GROUP-ID=\"audio-%s\",", AOriginal)
+		if audio.Language != nil {
+			master += fmt.Sprintf("LANGUAGE=\"%s\",", *audio.Language)
+		}
+		if audio.Title != nil {
+			master += fmt.Sprintf("NAME=\"%s\",", *audio.Title)
+		} else if audio.Language != nil {
+			master += fmt.Sprintf("NAME=\"%s\",", *audio.Language)
+		} else {
+			master += fmt.Sprintf("NAME=\"Audio %d\",", audio.Index)
+		}
+		if audio.IsDefault {
+			master += "DEFAULT=YES,"
+		}
+		master += "CHANNELS=\"2\"," // TODO
+		master += fmt.Sprintf("URI=\"audio/%d/%s/index.m3u8?clientId=%s\"\n", audio.Index, AOriginal, client)
 	}
 
 	// codec is the prefix + the level, the level is not part of the codec we want to compare for the same_codec check bellow
@@ -165,18 +181,19 @@ func (fs *FileStream) GetMaster(client string) string {
 				} else if def_video.MimeCodec != nil {
 					master += fmt.Sprintf("CODECS=\"%s\",", strings.Join([]string{*def_video.MimeCodec, audio_codec}, ","))
 				}
-				master += "AUDIO=\"audio\","
+				master += fmt.Sprintf("AUDIO=\"audio-%s\",", string(matchAudioQuality(quality)))
 				master += "CLOSED-CAPTIONS=NONE\n"
 				master += fmt.Sprintf("%d/%s/index.m3u8?clientId=%s\n", def_video.Index, quality, client)
 				continue
 			}
 
+			// TODO: Add another w/ transcoded audio
 			master += "#EXT-X-STREAM-INF:"
 			master += fmt.Sprintf("AVERAGE-BANDWIDTH=%d,", quality.AverageBitrate())
 			master += fmt.Sprintf("BANDWIDTH=%d,", quality.MaxBitrate())
 			master += fmt.Sprintf("RESOLUTION=%dx%d,", int(aspectRatio*float32(quality.Height())+0.5), quality.Height())
 			master += fmt.Sprintf("CODECS=\"%s\",", strings.Join([]string{transcode_codec, audio_codec}, ","))
-			master += "AUDIO=\"audio\","
+			master += fmt.Sprintf("AUDIO=\"audio-%s\",", string(matchAudioQuality(quality)))
 			master += "CLOSED-CAPTIONS=NONE\n"
 			master += fmt.Sprintf("%d/%s/index.m3u8?clientId=%s\n", def_video.Index, quality, client)
 		}
@@ -233,4 +250,27 @@ func (fs *FileStream) GetAudioSegment(idx uint32, quality AudioQuality, segment 
 		return "", nil
 	}
 	return stream.GetSegment(segment)
+}
+
+func matchAudioQuality(q VideoQuality) AudioQuality {
+	switch q {
+	case P240:
+		return K128
+	case P360:
+		return K128
+	case P480:
+		return K128
+	case P720:
+		return K192
+	case P1080:
+		return K192
+	case P1440:
+		return K256
+	case P4k:
+		return K512
+	case P8k:
+		return K512
+	default:
+		return AOriginal
+	}
 }

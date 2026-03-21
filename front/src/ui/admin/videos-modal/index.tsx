@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import { type Entry, FullVideo, type Page } from "~/models";
+import { type Entry, type Episode, FullVideo, type Page } from "~/models";
 import { Modal, P } from "~/primitives";
 import {
 	InfiniteFetch,
@@ -32,17 +32,17 @@ export const useEditLinks = (
 			body: [
 				{
 					id: video,
-					for: entries.map((x) =>
-						x.kind === "episode" && !x.slug
-							? {
-									serie: slug,
-									// @ts-expect-error: idk why it couldn't match x as an episode
-									season: x.seasonNumber,
-									// @ts-expect-error: idk why it couldn't match x as an episode
-									episode: x.episodeNumber,
-								}
-							: { slug: x.slug },
-					),
+					for: entries.map((x) => {
+						if (x.slug) return { slug: x.slug };
+						const ep = x as Episode;
+						if (ep.seasonNumber === 0)
+							return { serie: slug, special: ep.episodeNumber };
+						return {
+							serie: slug,
+							season: ep.seasonNumber,
+							episoed: ep.episodeNumber,
+						};
+					}),
 				},
 			],
 		}),

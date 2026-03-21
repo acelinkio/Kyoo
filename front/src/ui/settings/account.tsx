@@ -91,7 +91,6 @@ export const AccountSettings = () => {
 								{
 									cancelable: true,
 									userInterfaceStyle: theme as "light" | "dark",
-									icon: "warning",
 								},
 							);
 						}}

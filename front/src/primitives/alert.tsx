@@ -5,14 +5,13 @@ import {
 	type AlertOptions,
 	Alert as RNAlert,
 } from "react-native";
-import type { SweetAlertIcon } from "sweetalert2";
 
 export interface ExtendedAlertStatic {
 	alert: (
 		title: string,
 		message?: string,
 		buttons?: AlertButton[],
-		options?: AlertOptions & { icon?: SweetAlertIcon },
+		options?: AlertOptions,
 	) => void;
 }
 

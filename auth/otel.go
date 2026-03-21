@@ -37,7 +37,6 @@ func setupOtel(ctx context.Context) (func(context.Context) error, error) {
 		resource.WithAttributes(semconv.ServiceNameKey.String("kyoo.auth")),
 		resource.WithFromEnv(),
 		resource.WithTelemetrySDK(),
-		resource.WithProcess(),
 		resource.WithOS(),
 		resource.WithContainer(),
 		resource.WithHost(),

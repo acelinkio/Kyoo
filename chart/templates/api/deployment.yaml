@@ -14,7 +14,7 @@ metadata:
 spec:
   replicas: {{ .Values.api.replicaCount }}
   {{- with .Values.api.updateStrategy }}
-  strategy: 
+  strategy:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
@@ -38,7 +38,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.global.securityContext }}
+      {{- with (mergeOverwrite (deepCopy .Values.global.securityContext) .Values.api.securityContext) }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -63,15 +63,23 @@ spec:
             - name: IMAGES_PATH
               value: "/images"
             - name: PGUSER
+              {{- if .Values.global.postgres.shared.userOverride }}
+              value: {{ .Values.global.postgres.shared.userOverride | quote }}
+              {{- else }}
               valueFrom:
                 secretKeyRef:
                   key: {{ default .Values.global.postgres.shared.userKey .Values.global.postgres.kyoo_api.kyoo_api.userKey }}
                   name: {{ default .Values.global.postgres.shared.existingSecret .Values.global.postgres.kyoo_api.kyoo_api.existingSecret }}
+              {{- end }}
             - name: PGPASSWORD
+              {{- if .Values.global.postgres.shared.passwordOverride }}
+              value: {{ .Values.global.postgres.shared.passwordOverride | quote }}
+              {{- else }}
               valueFrom:
                 secretKeyRef:
                   key: {{ default .Values.global.postgres.shared.passwordKey .Values.global.postgres.kyoo_api.kyoo_api.passwordKey }}
                   name: {{ default .Values.global.postgres.shared.existingSecret .Values.global.postgres.kyoo_api.kyoo_api.existingSecret }}
+              {{- end }}
             - name: PGDATABASE
               value: {{ default .Values.global.postgres.kyoo_api.database .Values.global.postgres.shared.databaseOverride | quote }}
             - name: PGHOST
@@ -79,7 +87,7 @@ spec:
             - name: PGPORT
               value: {{ default .Values.global.postgres.shared.port .Values.global.postgres.kyoo_api.port | quote }}
             - name: PGSSLMODE
-              value: {{ .Values.global.postgres.kyoo_api.sslmode | quote  }}
+              value: {{ default .Values.global.postgres.kyoo_api.sslmode .Values.global.postgres.shared.sslmodeOverride | quote }}
             {{- with (concat .Values.global.extraEnv .Values.api.kyoo_api.extraEnv) }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -99,7 +107,7 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.api.kyoo_api.containerSecurityContext }}
+          {{- with (mergeOverwrite (deepCopy .Values.global.containerSecurityContext) .Values.api.kyoo_api.containerSecurityContext) }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -107,6 +115,9 @@ spec:
             {{- if .Values.api.persistence.enabled }}
             - name: apiimagedata
               mountPath: /images
+            {{- end }}
+            {{- with .Values.global.extraVolumeMounts }}
+              {{- toYaml . | nindent 12 }}
             {{- end }}
             {{- with .Values.api.kyoo_api.volumeMounts }}
               {{- toYaml . | nindent 12 }}
@@ -128,6 +139,9 @@ spec:
           persistentVolumeClaim:
             claimName: {{ include "kyoo.apiimagedata.fullname" . }}
         {{- end }}
+        {{- end }}
+        {{- with .Values.global.extraVolumes }}
+          {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- with .Values.api.volumes }}
           {{- toYaml . | nindent 8 }}

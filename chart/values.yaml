@@ -13,7 +13,11 @@ global:
   persistentVolumeClaimAnnotations: {}
   podAnnotations: {}
   podLabels: {}
+  securityContext: {}
+  containerSecurityContext: {}
   extraEnv: []
+  extraVolumes: []
+  extraVolumeMounts: []
 
   # kyoo connectivity & subchart settings for postgres
   # subchart configuration can be found at .postgresql
@@ -33,6 +37,9 @@ global:
       port: 5432
       # setting the database here will override the other database settings
       databaseOverride: ~
+      userOverride: ~
+      passwordOverride: ~
+      sslmodeOverride: ~
       # base setting for specifying existingSecret for all kyoo workloads
       existingSecret: bigsecret
       # base setting for specifying userKey for all kyoo workloads
@@ -203,6 +210,7 @@ api:
   # default to recreate for better user experience with ReadWriteOnce volumes
   updateStrategy:
     type: Recreate
+  securityContext: {}
   podLabels: {}
   deploymentAnnotations: {}
   podAnnotations: {}
@@ -253,6 +261,7 @@ auth:
       tag: ~
   replicaCount: 1
   updateStrategy: ~
+  securityContext: {}
   podLabels: {}
   deploymentAnnotations: {}
   podAnnotations: {}
@@ -287,6 +296,7 @@ front:
       tag: ~
   replicaCount: 1
   updateStrategy: ~
+  securityContext: {}
   podLabels: {}
   deploymentAnnotations: {}
   podAnnotations: {}
@@ -328,6 +338,7 @@ scanner:
   # scanner does not support multiple replicas
   replicaCount: 1
   updateStrategy: ~
+  securityContext: {}
   podLabels: {}
   deploymentAnnotations: {}
   podAnnotations: {}
@@ -388,6 +399,7 @@ transcoder:
   # default to recreate for better user experience with ReadWriteOnce volumes & hardware resources
   updateStrategy:
     type: Recreate
+  securityContext: {}
   podLabels: {}
   deploymentAnnotations: {}
   podAnnotations: {}
@@ -437,20 +449,21 @@ traefikproxy:
     containerSecurityContext: {}
     extraVolumeMounts: []
     extraArgs:
-      - '--entryPoints.web.address=:80/tcp'
-      - '--entryPoints.websecure.address=:443/tcp'
-      - '--entryPoints.web.forwardedHeaders.insecure=true'
-      - '--entryPoints.websecure.forwardedHeaders.insecure=true'
-      - '--api.dashboard=true'
-      - '--api.insecure=true'
-      - '--log.level=INFO'
-      - '--providers.file.filename=/dynamic_config/dynamic_config.yaml'
+      - "--entryPoints.web.address=:80/tcp"
+      - "--entryPoints.websecure.address=:443/tcp"
+      - "--entryPoints.web.forwardedHeaders.insecure=true"
+      - "--entryPoints.websecure.forwardedHeaders.insecure=true"
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--log.level=INFO"
+      - "--providers.file.filename=/dynamic_config/dynamic_config.yaml"
     extraEnv: []
     image:
       repository: docker.io/traefik
       tag: v3.6.10
   replicaCount: 1
   updateStrategy: ~
+  securityContext: {}
   podLabels: {}
   configmapAnnotations: {}
   deploymentAnnotations: {}

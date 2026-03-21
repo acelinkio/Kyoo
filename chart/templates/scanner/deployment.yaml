@@ -38,7 +38,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.global.securityContext }}
+      {{- with (mergeOverwrite (deepCopy .Values.global.securityContext) .Values.scanner.securityContext) }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -74,15 +74,23 @@ spec:
                   name: {{ .Values.contentdatabase.tmdb.existingSecret }}
                   optional: true
             - name: PGUSER
+              {{- if .Values.global.postgres.shared.userOverride }}
+              value: {{ .Values.global.postgres.shared.userOverride | quote }}
+              {{- else }}
               valueFrom:
                 secretKeyRef:
                   key: {{ default .Values.global.postgres.shared.userKey .Values.global.postgres.kyoo_scanner.kyoo_scanner.userKey }}
                   name: {{ default .Values.global.postgres.shared.existingSecret .Values.global.postgres.kyoo_scanner.kyoo_scanner.existingSecret }}
+              {{- end }}
             - name: PGPASSWORD
+              {{- if .Values.global.postgres.shared.passwordOverride }}
+              value: {{ .Values.global.postgres.shared.passwordOverride | quote }}
+              {{- else }}
               valueFrom:
                 secretKeyRef:
                   key: {{ default .Values.global.postgres.shared.passwordKey .Values.global.postgres.kyoo_scanner.kyoo_scanner.passwordKey }}
                   name: {{ default .Values.global.postgres.shared.existingSecret .Values.global.postgres.kyoo_scanner.kyoo_scanner.existingSecret }}
+              {{- end }}
             - name: PGDATABASE
               value: {{ default .Values.global.postgres.kyoo_scanner.database .Values.global.postgres.shared.databaseOverride | quote }}
             - name: PGHOST
@@ -90,7 +98,7 @@ spec:
             - name: PGPORT
               value: {{ default .Values.global.postgres.shared.port .Values.global.postgres.kyoo_scanner.port | quote }}
             - name: PGSSLMODE
-              value: {{ .Values.global.postgres.kyoo_scanner.sslmode | quote  }}
+              value: {{ default .Values.global.postgres.kyoo_scanner.sslmode .Values.global.postgres.shared.sslmodeOverride | quote }}
             {{- with (concat .Values.global.extraEnv .Values.scanner.kyoo_scanner.extraEnv) }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -110,11 +118,14 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.scanner.kyoo_scanner.containerSecurityContext }}
+          {{- with (mergeOverwrite (deepCopy .Values.global.containerSecurityContext) .Values.scanner.kyoo_scanner.containerSecurityContext) }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
+            {{- with .Values.global.extraVolumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
             {{- with .Values.media.volumeMounts }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -129,6 +140,9 @@ spec:
         {{- tpl (toYaml .) $ | nindent 6 }}
       {{- end }}
       volumes:
+        {{- with .Values.global.extraVolumes }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
         {{- with .Values.media.volumes }}
           {{- toYaml . | nindent 8 }}
         {{- end }}

@@ -3,12 +3,10 @@ package main
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
-	"os/user"
 	"slices"
 	"sort"
 	"strings"
@@ -103,10 +101,10 @@ func GetenvOr(env string, def string) string {
 }
 
 func OpenDatabase(ctx context.Context) (*pgxpool.Pool, error) {
-	connectionString := GetenvOr("POSTGRES_URL", "")
+	connectionString := os.Getenv("POSTGRES_URL")
 	config, err := pgxpool.ParseConfig(connectionString)
 	if err != nil {
-		return nil, errors.New("failed to create postgres config from environment variables")
+		return nil, fmt.Errorf("failed to create postgres config from environment variables: %v", err)
 	}
 
 	// Set default values
@@ -115,22 +113,6 @@ func OpenDatabase(ctx context.Context) (*pgxpool.Pool, error) {
 	}
 	if config.ConnConfig.Database == "" {
 		config.ConnConfig.Database = "kyoo"
-	}
-	// The pgx library will set the username to the name of the current user if not provided via
-	// environment variable or connection string. Make a best-effort attempt to see if the user
-	// was explicitly specified, without implementing full connection string parsing. If not, set
-	// the username to the default value of "kyoo".
-	if os.Getenv("PGUSER") == "" {
-		currentUserName, _ := user.Current()
-		// If the username matches the current user and it's not in the connection string, then it was set
-		// by the pgx library. This doesn't cover the case where the system username happens to be in some other part
-		// of the connection string, but this cannot be checked without full connection string parsing.
-		if currentUserName.Username == config.ConnConfig.User && !strings.Contains(connectionString, currentUserName.Username) {
-			config.ConnConfig.User = "kyoo"
-		}
-	}
-	if config.ConnConfig.Password == "" {
-		config.ConnConfig.Password = "password"
 	}
 	if _, ok := config.ConnConfig.RuntimeParams["application_name"]; !ok {
 		config.ConnConfig.RuntimeParams["application_name"] = "keibi"

@@ -14,7 +14,7 @@ metadata:
 spec:
   replicas: {{ .Values.auth.replicaCount }}
   {{- with .Values.auth.updateStrategy }}
-  strategy: 
+  strategy:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
@@ -38,7 +38,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.global.securityContext }}
+      {{- with (mergeOverwrite (deepCopy .Values.global.securityContext) .Values.auth.securityContext) }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -79,15 +79,23 @@ spec:
               value: {{ $entry.claims | quote }}
             {{- end }}
             - name: PGUSER
+              {{- if .Values.global.postgres.shared.userOverride }}
+              value: {{ .Values.global.postgres.shared.userOverride | quote }}
+              {{- else }}
               valueFrom:
                 secretKeyRef:
                   key: {{ default .Values.global.postgres.shared.userKey .Values.global.postgres.kyoo_auth.kyoo_auth.userKey }}
                   name: {{ default .Values.global.postgres.shared.existingSecret .Values.global.postgres.kyoo_auth.kyoo_auth.existingSecret }}
+              {{- end }}
             - name: PGPASSWORD
+              {{- if .Values.global.postgres.shared.passwordOverride }}
+              value: {{ .Values.global.postgres.shared.passwordOverride | quote }}
+              {{- else }}
               valueFrom:
                 secretKeyRef:
                   key: {{ default .Values.global.postgres.shared.passwordKey .Values.global.postgres.kyoo_auth.kyoo_auth.passwordKey }}
                   name: {{ default .Values.global.postgres.shared.existingSecret .Values.global.postgres.kyoo_auth.kyoo_auth.existingSecret }}
+              {{- end }}
             - name: PGDATABASE
               value: {{ default .Values.global.postgres.kyoo_auth.database .Values.global.postgres.shared.databaseOverride | quote }}
             - name: PGHOST
@@ -95,7 +103,7 @@ spec:
             - name: PGPORT
               value: {{ default .Values.global.postgres.shared.port .Values.global.postgres.kyoo_auth.port | quote }}
             - name: PGSSLMODE
-              value: {{ .Values.global.postgres.kyoo_auth.sslmode | quote  }}
+              value: {{ default .Values.global.postgres.kyoo_auth.sslmode .Values.global.postgres.shared.sslmodeOverride | quote }}
             {{- if .Values.kyoo.auth.privatekey.existingSecret }}
             - name: RSA_PRIVATE_KEY_PATH
               value: /mnt/private_key/private_key.pem
@@ -145,14 +153,17 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.auth.kyoo_auth.containerSecurityContext }}
+          {{- with (mergeOverwrite (deepCopy .Values.global.containerSecurityContext) .Values.auth.kyoo_auth.containerSecurityContext) }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- if or .Values.auth.kyoo_auth.extraVolumeMounts .Values.kyoo.auth.privatekey.existingSecret }}
+          {{- if or .Values.global.extraVolumeMounts .Values.auth.kyoo_auth.extraVolumeMounts .Values.kyoo.auth.privatekey.existingSecret }}
           volumeMounts:
+            {{- with .Values.global.extraVolumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
             {{- with .Values.auth.kyoo_auth.extraVolumeMounts }}
-            {{- toYaml . | nindent 12 }}
+              {{- toYaml . | nindent 12 }}
             {{- end }}
             {{- if .Values.kyoo.auth.privatekey.existingSecret }}
             - name: private-key
@@ -167,10 +178,13 @@ spec:
       initContainers:
         {{- tpl (toYaml .) $ | nindent 6 }}
       {{- end }}
-      {{- if or .Values.auth.extraVolumes .Values.kyoo.auth.privatekey.existingSecret }}
+      {{- if or .Values.global.extraVolumes .Values.auth.extraVolumes .Values.kyoo.auth.privatekey.existingSecret }}
       volumes:
+        {{- with .Values.global.extraVolumes }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
         {{- with .Values.auth.extraVolumes }}
-        {{- toYaml . | nindent 8 }}
+          {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- if .Values.kyoo.auth.privatekey.existingSecret }}
         - name: private-key

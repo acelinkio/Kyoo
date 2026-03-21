@@ -23,7 +23,7 @@ export async function setupLogging() {
 				const minLevel = aliasMap[minLevelRaw] ?? minLevelRaw;
 				return withFilter(
 					redactByField(getConsoleSink(), {
-						fieldPatterns: [/password/i, /secret/i, /apikey/i],
+						fieldPatterns: [/password/i, /secret/i, /apikey/i, /ca/i, /cert/i],
 						action: () => "[REDACTED]",
 					}),
 					getLevelFilter(parseLogLevel(minLevel)),
@@ -38,7 +38,7 @@ export async function setupLogging() {
 				const minLevel = aliasMap[minLevelRaw] ?? minLevelRaw;
 				return withFilter(
 					redactByField(getOpenTelemetrySink({ loggerProvider }), {
-						fieldPatterns: [/password/i, /secret/i, /apikey/i],
+						fieldPatterns: [/password/i, /secret/i, /apikey/i, /ca/i, /cert/i],
 						action: () => "[REDACTED]",
 					}),
 					getLevelFilter(parseLogLevel(minLevel)),

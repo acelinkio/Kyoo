@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -38,6 +39,7 @@ func ErrorHandler(c *echo.Context, err error) {
 
 	code := http.StatusInternalServerError
 	var message string
+	var sc echo.HTTPStatusCoder
 
 	if he, ok := err.(*echo.HTTPError); ok {
 		code = he.Code
@@ -46,8 +48,12 @@ func ErrorHandler(c *echo.Context, err error) {
 		if message == "missing or malformed jwt" {
 			code = http.StatusUnauthorized
 		}
+	} else if errors.As(err, &sc) {
+		if tmp := sc.StatusCode(); tmp != 0 {
+			code = tmp
+		}
 	} else {
-		c.Logger().Error(err.Error())
+		c.Logger().Error("Unhandled error", slog.Any("err", err))
 	}
 
 	c.JSON(code, KError{

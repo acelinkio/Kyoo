@@ -171,14 +171,25 @@ func (h *Handler) TokenToJwt(next echo.HandlerFunc) echo.HandlerFunc {
 			jwt = &token
 		} else {
 			auth := c.Request().Header.Get("Authorization")
+			var token string
 
-			if auth == "" || !strings.HasPrefix(auth, "Bearer ") {
+			if auth == "" {
+				cookie, _ := c.Request().Cookie("X-Bearer")
+				if cookie != nil {
+					token = cookie.Value
+				}
+			} else if strings.HasPrefix(auth, "Bearer ") {
+				token = auth[len("Bearer "):]
+			} else if auth != "" {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid bearer format.")
+			}
+
+			if token == "" {
 				jwt = h.createGuestJwt()
 				if jwt == nil {
 					return echo.NewHTTPError(http.StatusUnauthorized, "Guests not allowed.")
 				}
 			} else {
-				token := auth[len("Bearer "):]
 				// this is only used to check if it is a session token or a jwt
 				_, err := base64.RawURLEncoding.DecodeString(token)
 				if err != nil {

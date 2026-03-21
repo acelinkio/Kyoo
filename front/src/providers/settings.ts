@@ -3,7 +3,7 @@ import { createMMKV, useMMKVString } from "react-native-mmkv";
 import type { ZodType, z } from "zod/v4";
 import { getServerData } from "~/utils";
 
-export const storage = createMMKV();
+export const storage = createMMKV({ id: "kyoo-v5" });
 
 function toBase64(utf8: string) {
 	if (typeof window !== "undefined") return window.btoa(utf8);
@@ -35,7 +35,6 @@ export const setCookie = (
 
 export const readCookie = <T extends ZodType>(key: string, parser: T) => {
 	const cookies = getServerData("cookies");
-	console.log("cookies", cookies);
 	const decodedCookie = decodeURIComponent(cookies);
 	const ca = decodedCookie.split(";");
 

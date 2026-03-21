@@ -117,6 +117,7 @@
 		"prev-page": "Previous page",
 		"next-page": "Next page",
 		"delete": "Delete",
+		"delete-name": "Delete {{name}}",
 		"cancel": "Cancel",
 		"more": "More",
 		"expand": "Expand",

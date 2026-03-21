@@ -16,11 +16,13 @@ declare module "react-native-video" {
 }
 
 export const enhanceSubtitles = (player: VideoPlayer) => {
+	if (player.__ass) return;
 	player.__ass = { fonts: [] };
 
 	const select = player.selectTextTrack.bind(player);
 	player.selectTextTrack = async (track) => {
 		player.__currentId = undefined;
+		select(track);
 
 		if (!track) {
 			player.__unselect?.();
@@ -33,10 +35,7 @@ export const enhanceSubtitles = (player: VideoPlayer) => {
 
 		switch (newMode) {
 			case "vtt":
-				select(track);
-				player.__unselect = (newMode) => {
-					if (newMode !== "vtt") select(null);
-				};
+				player.__unselect = () => {};
 				break;
 			case "ass":
 				player.__currentId = track.id;

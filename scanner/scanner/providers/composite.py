@@ -4,7 +4,6 @@ from langcodes import Language
 
 from scanner.identifiers.anilist import anilist_enrich_ids
 from scanner.models.metadataid import MetadataId
-from scanner.providers.names import ProviderName
 from scanner.utils import uniq_by
 
 from ..models.movie import Movie, SearchMovie

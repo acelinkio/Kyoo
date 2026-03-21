@@ -16,8 +16,8 @@ export const Controls = ({
 	poster,
 	subName,
 	chapters,
-	previous,
-	next,
+	playPrev,
+	playNext,
 }: {
 	player: VideoPlayer;
 	showHref?: string;
@@ -25,8 +25,8 @@ export const Controls = ({
 	poster?: KImage | null;
 	subName?: string;
 	chapters: Chapter[];
-	previous?: string | null;
-	next?: string | null;
+	playPrev: (() => boolean) | null;
+	playNext: (() => boolean) | null;
 }) => {
 	const isTouch = useIsTouch();
 
@@ -62,15 +62,19 @@ export const Controls = ({
 					{...hoverControls}
 				/>
 				{isTouch && (
-					<MiddleControls player={player} previous={previous} next={next} />
+					<MiddleControls
+						player={player}
+						playPrev={playPrev}
+						playNext={playNext}
+					/>
 				)}
 				<BottomControls
 					player={player}
 					name={subName}
 					poster={poster}
 					chapters={chapters}
-					previous={previous}
-					next={next}
+					playPrev={playPrev}
+					playNext={playNext}
 					setMenu={setMenu}
 					className="absolute bottom-0 w-full bg-slate-900/50 px-safe pt-safe"
 					{...hoverControls}

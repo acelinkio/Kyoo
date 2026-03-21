@@ -4,8 +4,6 @@ from itertools import zip_longest
 from logging import getLogger
 from typing import Callable, Literal, cast
 
-from rebulk.match import Match
-
 from ..models.videos import Guess, Video
 from .anilist import get_anilist_data, identify_anilist
 from .guess.guess import guessit

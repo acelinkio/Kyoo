@@ -259,6 +259,77 @@ class PreferFilenameOverDirectory(Rule):
 		return to_remove if to_remove else None
 
 
+class TitleNumberFixup(Rule):
+	"""Fix titles having numbers in them
+
+	Example: '[Erai-raws] Zom 100 - Zombie ni Naru made ni Shitai 100 no Koto - 01 [1080p][Multiple Subtitle][8AFBB298].mkv'
+	     (or '[SubsPlease] Mob Psycho 100 Season 3 - 12 (1080p) [E5058D7B].mkv')
+	Default:
+	```json
+	{
+		"release_group": "Erai-raws",
+		"title": "Zom",
+		"episode": [
+				100,
+				1
+		],
+		"episode_title": "Zombie ni Naru made ni Shitai",
+	}
+	```
+	Expected:
+	```json
+	{
+		"release_group": "Erai-raws",
+		"title": "Zom 100",
+		"episode": 1,
+		"episode_title": "Zombie ni Naru made ni Shitai 100 no Koto",
+	}
+	```
+	"""
+
+	priority = POST_PROCESS
+	consequence = [RemoveMatch, AppendMatch]
+
+	@override
+	def when(self, matches: Matches, context) -> Any:
+		episodes: List[Match] = matches.named("episode")  # type: ignore
+
+		if len(episodes) < 2 or all(x.value == episodes[0].value for x in episodes):
+			return
+
+		to_remove = []
+		to_add = []
+		for episode in episodes:
+			prevs: List[Match] = matches.previous(episode)  # type: ignore
+			title = prevs[0] if prevs and prevs[0].tagged("title") else None
+			if not title:
+				continue
+
+			# do not fixup if there was a - or any separator between the title and the episode number
+			hole: List[Match] = matches.holes(title.end, episode.start)  # type: ignore
+			if hole:
+				continue
+
+			to_remove.extend([title, episode])
+			new_title = copy(title)
+			new_title.end = episode.end
+
+			nmatch: List[Match] = matches.next(episode)  # type: ignore
+			if nmatch:
+				end = (
+					nmatch[0].initiator.start
+					if isinstance(nmatch[0].initiator, Match)
+					else nmatch[0].start
+				)
+				# If an hole was created to parse the episode at the current pos, merge it back into the title
+				holes: List[Match] = matches.holes(start=episode.end, end=end)  # type: ignore
+				if holes and holes[0].start == episode.end:
+					new_title.end = holes[0].end
+
+			to_add.append(new_title)
+		return [to_remove, to_add]
+
+
 class ExpectedTitles(Rule):
 	"""Fix both alternate names and seasons that are known titles but parsed differently by guessit
 

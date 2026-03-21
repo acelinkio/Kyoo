@@ -101,7 +101,17 @@ export const PathItem = ({
 									? `${x.seasonNumber}-${x.episodeNumber}`
 									: x.id
 				}
-				getLabel={(x) => `${entryDisplayNumber(x)} - ${x.name}`}
+				getLabel={(x) => {
+					const dn = entryDisplayNumber(x);
+					const abs =
+						Number.isInteger(x.order) && !dn.includes(x.order.toString())
+							? x.order.toString()
+							: null;
+					if (dn && abs) return `${dn} (${abs}) - ${x.name}`;
+					if (dn) return `${dn} - ${x.name}`;
+					if (abs) return `${abs} - ${x.name}`;
+					return x.name!;
+				}}
 				getSmallLabel={entryDisplayNumber}
 				onValueChange={async (entries) => {
 					if (!entries.length) addTitle(guessTitle);

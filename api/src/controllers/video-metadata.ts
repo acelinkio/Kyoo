@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { Elysia, t } from "elysia";
+import slugify from "slugify";
 import { auth } from "~/auth";
 import { db } from "~/db";
 import { entryVideoJoin, videos } from "~/db/schema";
@@ -119,8 +120,10 @@ export const videosMetadata = new Elysia({
 				});
 			}
 			const path = Buffer.from(video.path, "utf8").toString("base64url");
-			const filename = path.substring(path.lastIndexOf("/") + 1);
-			return redirect(`/video/${path}/direct/${filename}`);
+			const filename = video.path.substring(video.path.lastIndexOf("/") + 1);
+			return redirect(
+				`/video/${path}/direct/${slugify(filename, { lower: true })}`,
+			);
 		},
 		{
 			detail: {

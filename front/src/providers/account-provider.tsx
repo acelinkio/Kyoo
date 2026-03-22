@@ -31,7 +31,6 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
 
 	const router = useRouter();
 	if (Platform.OS !== "web") {
-		// biome-ignore lint/correctness/useHookAtTopLevel: static
 		useEffect(() => {
 			if (!ret.apiUrl) {
 				setTimeout(() => {
@@ -76,12 +75,12 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
 		updateAccount(nUser.id, nUser);
 	}, [user, userIsSuccess, userIsPlaceholder]);
 
-	const selectedId = ret.selectedAccount?.id;
+	const curId = selectedRef.current?.id;
 	useEffect(() => {
-		selectedId;
+		console.log("Selected user changed, new id: ", curId);
 		// if the user change account (or connect/disconnect), reset query cache.
 		queryClient.resetQueries();
-	}, [selectedId, queryClient]);
+	}, [curId, queryClient]);
 
 	return (
 		<AccountContext.Provider value={ret}>{children}</AccountContext.Provider>

@@ -193,7 +193,10 @@ class TVDB(Provider):
 				if x.get("first_air_time")
 				else None,
 				end_air=None,
-				poster=x["image_url"],
+				poster=x["image_url"]
+				if x["image_url"]
+				!= "https://artworks.thetvdb.com/banners/images/missing/series.jpg"
+				else None,
 				original_language=Language.get(x["primary_language"]),
 				external_id={
 					self.name: [

@@ -19,6 +19,7 @@ export * from "./progress";
 export * from "./select";
 export * from "./skeleton";
 export * from "./slider";
+export * from "./tabs";
 export * from "./text";
 export * from "./tooltip";
 

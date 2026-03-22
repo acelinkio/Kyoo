@@ -6,7 +6,7 @@ import Search from "@material-symbols/svg-400/rounded/search-fill.svg";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import { z } from "zod/v4";
+import type { z } from "zod/v4";
 import { ScanRequest, Video } from "~/models";
 import {
 	Button,
@@ -25,10 +25,11 @@ import {
 import {
 	InfiniteFetch,
 	type QueryIdentifier,
-	useFetch,
+	useInfiniteFetch,
 	useMutation,
 } from "~/query";
 import { cn, useQueryState } from "~/utils";
+import { EmptyView } from "../empty-view";
 
 type VideoT = z.infer<typeof Video>;
 
@@ -224,7 +225,7 @@ export const UnmatchedPage = () => {
 	const { t } = useTranslation();
 	const [search, setSearch] = useQueryState("q", "");
 
-	const { data: scanData } = useFetch(UnmatchedPage.scanQuery());
+	const { items: scanData } = useInfiniteFetch(UnmatchedPage.scanQuery());
 	const scanMap = useMemo(() => {
 		if (!scanData) return new Map<string, ScanRequest>();
 		const map = new Map<string, ScanRequest>();
@@ -258,7 +259,7 @@ export const UnmatchedPage = () => {
 			)}
 			Loader={() => <VideoItem.Loader />}
 			Divider
-			Empty={<P className="self-center py-8">{t("admin.unmatched.empty")}</P>}
+			Empty={<EmptyView message={t("admin.unmatched.empty")} />}
 		/>
 	);
 };
@@ -273,10 +274,10 @@ UnmatchedPage.query = (search?: string): QueryIdentifier<VideoT> => ({
 	refetchInterval: 5000,
 });
 
-UnmatchedPage.scanQuery = (): QueryIdentifier<ScanRequest[]> => ({
-	parser: z.array(ScanRequest),
+UnmatchedPage.scanQuery = (): QueryIdentifier<ScanRequest> => ({
+	parser: ScanRequest,
 	path: ["scanner", "scan"],
-	infinite: false,
+	infinite: true,
 	refetchInterval: 5000,
 	options: {
 		returnError: true,

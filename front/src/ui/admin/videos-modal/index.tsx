@@ -13,6 +13,7 @@ import { useQueryState } from "~/utils";
 import { Header } from "../../details/header";
 import { AddVideoFooter, VideoListHeader } from "./headers";
 import { PathItem } from "./path-item";
+import { EmptyView } from "~/ui/empty-view";
 
 export const useEditLinks = (
 	slug: string,
@@ -102,11 +103,7 @@ export const VideosModal = () => {
 					/>
 				)}
 				Loader={PathItem.Loader}
-				Empty={
-					<View className="flex-1">
-						<P className="flex-1 self-center">{t("videos-map.no-video")}</P>
-					</View>
-				}
+				Empty={<EmptyView message={t("videos-map.no-video")} />}
 				Footer={<AddVideoFooter addTitle={addTitle} />}
 			/>
 		</Modal>

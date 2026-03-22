@@ -40,7 +40,8 @@ export const ImageBackground = ({
 		);
 	}
 
-	const uri = `${apiUrl}${src[quality ?? "high"]}`;
+	const path = src[quality ?? "high"];
+	const uri = path.startsWith("http") ? path : `${apiUrl}${path}`;
 	return (
 		<ImgBg
 			recyclingKey={uri}

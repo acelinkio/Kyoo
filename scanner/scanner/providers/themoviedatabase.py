@@ -118,6 +118,7 @@ class TheMovieDatabase(Provider):
 		search = self._sort_search(search, title, year)
 		return [
 			SearchMovie(
+				id=x["id"],
 				slug=to_slug(x["title"]),
 				name=x["title"],
 				description=x["overview"],
@@ -252,6 +253,7 @@ class TheMovieDatabase(Provider):
 		search = self._sort_search(search, title, year)
 		return [
 			SearchSerie(
+				id=x["id"],
 				slug=to_slug(x["name"]),
 				name=x["name"],
 				description=x["overview"],

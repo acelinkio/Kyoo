@@ -171,6 +171,7 @@ class TVDB(Provider):
 		)
 		return [
 			SearchSerie(
+				id=x["id"],
 				slug=x["slug"],
 				name=next(
 					(

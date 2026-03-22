@@ -1,11 +1,18 @@
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Security
+from fastapi import (
+	APIRouter,
+	BackgroundTasks,
+	Depends,
+	Request as HttpRequest,
+	Security,
+)
 
 from ..fsscan import create_scanner
 from ..identifiers.identify import identify
 from ..jwt import validate_bearer
 from ..models.movie import SearchMovie
+from ..models.page import Page
 from ..models.request import CreateRequest, Request, RequestRet
 from ..models.serie import SearchSerie
 from ..models.videos import Video
@@ -21,14 +28,16 @@ router = APIRouter()
 @router.get("/scan")
 async def get_scan_status(
 	svc: Annotated[StatusService, Depends(StatusService.create)],
+	request: HttpRequest,
 	_: Annotated[None, Security(validate_bearer, scopes=["scanner.trigger"])],
 	status: Literal["pending", "running", "failed"] | None = None,
-) -> list[RequestRet]:
+) -> Page[RequestRet]:
 	"""
 	Get scan status, know what tasks are running, pending or failed.
 	"""
 
-	return await svc.list_requests(status=status)
+	items = await svc.list_requests(status=status)
+	return Page(items=items, this_=str(request.url), next=None)
 
 
 @router.put(
@@ -75,15 +84,17 @@ async def get_guess(
 async def get_movies(
 	provider: Annotated[CompositeProvider, Depends(get_provider)],
 	language: Annotated[list[Language], Depends(get_preferred_languages)],
+	request: HttpRequest,
 	_: Annotated[None, Security(validate_bearer, scopes=["scanner.search"])],
 	query: str,
 	year: int | None = None,
-) -> list[SearchMovie]:
+) -> Page[SearchMovie]:
 	"""
 	Search for a movie
 	"""
 
-	return await provider.search_movies(query, year=year, language=language)
+	items = await provider.search_movies(query, year=year, language=language)
+	return Page(items=items, this_=str(request.url), next=None)
 
 
 @router.get(
@@ -94,15 +105,17 @@ async def get_movies(
 async def get_series(
 	provider: Annotated[CompositeProvider, Depends(get_provider)],
 	language: Annotated[list[Language], Depends(get_preferred_languages)],
+	request: HttpRequest,
 	_: Annotated[None, Security(validate_bearer, scopes=["scanner.search"])],
 	query: str,
 	year: int | None = None,
-) -> list[SearchSerie]:
+) -> Page[SearchSerie]:
 	"""
 	Search for a serie
 	"""
 
-	return await provider.search_series(query, year=year, language=language)
+	items = await provider.search_series(query, year=year, language=language)
+	return Page(items=items, this_=str(request.url), next=None)
 
 
 @router.post(

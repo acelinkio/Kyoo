@@ -50,7 +50,7 @@ export const useStoreValue = <T extends ZodType>(key: string, parser: T) => {
 		return readCookie(key, parser);
 	}
 	// biome-ignore lint/correctness/useHookAtTopLevel: constant
-	const [val] = useMMKVString(key);
+	const [val] = useMMKVString(key, storage);
 	if (val === undefined) return val;
 	return parser.parse(JSON.parse(val)) as z.infer<T>;
 };

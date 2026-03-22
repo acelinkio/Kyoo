@@ -31,6 +31,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
 
 	const router = useRouter();
 	if (Platform.OS !== "web") {
+		// biome-ignore lint/correctness/useHookAtTopLevel: static
 		useEffect(() => {
 			if (!ret.apiUrl) {
 				setTimeout(() => {

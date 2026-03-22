@@ -309,12 +309,24 @@
 			"rescan": "Rescan Library",
 			"empty": "All videos are matched!",
 			"search": "Search videos...",
+			"match": "Match",
+			"match-file": "Match {{file}}",
 			"status-pending": "Pending",
 			"status-running": "Scanning",
 			"status-failed": "Failed",
 			"progress-running": "{{count}} scanning",
 			"progress-pending": "{{count}} pending",
 			"progress-failed": "{{count}} failed"
+		},
+		"add": {
+			"title": "Add to library",
+			"searchPlaceholder": "Search for a movie or series...",
+			"year": "Year",
+			"library": "Library",
+			"movies": "Movies",
+			"series": "Series",
+			"noResults": "No results found",
+			"typeToSearch": "Type a name to search for movies or series"
 		}
 	}
 }

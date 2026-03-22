@@ -50,6 +50,7 @@ class MovieTranslation(Model):
 
 
 class SearchMovie(Model):
+	id: str
 	slug: str
 	name: str
 	description: str | None

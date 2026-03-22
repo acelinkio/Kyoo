@@ -21,6 +21,13 @@ class Request(Model, extra="allow"):
 		episodes: list[Guess.Episode]
 
 
+class CreateRequest(Model):
+	title: str
+	year: int | None
+	external_id: dict[str, str]
+	videos: list[Request.Video]
+
+
 class RequestRet(Model):
 	id: str
 	kind: Literal["episode", "movie"]

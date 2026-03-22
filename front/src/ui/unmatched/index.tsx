@@ -6,7 +6,7 @@ import Search from "@material-symbols/svg-400/rounded/search-fill.svg";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import { z } from "zod/v4";
+import type { z } from "zod/v4";
 import { ScanRequest, Video } from "~/models";
 import {
 	Button,
@@ -25,10 +25,11 @@ import {
 import {
 	InfiniteFetch,
 	type QueryIdentifier,
-	useFetch,
+	useInfiniteFetch,
 	useMutation,
 } from "~/query";
 import { cn, useQueryState } from "~/utils";
+import { EmptyView } from "../empty-view";
 
 type VideoT = z.infer<typeof Video>;
 
@@ -70,43 +71,51 @@ const VideoItem = ({
 	const episodes = item.guess.episodes;
 
 	return (
-		<Link
-			href={menuOpen ? undefined : `/watch/${item.id}`}
-			onLongPress={() => setMenuOpen(true)}
-			className="group flex-row"
-		>
-			<View className="w-20 items-center">
-				<IconButton
-					icon={Play}
-					iconClassName="fill-accent"
-					{...tooltip(t("show.play"), true)}
-				/>
-				<ScanStatusBadge status={scanStatus?.status ?? null} />
-			</View>
-			<View className="mr-4 flex-1">
-				<P className="wrap-anywhere flex-1 text-sm">{item.path}</P>
-				<View className="mt-1 flex-row flex-wrap items-center gap-2">
-					<SubP className="font-semibold">{item.guess.title}</SubP>
-					{item.guess.kind && (
-						<View className="rounded bg-card px-1.5 py-0.5">
-							<SubP className="text-xs">{item.guess.kind}</SubP>
+		<View className="group flex-row">
+			<Link
+				href={menuOpen ? undefined : `/watch/${item.id}`}
+				onLongPress={() => setMenuOpen(true)}
+				className="flex-1 flex-row"
+			>
+				<View className="w-20 items-center">
+					<IconButton
+						icon={Play}
+						iconClassName="fill-accent"
+						{...tooltip(t("show.play"), true)}
+					/>
+					<ScanStatusBadge status={scanStatus?.status ?? null} />
+				</View>
+				<View className="mr-4 flex-1">
+					<P className="wrap-anywhere flex-1 text-sm">{item.path}</P>
+					<View className="mt-1 flex-row flex-wrap items-center gap-2">
+						<SubP className="font-semibold">{item.guess.title}</SubP>
+						{item.guess.kind && (
+							<View className="rounded bg-card px-1.5 py-0.5">
+								<SubP className="text-xs">{item.guess.kind}</SubP>
+							</View>
+						)}
+						{episodes.length > 0 && (
+							<SubP className="font-semibold">
+								{episodes
+									.map((x) => `S${x.season ?? "?"}E${x.episode}`)
+									.join(", ")}
+							</SubP>
+						)}
+						{item.version > 1 && <SubP>v{item.version}</SubP>}
+					</View>
+					{scanStatus?.status === "failed" && scanStatus.error && (
+						<View className="mt-2 rounded bg-card p-2">
+							<SubP className="text-xs">{scanStatus.error.message}</SubP>
 						</View>
 					)}
-					{episodes.length > 0 && (
-						<SubP className="font-semibold">
-							{episodes
-								.map((x) => `S${x.season ?? "?"}E${x.episode}`)
-								.join(", ")}
-						</SubP>
-					)}
-					{item.version > 1 && <SubP>v{item.version}</SubP>}
 				</View>
-				{scanStatus?.status === "failed" && scanStatus.error && (
-					<View className="mt-2 rounded bg-card p-2">
-						<SubP className="text-xs">{scanStatus.error.message}</SubP>
-					</View>
-				)}
-			</View>
+			</Link>
+			<IconButton
+				icon={Search}
+				as={Link}
+				href={`/admin/match/${item.id}?q=${item.guess.title}`}
+				{...tooltip(t("admin.unmatched.match"))}
+			/>
 			<Menu
 				Trigger={IconButton}
 				icon={MoreVert}
@@ -115,12 +124,18 @@ const VideoItem = ({
 				{...tooltip(t("misc.more"))}
 			>
 				<Menu.Item
+					label={t("admin.unmatched.match")}
+					icon={Search}
+					href={`/admin/match/${item.id}?q=${item.guess.title}`}
+				/>
+				<HR />
+				<Menu.Item
 					label={t("home.episodeMore.mediainfo")}
 					icon={MovieInfo}
 					href={`/info/${item.id}`}
 				/>
 			</Menu>
-		</Link>
+		</View>
 	);
 };
 
@@ -224,7 +239,7 @@ export const UnmatchedPage = () => {
 	const { t } = useTranslation();
 	const [search, setSearch] = useQueryState("q", "");
 
-	const { data: scanData } = useFetch(UnmatchedPage.scanQuery());
+	const { items: scanData } = useInfiniteFetch(UnmatchedPage.scanQuery());
 	const scanMap = useMemo(() => {
 		if (!scanData) return new Map<string, ScanRequest>();
 		const map = new Map<string, ScanRequest>();
@@ -258,7 +273,7 @@ export const UnmatchedPage = () => {
 			)}
 			Loader={() => <VideoItem.Loader />}
 			Divider
-			Empty={<P className="self-center py-8">{t("admin.unmatched.empty")}</P>}
+			Empty={<EmptyView message={t("admin.unmatched.empty")} />}
 		/>
 	);
 };
@@ -273,10 +288,10 @@ UnmatchedPage.query = (search?: string): QueryIdentifier<VideoT> => ({
 	refetchInterval: 5000,
 });
 
-UnmatchedPage.scanQuery = (): QueryIdentifier<ScanRequest[]> => ({
-	parser: z.array(ScanRequest),
+UnmatchedPage.scanQuery = (): QueryIdentifier<ScanRequest> => ({
+	parser: ScanRequest,
 	path: ["scanner", "scan"],
-	infinite: false,
+	infinite: true,
 	refetchInterval: 5000,
 	options: {
 		returnError: true,

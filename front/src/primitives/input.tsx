@@ -3,12 +3,14 @@ import { TextInput, type TextInputProps, View } from "react-native";
 import { cn } from "~/utils";
 
 export const Input = ({
+	left,
 	right,
 	containerClassName,
 	ref,
 	className,
 	...props
 }: {
+	left?: ReactNode;
 	right?: ReactNode;
 	containerClassName?: string;
 	ref?: Ref<TextInput>;
@@ -21,6 +23,7 @@ export const Input = ({
 				containerClassName,
 			)}
 		>
+			{left}
 			<TextInput
 				ref={ref}
 				textAlignVertical="center"

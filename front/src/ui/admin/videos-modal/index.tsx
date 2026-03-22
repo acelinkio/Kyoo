@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { View } from "react-native";
 import { type Entry, type Episode, FullVideo, type Page } from "~/models";
-import { Modal, P } from "~/primitives";
+import { Modal } from "~/primitives";
 import {
 	InfiniteFetch,
 	type QueryIdentifier,
 	useFetch,
 	useMutation,
 } from "~/query";
+import { EmptyView } from "~/ui/empty-view";
 import { useQueryState } from "~/utils";
 import { Header } from "../../details/header";
 import { AddVideoFooter, VideoListHeader } from "./headers";
@@ -35,12 +35,12 @@ export const useEditLinks = (
 					for: entries.map((x) => {
 						if (x.slug) return { slug: x.slug };
 						const ep = x as Episode;
-						if (ep.seasonNumber === 0)
+						if (!ep.seasonNumber)
 							return { serie: slug, special: ep.episodeNumber };
 						return {
 							serie: slug,
 							season: ep.seasonNumber,
-							episoed: ep.episodeNumber,
+							episode: ep.episodeNumber,
 						};
 					}),
 				},
@@ -102,11 +102,7 @@ export const VideosModal = () => {
 					/>
 				)}
 				Loader={PathItem.Loader}
-				Empty={
-					<View className="flex-1">
-						<P className="flex-1 self-center">{t("videos-map.no-video")}</P>
-					</View>
-				}
+				Empty={<EmptyView message={t("videos-map.no-video")} />}
 				Footer={<AddVideoFooter addTitle={addTitle} />}
 			/>
 		</Modal>

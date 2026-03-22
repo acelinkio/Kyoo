@@ -1,12 +1,26 @@
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Security
+from fastapi import (
+	APIRouter,
+	BackgroundTasks,
+	Depends,
+	Request as HttpRequest,
+	Security,
+)
 
 from ..fsscan import create_scanner
 from ..identifiers.identify import identify
 from ..jwt import validate_bearer
-from ..models.request import RequestRet
+from ..models.movie import SearchMovie
+from ..models.page import Page
+from ..models.request import CreateRequest, Request, RequestRet
+from ..models.serie import SearchSerie
+from ..models.videos import Video
+from ..providers.composite import CompositeProvider
+from ..requests import RequestCreator
 from ..status import StatusService
+from ..utils import Language
+from .dependencies import get_preferred_languages, get_provider, get_request_creator
 
 router = APIRouter()
 
@@ -14,14 +28,16 @@ router = APIRouter()
 @router.get("/scan")
 async def get_scan_status(
 	svc: Annotated[StatusService, Depends(StatusService.create)],
+	request: HttpRequest,
 	_: Annotated[None, Security(validate_bearer, scopes=["scanner.trigger"])],
 	status: Literal["pending", "running", "failed"] | None = None,
-) -> list[RequestRet]:
+) -> Page[RequestRet]:
 	"""
 	Get scan status, know what tasks are running, pending or failed.
 	"""
 
-	return await svc.list_requests(status=status)
+	items = await svc.list_requests(status=status)
+	return Page(items=items, this_=str(request.url), next=None)
 
 
 @router.put(
@@ -52,9 +68,107 @@ async def trigger_scan(
 async def get_guess(
 	path: str,
 	_: Annotated[None, Security(validate_bearer, scopes=["scanner.guess"])],
-):
+) -> Video:
 	"""
 	Identify a video path and return a serie/movie guess.
 	"""
 
 	return await identify(path)
+
+
+@router.get(
+	"/movies",
+	status_code=200,
+	response_description="Found movies",
+)
+async def get_movies(
+	provider: Annotated[CompositeProvider, Depends(get_provider)],
+	language: Annotated[list[Language], Depends(get_preferred_languages)],
+	request: HttpRequest,
+	_: Annotated[None, Security(validate_bearer, scopes=["scanner.search"])],
+	query: str,
+	year: int | None = None,
+) -> Page[SearchMovie]:
+	"""
+	Search for a movie
+	"""
+
+	items = await provider.search_movies(query, year=year, language=language)
+	return Page(items=items, this_=str(request.url), next=None)
+
+
+@router.get(
+	"/series",
+	status_code=200,
+	response_description="Found series",
+)
+async def get_series(
+	provider: Annotated[CompositeProvider, Depends(get_provider)],
+	language: Annotated[list[Language], Depends(get_preferred_languages)],
+	request: HttpRequest,
+	_: Annotated[None, Security(validate_bearer, scopes=["scanner.search"])],
+	query: str,
+	year: int | None = None,
+) -> Page[SearchSerie]:
+	"""
+	Search for a serie
+	"""
+
+	items = await provider.search_series(query, year=year, language=language)
+	return Page(items=items, this_=str(request.url), next=None)
+
+
+@router.post(
+	"/movies",
+	status_code=201,
+	response_description="Movie metadata request created.",
+)
+async def create_movie(
+	body: CreateRequest,
+	requests: Annotated[RequestCreator, Depends(get_request_creator)],
+	_: Annotated[None, Security(validate_bearer, scopes=["scanner.add"])],
+) -> RequestRet:
+	"""
+	Create a movie metadata request.
+	"""
+
+	[ret] = await requests.enqueue(
+		[
+			Request(
+				kind="movie",
+				title=body.title,
+				year=body.year,
+				external_id=body.external_id,
+				videos=body.videos,
+			)
+		]
+	)
+	return ret
+
+
+@router.post(
+	"/series",
+	status_code=201,
+	response_description="Series metadata request created.",
+)
+async def create_serie(
+	body: CreateRequest,
+	requests: Annotated[RequestCreator, Depends(get_request_creator)],
+	_: Annotated[None, Security(validate_bearer, scopes=["scanner.add"])],
+) -> RequestRet:
+	"""
+	Create a series metadata request.
+	"""
+
+	[ret] = await requests.enqueue(
+		[
+			Request(
+				kind="episode",
+				title=body.title,
+				year=body.year,
+				external_id=body.external_id,
+				videos=body.videos,
+			)
+		]
+	)
+	return ret

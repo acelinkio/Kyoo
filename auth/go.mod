@@ -1,8 +1,6 @@
 module github.com/zoriya/kyoo/keibi
 
-go 1.25.0
-
-toolchain go1.26.0
+go 1.26.0
 
 require (
 	github.com/alexedwards/argon2id v1.0.0
@@ -81,6 +79,7 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/mileusna/useragent v1.3.5
 	github.com/swaggo/files/v2 v2.0.2 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.42.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.42.0

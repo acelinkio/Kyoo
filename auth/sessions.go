@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/alexedwards/argon2id"
@@ -12,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v5"
+	"github.com/mileusna/useragent"
 	"github.com/zoriya/kyoo/keibi/dbc"
 )
 
@@ -32,23 +34,30 @@ type SessionWToken struct {
 }
 
 func MapSession(ses *dbc.Session) Session {
+	dev := ses.Device
+	if ses.Device != nil {
+		ua := useragent.Parse(*ses.Device)
+		uae := ([]string{ua.Name})
+		if ua.Device != "" {
+			uae = append(uae, ua.Device)
+		}
+		if ua.OS != "" {
+			uae = append(uae, ua.OS)
+		}
+		dev = new(strings.Join(uae, " - "))
+	}
 	return Session{
 		Id:          ses.Id,
 		CreatedDate: ses.CreatedDate,
 		LastUsed:    ses.LastUsed,
-		Device:      ses.Device,
+		Device:      dev,
 	}
 }
 
 func MapSessionToken(ses *dbc.Session) SessionWToken {
 	return SessionWToken{
-		Session: Session{
-			Id:          ses.Id,
-			CreatedDate: ses.CreatedDate,
-			LastUsed:    ses.LastUsed,
-			Device:      ses.Device,
-		},
-		Token: ses.Token,
+		Session: MapSession(ses),
+		Token:   ses.Token,
 	}
 }
 
@@ -126,6 +135,87 @@ func (h *Handler) createSession(c *echo.Context, user *User) error {
 		return err
 	}
 	return c.JSON(201, MapSessionToken(&session))
+}
+
+// @Summary      List my sessions
+// @Description  List all active sessions for the currently connected user
+// @Tags         sessions
+// @Produce      json
+// @Security     Jwt
+// @Success      200  {array}   Session
+// @Failure      401  {object}  KError "Missing jwt token"
+// @Failure      403  {object}  KError "Invalid jwt token (or expired)"
+// @Router /sessions [get]
+func (h *Handler) ListMySessions(c *echo.Context) error {
+	ctx := c.Request().Context()
+	uid, err := GetCurrentUserId(c)
+	if err != nil {
+		return err
+	}
+
+	users, err := h.db.GetUser(ctx, dbc.GetUserParams{
+		UseId: true,
+		Id:    uid,
+	})
+	if err != nil {
+		return err
+	}
+
+	dbSessions, err := h.db.GetUserSessions(ctx, users[0].User.Pk)
+	if err != nil {
+		return err
+	}
+
+	ret := make([]Session, 0, len(dbSessions))
+	for _, ses := range dbSessions {
+		ret = append(ret, MapSession(&ses))
+	}
+
+	return c.JSON(http.StatusOK, ret)
+}
+
+// @Summary      List user sessions
+// @Description  List all active sessions for a user. Listing someone else's sessions requires users.read.
+// @Tags         sessions
+// @Produce      json
+// @Security     Jwt
+// @Param        id   path      string    true  "The id or username of the user"  Example(e05089d6-9179-4b5b-a63e-94dd5fc2a397)
+// @Success      200  {array}   Session
+// @Failure      401  {object}  KError "Missing jwt token"
+// @Failure      403  {object}  KError "Missing permissions: users.read."
+// @Failure      404  {object}  KError "No user found with id or username"
+// @Router /users/{id}/sessions [get]
+func (h *Handler) ListUserSessions(c *echo.Context) error {
+	ctx := c.Request().Context()
+	if err := CheckPermissions(c, []string{"users.read"}); err != nil {
+		return err
+	}
+
+	id := c.Param("id")
+	uid, err := uuid.Parse(id)
+	users, err := h.db.GetUser(ctx, dbc.GetUserParams{
+		UseId:    err == nil,
+		Id:       uid,
+		Username: id,
+	})
+	if err != nil {
+		return err
+	}
+	if len(users) == 0 {
+		return echo.NewHTTPError(http.StatusNotFound, "No user found with id or username")
+	}
+
+	dbSessions, err := h.db.GetUserSessions(ctx, users[0].User.Pk)
+	if err != nil {
+		return err
+	}
+
+	ret := make([]Session, 0, len(dbSessions))
+	for _, ses := range dbSessions {
+		ret = append(ret, MapSession(&ses))
+	}
+
+	return c.JSON(http.StatusOK, ret)
 }
 
 // @Summary      Logout

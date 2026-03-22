@@ -346,8 +346,10 @@ func main() {
 	g.POST("/users", h.Register)
 
 	g.POST("/sessions", h.Login)
+	r.GET("/sessions", h.ListMySessions)
 	r.DELETE("/sessions", h.Logout)
 	r.DELETE("/sessions/:id", h.Logout)
+	r.GET("/users/:id/sessions", h.ListUserSessions)
 
 	r.GET("/keys", h.ListApiKey)
 	r.POST("/keys", h.CreateApiKey)

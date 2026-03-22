@@ -11,11 +11,14 @@ export const Tabs = <T,>({
 	disabled,
 	...props
 }: {
-	tabs: {
-		label: string;
-		value: T;
-		icon: IconType;
-	}[];
+	tabs: (
+		| {
+				label: string;
+				value: T;
+				icon: IconType;
+		  }
+		| Falsy
+	)[];
 	value: string;
 	setValue: (value: T) => void;
 	className?: string;

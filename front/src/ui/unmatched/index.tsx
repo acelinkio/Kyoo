@@ -71,43 +71,51 @@ const VideoItem = ({
 	const episodes = item.guess.episodes;
 
 	return (
-		<Link
-			href={menuOpen ? undefined : `/watch/${item.id}`}
-			onLongPress={() => setMenuOpen(true)}
-			className="group flex-row"
-		>
-			<View className="w-20 items-center">
-				<IconButton
-					icon={Play}
-					iconClassName="fill-accent"
-					{...tooltip(t("show.play"), true)}
-				/>
-				<ScanStatusBadge status={scanStatus?.status ?? null} />
-			</View>
-			<View className="mr-4 flex-1">
-				<P className="wrap-anywhere flex-1 text-sm">{item.path}</P>
-				<View className="mt-1 flex-row flex-wrap items-center gap-2">
-					<SubP className="font-semibold">{item.guess.title}</SubP>
-					{item.guess.kind && (
-						<View className="rounded bg-card px-1.5 py-0.5">
-							<SubP className="text-xs">{item.guess.kind}</SubP>
+		<View className="group flex-row">
+			<Link
+				href={menuOpen ? undefined : `/watch/${item.id}`}
+				onLongPress={() => setMenuOpen(true)}
+				className="flex-1 flex-row"
+			>
+				<View className="w-20 items-center">
+					<IconButton
+						icon={Play}
+						iconClassName="fill-accent"
+						{...tooltip(t("show.play"), true)}
+					/>
+					<ScanStatusBadge status={scanStatus?.status ?? null} />
+				</View>
+				<View className="mr-4 flex-1">
+					<P className="wrap-anywhere flex-1 text-sm">{item.path}</P>
+					<View className="mt-1 flex-row flex-wrap items-center gap-2">
+						<SubP className="font-semibold">{item.guess.title}</SubP>
+						{item.guess.kind && (
+							<View className="rounded bg-card px-1.5 py-0.5">
+								<SubP className="text-xs">{item.guess.kind}</SubP>
+							</View>
+						)}
+						{episodes.length > 0 && (
+							<SubP className="font-semibold">
+								{episodes
+									.map((x) => `S${x.season ?? "?"}E${x.episode}`)
+									.join(", ")}
+							</SubP>
+						)}
+						{item.version > 1 && <SubP>v{item.version}</SubP>}
+					</View>
+					{scanStatus?.status === "failed" && scanStatus.error && (
+						<View className="mt-2 rounded bg-card p-2">
+							<SubP className="text-xs">{scanStatus.error.message}</SubP>
 						</View>
 					)}
-					{episodes.length > 0 && (
-						<SubP className="font-semibold">
-							{episodes
-								.map((x) => `S${x.season ?? "?"}E${x.episode}`)
-								.join(", ")}
-						</SubP>
-					)}
-					{item.version > 1 && <SubP>v{item.version}</SubP>}
 				</View>
-				{scanStatus?.status === "failed" && scanStatus.error && (
-					<View className="mt-2 rounded bg-card p-2">
-						<SubP className="text-xs">{scanStatus.error.message}</SubP>
-					</View>
-				)}
-			</View>
+			</Link>
+			<IconButton
+				icon={Search}
+				as={Link}
+				href={`/admin/match/${item.id}?q=${item.guess.title}`}
+				{...tooltip(t("admin.unmatched.match"))}
+			/>
 			<Menu
 				Trigger={IconButton}
 				icon={MoreVert}
@@ -116,12 +124,18 @@ const VideoItem = ({
 				{...tooltip(t("misc.more"))}
 			>
 				<Menu.Item
+					label={t("admin.unmatched.match")}
+					icon={Search}
+					href={`/admin/match/${item.id}?q=${item.guess.title}`}
+				/>
+				<HR />
+				<Menu.Item
 					label={t("home.episodeMore.mediainfo")}
 					icon={MovieInfo}
 					href={`/info/${item.id}`}
 				/>
 			</Menu>
-		</Link>
+		</View>
 	);
 };
 

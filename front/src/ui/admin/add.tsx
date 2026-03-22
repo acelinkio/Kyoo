@@ -1,16 +1,18 @@
-import Add from "@material-symbols/svg-400/rounded/add.svg";
-import MovieIcon from "@material-symbols/svg-400/rounded/movie.svg";
-import OpenInNew from "@material-symbols/svg-400/rounded/open_in_new.svg";
+import Add from "@material-symbols/svg-400/rounded/add-fill.svg";
+import MovieIcon from "@material-symbols/svg-400/rounded/movie-fill.svg";
+import OpenInNew from "@material-symbols/svg-400/rounded/open_in_new-fill.svg";
 import SearchIcon from "@material-symbols/svg-400/rounded/search-fill.svg";
-import TVIcon from "@material-symbols/svg-400/rounded/tv.svg";
+import TVIcon from "@material-symbols/svg-400/rounded/tv-fill.svg";
+import Library from "@material-symbols/svg-400/rounded/video_library-fill.svg";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, View } from "react-native";
-import type { Metadata } from "~/models";
-import { SearchMovie, SearchSerie } from "~/models";
+import { Pressable, View } from "react-native";
+import { type KImage, SearchMovie, SearchSerie, Show } from "~/models";
 import {
+	CircularProgress,
 	HR,
+	type Icon,
 	IconButton,
 	Input,
 	Link,
@@ -26,45 +28,18 @@ import { InfiniteFetch, type QueryIdentifier, useMutation } from "~/query";
 import { cn, getDisplayDate, useQueryState } from "~/utils";
 import { EmptyView } from "../empty-view";
 
-const ExternalIdLinks = ({ externalId }: { externalId: Metadata }) => {
-	const links = Object.entries(externalId).flatMap(([provider, ids]) =>
-		ids
-			.filter((x) => x.link)
-			.map((x) => ({ provider, link: x.link!, label: x.label })),
-	);
-
-	if (links.length === 0) return null;
-
-	return (
-		<View className="absolute top-1 right-1 flex-row gap-1">
-			{links.map(({ provider, link, label }) => (
-				<IconButton
-					key={`${provider}-${link}`}
-					icon={OpenInNew}
-					as={Link}
-					href={link}
-					target="_blank"
-					className="bg-gray-800/70 hover:bg-gray-800 focus:bg-gray-800"
-					iconClassName="h-5 w-5 fill-slate-200 dark:fill-slate-200"
-					{...tooltip(label ?? provider)}
-				/>
-			))}
-		</View>
-	);
-};
-
 const SearchResultItem = ({
 	name,
 	subtitle,
 	poster,
-	externalId,
+	externalHref,
 	onSelect,
 	isPending,
 }: {
 	name: string;
 	subtitle: string | null;
-	poster: string | null;
-	externalId: Metadata;
+	poster: KImage | null;
+	externalHref: string | null;
 	onSelect: () => void;
 	isPending: boolean;
 }) => {
@@ -75,18 +50,7 @@ const SearchResultItem = ({
 			className="group items-center p-1 outline-0"
 		>
 			<PosterBackground
-				src={
-					poster
-						? {
-								id: poster,
-								source: poster,
-								blurhash: "",
-								low: poster,
-								medium: poster,
-								high: poster,
-							}
-						: null
-				}
+				src={poster}
 				quality="medium"
 				className={cn(
 					"w-full",
@@ -95,10 +59,19 @@ const SearchResultItem = ({
 			>
 				{isPending && (
 					<View className="absolute inset-0 items-center justify-center bg-black/50">
-						<ActivityIndicator size="large" />
+						<CircularProgress />
 					</View>
 				)}
-				<ExternalIdLinks externalId={externalId} />
+				{externalHref && (
+					<IconButton
+						icon={OpenInNew}
+						as={Link}
+						href={externalHref}
+						target="_blank"
+						className="absolute top-1 right-1 bg-gray-800/70 hover:bg-gray-800 focus:bg-gray-800"
+						iconClassName="h-5 w-5 fill-slate-200 dark:fill-slate-200"
+					/>
+				)}
 			</PosterBackground>
 			<P
 				numberOfLines={subtitle ? 1 : 2}
@@ -128,11 +101,13 @@ const AddHeader = ({
 	setQuery,
 	kind,
 	setKind,
+	allowLibrary,
 }: {
 	query: string;
 	setQuery: (q: string) => void;
-	kind: "movie" | "serie";
-	setKind: (k: "movie" | "serie") => void;
+	kind: "library" | "movie" | "serie";
+	setKind: (k: "library" | "movie" | "serie") => void;
+	allowLibrary: boolean;
 }) => {
 	const { t } = useTranslation();
 
@@ -152,6 +127,11 @@ const AddHeader = ({
 					value={kind}
 					setValue={setKind}
 					tabs={[
+						allowLibrary && {
+							icon: Library,
+							label: t("admin.add.library"),
+							value: "library",
+						},
 						{
 							icon: MovieIcon,
 							label: t("admin.add.movies"),
@@ -170,16 +150,33 @@ const AddHeader = ({
 	);
 };
 
-export const AddPage = () => {
+export const AddPage = ({
+	title,
+	icon,
+	allowLibrary,
+	videos = [],
+}: {
+	title?: string;
+	icon?: Icon;
+	allowLibrary: boolean;
+	videos: {
+		id: string;
+		episodes: { season: number | null; episode: number }[];
+	}[];
+}) => {
 	const { t } = useTranslation();
 	const router = useRouter();
 	const [query, setQuery] = useQueryState("q", "");
-	const [kind, setKind] = useQueryState<"movie" | "serie">("kind", "movie");
+	const [kind, setKind] = useQueryState<"movie" | "serie" | "library">(
+		"kind",
+		allowLibrary ? "library" : "movie",
+	);
+	const [selected, setSelected] = useState<string | null>(null);
 
-	const { mutateAsync, isPending } = useMutation<SearchMovie | SearchSerie>({
+	const addShow = useMutation({
 		method: "POST",
 		path: ["scanner", kind === "movie" ? "movies" : "series"],
-		compute: (item) => ({
+		compute: (item: SearchMovie | SearchSerie) => ({
 			body: {
 				title: item.name,
 				year:
@@ -189,20 +186,43 @@ export const AddPage = () => {
 				externalId: Object.fromEntries(
 					Object.entries(item.externalId).map(([k, v]) => [k, v[0].dataId]),
 				),
-				videos: [],
+				videos: videos,
 			},
 		}),
 		invalidate: null,
 	});
+	const matchExisting = useMutation({
+		method: "PUT",
+		path: ["api", "videos", "link"],
+		compute: (item: Show) => ({
+			body: videos.map((x) => ({
+				id: x.id,
+				for:
+					item.kind === "serie"
+						? x.episodes.map((ep) => {
+								if (!ep.season)
+									return { serie: item.slug, special: ep.episode };
+								return {
+									serie: item.slug,
+									season: ep.season,
+									episode: ep.episode,
+								};
+							})
+						: [{ movie: item.slug }],
+			})),
+		}),
+		invalidate: ["api", "videos", "unmatched"],
+	});
 
-	if (query.length === 0) {
+	if (kind !== "library" && query.length === 0) {
 		return (
-			<Modal icon={Add} title={t("admin.add.title")}>
+			<Modal icon={icon ?? Add} title={title ?? t("admin.add.title")}>
 				<AddHeader
 					query={query}
 					setQuery={setQuery}
 					kind={kind}
 					setKind={setKind}
+					allowLibrary={allowLibrary}
 				/>
 				<P className="self-center py-8 text-center">
 					{t("admin.add.typeToSearch")}
@@ -212,7 +232,11 @@ export const AddPage = () => {
 	}
 
 	return (
-		<Modal icon={Add} title={t("admin.add.title")} scroll={false}>
+		<Modal
+			icon={icon ?? Add}
+			title={title ?? t("admin.add.title")}
+			scroll={false}
+		>
 			<InfiniteFetch
 				layout={{
 					layout: "grid",
@@ -220,13 +244,20 @@ export const AddPage = () => {
 					numColumns: { xs: 2, sm: 3, md: 4 },
 					size: 200,
 				}}
-				query={AddPage.query(kind, query)}
+				query={
+					(kind === "library"
+						? AddPage.libraryQuery(query)
+						: AddPage.query(kind, query)) as QueryIdentifier<
+						SearchMovie | SearchSerie | Show
+					>
+				}
 				Header={
 					<AddHeader
 						query={query}
 						setQuery={setQuery}
 						kind={kind}
 						setKind={setKind}
+						allowLibrary={allowLibrary}
 					/>
 				}
 				Empty={<EmptyView message={t("admin.add.noResults")} />}
@@ -234,13 +265,34 @@ export const AddPage = () => {
 					<SearchResultItem
 						name={item.name}
 						subtitle={getDisplayDate(item)}
-						poster={item.poster}
-						externalId={item.externalId}
+						poster={
+							typeof item.poster === "string"
+								? {
+										id: item.poster,
+										source: item.poster,
+										blurhash: "",
+										low: item.poster,
+										medium: item.poster,
+										high: item.poster,
+									}
+								: item.poster
+						}
+						externalHref={
+							item.kind.startsWith("search")
+								? Object.values(item.externalId)
+										.flatMap((ids) => ids.map((x) => x.link))
+										.filter((x) => x)[0]
+								: null
+						}
 						onSelect={async () => {
-							await mutateAsync(item);
+							setSelected(item.id);
+							if (item.kind.startsWith("search"))
+								await addShow.mutateAsync(item as SearchMovie | SearchSerie);
+							else await matchExisting.mutateAsync(item as Show);
+							setSelected(null);
 							if (router.canGoBack()) router.back();
 						}}
-						isPending={isPending}
+						isPending={selected === item.id}
 					/>
 				)}
 				Loader={SearchResultItem.Loader}
@@ -260,4 +312,13 @@ AddPage.query = (
 	},
 	infinite: true,
 	enabled: query.length > 0,
+});
+
+AddPage.libraryQuery = (query: string): QueryIdentifier<Show> => ({
+	parser: Show,
+	path: ["api", "shows"],
+	params: {
+		query: query,
+	},
+	infinite: true,
 });

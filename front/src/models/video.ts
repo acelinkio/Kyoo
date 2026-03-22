@@ -33,6 +33,7 @@ export const Video = z.object({
 	createdAt: zdate(),
 	updatedAt: zdate(),
 });
+export type Video = z.infer<typeof Video>;
 
 export const FullVideo = Video.extend({
 	entries: z.array(

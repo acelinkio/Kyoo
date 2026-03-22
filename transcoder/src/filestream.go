@@ -118,9 +118,10 @@ func (fs *FileStream) GetMaster(client string) string {
 	// codec is the prefix + the level, the level is not part of the codec we want to compare for the same_codec check bellow
 	transcode_prefix := "avc1.6400"
 	transcode_codec := transcode_prefix + "28"
-	audio_codec := "mp4a.40.2"
+	transcode_audio_codec := "mp4a.40.2"
 
 	var def_video *Video
+	var def_audio *Audio
 	for _, video := range fs.Info.Videos {
 		if video.IsDefault {
 			def_video = &video
@@ -129,6 +130,9 @@ func (fs *FileStream) GetMaster(client string) string {
 	}
 	if def_video == nil && len(fs.Info.Videos) > 0 {
 		def_video = &fs.Info.Videos[0]
+	}
+	if len(fs.Info.Audios) > 0 {
+		def_audio = &fs.Info.Audios[0]
 	}
 
 	if def_video != nil {
@@ -170,29 +174,34 @@ func (fs *FileStream) GetMaster(client string) string {
 		aspectRatio := float32(def_video.Width) / float32(def_video.Height)
 		for i, quality := range qualities {
 			if i >= transcode_count {
-				// original & noresize streams
-				bitrate := float64(def_video.Bitrate)
-				master += "#EXT-X-STREAM-INF:"
-				master += fmt.Sprintf("AVERAGE-BANDWIDTH=%d,", int(math.Min(bitrate*0.8, float64(def_video.Quality().AverageBitrate()))))
-				master += fmt.Sprintf("BANDWIDTH=%d,", int(math.Min(bitrate, float64(def_video.Quality().MaxBitrate()))))
-				master += fmt.Sprintf("RESOLUTION=%dx%d,", def_video.Width, def_video.Height)
-				if quality != Original {
-					master += fmt.Sprintf("CODECS=\"%s\",", strings.Join([]string{transcode_codec, audio_codec}, ","))
-				} else if def_video.MimeCodec != nil {
-					master += fmt.Sprintf("CODECS=\"%s\",", strings.Join([]string{*def_video.MimeCodec, audio_codec}, ","))
+				for _, audio_quality := range []AudioQuality{AOriginal, matchAudioQuality(def_video.Quality())} {
+					// original & noresize streams
+					bitrate := float64(def_video.Bitrate)
+					master += "#EXT-X-STREAM-INF:"
+					master += fmt.Sprintf("AVERAGE-BANDWIDTH=%d,", int(math.Min(bitrate*0.8, float64(def_video.Quality().AverageBitrate()))))
+					master += fmt.Sprintf("BANDWIDTH=%d,", int(math.Min(bitrate, float64(def_video.Quality().MaxBitrate()))))
+					master += fmt.Sprintf("RESOLUTION=%dx%d,", def_video.Width, def_video.Height)
+					var audio_codec = transcode_audio_codec
+					if def_audio != nil && audio_quality == AOriginal {
+						audio_codec = *def_audio.MimeCodec
+					}
+					if quality != Original {
+						master += fmt.Sprintf("CODECS=\"%s\",", strings.Join([]string{transcode_codec, audio_codec}, ","))
+					} else if def_video.MimeCodec != nil {
+						master += fmt.Sprintf("CODECS=\"%s\",", strings.Join([]string{*def_video.MimeCodec, audio_codec}, ","))
+					}
+					master += fmt.Sprintf("AUDIO=\"audio-%s\",", string(audio_quality))
+					master += "CLOSED-CAPTIONS=NONE\n"
+					master += fmt.Sprintf("%d/%s/index.m3u8?clientId=%s\n", def_video.Index, quality, client)
 				}
-				master += fmt.Sprintf("AUDIO=\"audio-%s\",", string(matchAudioQuality(quality)))
-				master += "CLOSED-CAPTIONS=NONE\n"
-				master += fmt.Sprintf("%d/%s/index.m3u8?clientId=%s\n", def_video.Index, quality, client)
 				continue
 			}
 
-			// TODO: Add another w/ transcoded audio
 			master += "#EXT-X-STREAM-INF:"
 			master += fmt.Sprintf("AVERAGE-BANDWIDTH=%d,", quality.AverageBitrate())
 			master += fmt.Sprintf("BANDWIDTH=%d,", quality.MaxBitrate())
 			master += fmt.Sprintf("RESOLUTION=%dx%d,", int(aspectRatio*float32(quality.Height())+0.5), quality.Height())
-			master += fmt.Sprintf("CODECS=\"%s\",", strings.Join([]string{transcode_codec, audio_codec}, ","))
+			master += fmt.Sprintf("CODECS=\"%s\",", strings.Join([]string{transcode_codec, transcode_audio_codec}, ","))
 			master += fmt.Sprintf("AUDIO=\"audio-%s\",", string(matchAudioQuality(quality)))
 			master += "CLOSED-CAPTIONS=NONE\n"
 			master += fmt.Sprintf("%d/%s/index.m3u8?clientId=%s\n", def_video.Index, quality, client)

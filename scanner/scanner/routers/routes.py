@@ -6,13 +6,14 @@ from ..fsscan import create_scanner
 from ..identifiers.identify import identify
 from ..jwt import validate_bearer
 from ..models.movie import SearchMovie
-from ..models.request import RequestRet
+from ..models.request import CreateRequest, Request, RequestRet
 from ..models.serie import SearchSerie
 from ..models.videos import Video
 from ..providers.composite import CompositeProvider
+from ..requests import RequestCreator
 from ..status import StatusService
 from ..utils import Language
-from .dependencies import get_preferred_languages, get_provider
+from .dependencies import get_preferred_languages, get_provider, get_request_creator
 
 router = APIRouter()
 
@@ -102,3 +103,59 @@ async def get_series(
 	"""
 
 	return await provider.search_series(query, year=year, language=language)
+
+
+@router.post(
+	"/movies",
+	status_code=201,
+	response_description="Movie metadata request created.",
+)
+async def create_movie(
+	body: CreateRequest,
+	requests: Annotated[RequestCreator, Depends(get_request_creator)],
+	_: Annotated[None, Security(validate_bearer, scopes=["scanner.add"])],
+) -> RequestRet:
+	"""
+	Create a movie metadata request.
+	"""
+
+	[ret] = await requests.enqueue(
+		[
+			Request(
+				kind="movie",
+				title=body.title,
+				year=body.year,
+				external_id=body.external_id,
+				videos=body.videos,
+			)
+		]
+	)
+	return ret
+
+
+@router.post(
+	"/series",
+	status_code=201,
+	response_description="Series metadata request created.",
+)
+async def create_serie(
+	body: CreateRequest,
+	requests: Annotated[RequestCreator, Depends(get_request_creator)],
+	_: Annotated[None, Security(validate_bearer, scopes=["scanner.add"])],
+) -> RequestRet:
+	"""
+	Create a series metadata request.
+	"""
+
+	[ret] = await requests.enqueue(
+		[
+			Request(
+				kind="episode",
+				title=body.title,
+				year=body.year,
+				external_id=body.external_id,
+				videos=body.videos,
+			)
+		]
+	)
+	return ret

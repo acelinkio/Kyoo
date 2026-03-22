@@ -3,11 +3,18 @@ from typing import Annotated
 from fastapi import Header, Request
 from langcodes import Language
 
+from ..database import get_db
 from ..providers.composite import CompositeProvider
+from ..requests import RequestCreator
 
 
 def get_provider(request: Request) -> CompositeProvider:
 	return request.app.state.provider
+
+
+async def get_request_creator():
+	async with get_db() as db:
+		yield RequestCreator(db)
 
 
 def get_preferred_languages(

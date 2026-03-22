@@ -111,7 +111,7 @@ class TheMovieDatabase(Provider):
 				params={
 					"query": title,
 					"year": year,
-					"languages": [str(x) for x in language],
+					"language": next((str(x) for x in language), None),
 				},
 			)
 		)["results"]
@@ -245,7 +245,7 @@ class TheMovieDatabase(Provider):
 				params={
 					"query": title,
 					"year": year,
-					"languages": [str(x) for x in language],
+					"language": next((str(x) for x in language), None),
 				},
 			)
 		)["results"]

@@ -172,8 +172,22 @@ class TVDB(Provider):
 		return [
 			SearchSerie(
 				slug=x["slug"],
-				name=x["name"],
-				description=x.get("overview"),
+				name=next(
+					(
+						x["translations"][lang.to_alpha3()]
+						for lang in language
+						if "translations" in x and lang.to_alpha3() in x["translations"]
+					),
+					x["name"],
+				),
+				description=next(
+					(
+						x["overviews"][lang.to_alpha3()]
+						for lang in language
+						if "overviews" in x and lang.to_alpha3() in x["overviews"]
+					),
+					x.get("overview"),
+				),
 				start_air=datetime.strptime(x["first_air_time"], "%Y-%m-%d").date()
 				if x.get("first_air_time")
 				else None,

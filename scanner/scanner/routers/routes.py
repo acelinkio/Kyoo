@@ -5,8 +5,14 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Security
 from ..fsscan import create_scanner
 from ..identifiers.identify import identify
 from ..jwt import validate_bearer
+from ..models.movie import SearchMovie
 from ..models.request import RequestRet
+from ..models.serie import SearchSerie
+from ..models.videos import Video
+from ..providers.composite import CompositeProvider
 from ..status import StatusService
+from ..utils import Language
+from .dependencies import get_preferred_languages, get_provider
 
 router = APIRouter()
 
@@ -52,9 +58,47 @@ async def trigger_scan(
 async def get_guess(
 	path: str,
 	_: Annotated[None, Security(validate_bearer, scopes=["scanner.guess"])],
-):
+) -> Video:
 	"""
 	Identify a video path and return a serie/movie guess.
 	"""
 
 	return await identify(path)
+
+
+@router.get(
+	"/movies",
+	status_code=200,
+	response_description="Found movies",
+)
+async def get_movies(
+	provider: Annotated[CompositeProvider, Depends(get_provider)],
+	language: Annotated[list[Language], Depends(get_preferred_languages)],
+	_: Annotated[None, Security(validate_bearer, scopes=["scanner.search"])],
+	query: str,
+	year: int | None = None,
+) -> list[SearchMovie]:
+	"""
+	Search for a movie
+	"""
+
+	return await provider.search_movies(query, year=year, language=language)
+
+
+@router.get(
+	"/series",
+	status_code=200,
+	response_description="Found series",
+)
+async def get_series(
+	provider: Annotated[CompositeProvider, Depends(get_provider)],
+	language: Annotated[list[Language], Depends(get_preferred_languages)],
+	_: Annotated[None, Security(validate_bearer, scopes=["scanner.search"])],
+	query: str,
+	year: int | None = None,
+) -> list[SearchSerie]:
+	"""
+	Search for a serie
+	"""
+
+	return await provider.search_series(query, year=year, language=language)

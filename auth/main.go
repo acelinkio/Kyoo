@@ -348,9 +348,13 @@ func main() {
 	g.POST("/users", h.Register)
 
 	g.POST("/sessions", h.Login)
+	g.GET("/oidc/login/:provider", h.OidcLogin)
+	g.GET("/oidc/logged/:provider", h.OidcLogged)
+	g.GET("/oidc/callback/:provider", h.OidcCallback)
 	r.GET("/sessions", h.ListMySessions)
 	r.DELETE("/sessions", h.Logout)
 	r.DELETE("/sessions/:id", h.Logout)
+	r.DELETE("/oidc/login/:provider", h.OidcUnlink)
 	r.GET("/users/:id/sessions", h.ListUserSessions)
 
 	r.GET("/keys", h.ListApiKey)
@@ -361,6 +365,8 @@ func main() {
 	g.Any("/jwt/*", h.CreateJwt)
 	e.GET("/.well-known/jwks.json", h.GetJwks)
 	e.GET("/.well-known/openid-configuration", h.GetOidcConfig)
+
+	g.GET("/info", h.Info)
 
 	g.GET("/swagger/*", echoSwagger.WrapHandler)
 

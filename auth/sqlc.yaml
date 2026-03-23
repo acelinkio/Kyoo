@@ -47,3 +47,4 @@ overrides:
       keibi_oidc_handle: OidcHandle
       keibi_session: Session
       keibi_user: User
+      keibi_oidc_login: OidcLogin

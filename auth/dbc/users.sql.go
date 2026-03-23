@@ -7,6 +7,7 @@ package dbc
 
 import (
 	"context"
+	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -55,6 +56,23 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.LastSeen,
 	)
 	return i, err
+}
+
+const deleteOidcHandle = `-- name: DeleteOidcHandle :exec
+delete from keibi.oidc_handle
+where
+	user_pk = $1
+	and provider = $2
+`
+
+type DeleteOidcHandleParams struct {
+	UserPk   int32  `json:"userPk"`
+	Provider string `json:"provider"`
+}
+
+func (q *Queries) DeleteOidcHandle(ctx context.Context, arg DeleteOidcHandleParams) error {
+	_, err := q.db.Exec(ctx, deleteOidcHandle, arg.UserPk, arg.Provider)
+	return err
 }
 
 const deleteUser = `-- name: DeleteUser :one
@@ -228,6 +246,32 @@ func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) ([]GetUserRow,
 	return items, nil
 }
 
+const getUserByEmail = `-- name: GetUserByEmail :one
+select
+	pk, id, username, email, password, claims, created_date, last_seen
+from
+	keibi.users
+where
+	email = $1
+limit 1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.Pk,
+		&i.Id,
+		&i.Username,
+		&i.Email,
+		&i.Password,
+		&i.Claims,
+		&i.CreatedDate,
+		&i.LastSeen,
+	)
+	return i, err
+}
+
 const getUserByLogin = `-- name: GetUserByLogin :one
 select
 	pk, id, username, email, password, claims, created_date, last_seen
@@ -241,6 +285,39 @@ limit 1
 
 func (q *Queries) GetUserByLogin(ctx context.Context, login string) (User, error) {
 	row := q.db.QueryRow(ctx, getUserByLogin, login)
+	var i User
+	err := row.Scan(
+		&i.Pk,
+		&i.Id,
+		&i.Username,
+		&i.Email,
+		&i.Password,
+		&i.Claims,
+		&i.CreatedDate,
+		&i.LastSeen,
+	)
+	return i, err
+}
+
+const getUserByOidc = `-- name: GetUserByOidc :one
+select
+	u.pk, u.id, u.username, u.email, u.password, u.claims, u.created_date, u.last_seen
+from
+	keibi.users as u
+	inner join keibi.oidc_handle as h on u.pk = h.user_pk
+where
+	h.provider = $1
+	and h.id = $2
+limit 1
+`
+
+type GetUserByOidcParams struct {
+	Provider string `json:"provider"`
+	Id       string `json:"id"`
+}
+
+func (q *Queries) GetUserByOidc(ctx context.Context, arg GetUserByOidcParams) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByOidc, arg.Provider, arg.Id)
 	var i User
 	err := row.Scan(
 		&i.Pk,
@@ -311,4 +388,42 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.LastSeen,
 	)
 	return i, err
+}
+
+const upsertOidcHandle = `-- name: UpsertOidcHandle :exec
+insert into keibi.oidc_handle(user_pk, provider, id, username, profile_url, access_token, refresh_token, expire_at)
+	values ($1, $2, $3, $4, $5, $6, $7, $8)
+on conflict (user_pk, provider)
+	do update set
+		id = excluded.id,
+		username = excluded.username,
+		profile_url = excluded.profile_url,
+		access_token = excluded.access_token,
+		refresh_token = excluded.refresh_token,
+		expire_at = excluded.expire_at
+`
+
+type UpsertOidcHandleParams struct {
+	UserPk       int32      `json:"userPk"`
+	Provider     string     `json:"provider"`
+	Id           string     `json:"id"`
+	Username     string     `json:"username"`
+	ProfileUrl   *string    `json:"profileUrl"`
+	AccessToken  *string    `json:"accessToken"`
+	RefreshToken *string    `json:"refreshToken"`
+	ExpireAt     *time.Time `json:"expireAt"`
+}
+
+func (q *Queries) UpsertOidcHandle(ctx context.Context, arg UpsertOidcHandleParams) error {
+	_, err := q.db.Exec(ctx, upsertOidcHandle,
+		arg.UserPk,
+		arg.Provider,
+		arg.Id,
+		arg.Username,
+		arg.ProfileUrl,
+		arg.AccessToken,
+		arg.RefreshToken,
+		arg.ExpireAt,
+	)
+	return err
 }

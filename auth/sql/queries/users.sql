@@ -84,3 +84,40 @@ where id = $1
 returning
 	*;
 
+-- name: GetUserByEmail :one
+select
+	*
+from
+	keibi.users
+where
+	email = $1
+limit 1;
+
+-- name: GetUserByOidc :one
+select
+	u.*
+from
+	keibi.users as u
+	inner join keibi.oidc_handle as h on u.pk = h.user_pk
+where
+	h.provider = $1
+	and h.id = $2
+limit 1;
+
+-- name: UpsertOidcHandle :exec
+insert into keibi.oidc_handle(user_pk, provider, id, username, profile_url, access_token, refresh_token, expire_at)
+	values ($1, $2, $3, $4, $5, $6, $7, $8)
+on conflict (user_pk, provider)
+	do update set
+		id = excluded.id,
+		username = excluded.username,
+		profile_url = excluded.profile_url,
+		access_token = excluded.access_token,
+		refresh_token = excluded.refresh_token,
+		expire_at = excluded.expire_at;
+
+-- name: DeleteOidcHandle :exec
+delete from keibi.oidc_handle
+where
+	user_pk = $1
+	and provider = $2;

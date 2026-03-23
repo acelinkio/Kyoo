@@ -33,6 +33,17 @@ type OidcHandle struct {
 	ExpireAt     *time.Time `json:"expireAt"`
 }
 
+type OidcLogin struct {
+	Pk          int32     `json:"pk"`
+	Id          uuid.UUID `json:"id"`
+	Opaque      string    `json:"opaque"`
+	Provider    string    `json:"provider"`
+	RedirectUrl string    `json:"redirectUrl"`
+	Tenant      *string   `json:"tenant"`
+	Code        *string   `json:"code"`
+	CreatedAt   time.Time `json:"createdAt"`
+}
+
 type Session struct {
 	Pk          int32     `json:"pk"`
 	Id          uuid.UUID `json:"id"`

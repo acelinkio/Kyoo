@@ -338,6 +338,8 @@ func main() {
 	r.GET("/users", h.ListUsers)
 	r.GET("/users/:id", h.GetUser)
 	r.GET("/users/me", h.GetMe)
+	r.GET("/users/me/logo", h.GetMyLogo)
+	r.GET("/users/:id/logo", h.GetUserLogo)
 	r.DELETE("/users/:id", h.DeleteUser)
 	r.DELETE("/users/me", h.DeleteSelf)
 	r.PATCH("/users/:id", h.EditUser)

@@ -13,6 +13,7 @@ export const PasswordInput = (props: ComponentProps<typeof Input>) => {
 				<IconButton
 					icon={show ? VisibilityOff : Visibility}
 					onPress={() => setVisibility(!show)}
+					className="p-0"
 				/>
 			}
 			{...props}

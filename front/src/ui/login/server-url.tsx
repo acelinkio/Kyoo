@@ -18,12 +18,10 @@ export const ServerUrlPage = () => {
 		queryKey: [apiUrl, "api", "health"],
 		queryFn: async (ctx) => {
 			try {
-				const apiUrl = "http://kyoo.sdg.moe";
 				const resp = await fetch(`${apiUrl}/api/health`, {
 					method: "GET",
 					signal: ctx.signal,
 				});
-				console.log(resp.url);
 				return resp.url.replace("/api/health", "");
 			} catch (e) {
 				console.log("server select fetch error", e);

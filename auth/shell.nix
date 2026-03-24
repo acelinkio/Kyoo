@@ -3,7 +3,9 @@ pkgs.mkShell {
   packages = with pkgs; [
     go
     wgo
-    go-migrate
+    (go-migrate.overrideAttrs (_: {
+      tags = ["postgres" "file"];
+    }))
     sqlc
     go-swag
     # for psql in cli (+ pgformatter for sql files)

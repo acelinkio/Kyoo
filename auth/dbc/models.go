@@ -39,7 +39,7 @@ type OidcLogin struct {
 	Opaque      string    `json:"opaque"`
 	Provider    string    `json:"provider"`
 	RedirectUrl string    `json:"redirectUrl"`
-	Tenant      *string   `json:"tenant"`
+	Tenant      string    `json:"tenant"`
 	Code        *string   `json:"code"`
 	CreatedAt   time.Time `json:"createdAt"`
 }

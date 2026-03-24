@@ -16,7 +16,7 @@ export const LoginPage = () => {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const params = useLocalSearchParams();
-	const [error, setError] = useState(params.error as string | null);
+	const [error, setError] = useState(params.error as string | undefined);
 
 	const { t } = useTranslation();
 	const router = useRouter();
@@ -26,7 +26,7 @@ export const LoginPage = () => {
 	return (
 		<FormPage apiUrl={apiUrl!}>
 			<H1 className="pb-4">{t("login.login")}</H1>
-			<OidcLogin apiUrl={apiUrl}>
+			<OidcLogin apiUrl={apiUrl} error={error}>
 				<P className="pl-2">{t("login.username")}</P>
 				<Input
 					autoComplete="username"

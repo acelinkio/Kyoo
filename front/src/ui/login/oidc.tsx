@@ -8,9 +8,11 @@ import { Fetch, type QueryIdentifier } from "~/query";
 export const OidcLogin = ({
 	apiUrl,
 	children,
+	error,
 }: {
 	apiUrl: string;
 	children: ReactNode;
+	error?: string;
 }) => {
 	const { t } = useTranslation();
 
@@ -36,6 +38,7 @@ export const OidcLogin = ({
 								as={Link}
 								key={id}
 								href={provider.link}
+								replace
 								className="w-full sm:w-3/4"
 								left={
 									provider.logo ? (
@@ -50,19 +53,20 @@ export const OidcLogin = ({
 							/>
 						))}
 					</View>
-					{info.allowRegister && or}
+					{info.allowRegister
+						? or
+						: error && (
+								<P className="text-red-500 dark:text-red-500">{error}</P>
+							)}
 				</>
 			)}
 			Loader={() => (
 				<>
 					<View className="my-2 items-center">
 						{[...Array(3)].map((_, i) => (
-							<View
-								key={i}
-								className="my-1.5 w-full rounded-4xl border-3 border-accent px-4 py-3 sm:w-3/4"
-							>
-								<Skeleton className="mx-auto my-1 h-5 w-2/3" />
-							</View>
+							<Button key={i} className="w-full sm:w-3/4">
+								<Skeleton />
+							</Button>
 						))}
 					</View>
 					{or}
@@ -99,7 +103,7 @@ const AuthInfo = z
 					provider,
 					{
 						...info,
-						link: `${x.publicUrl}/auth/oidc/login/${provider}?redirectUrl=${baseUrl}/login/callback`,
+						link: `${x.publicUrl}/auth/oidc/login/${provider}?redirectUrl=${baseUrl}/oidc-callback?apiUrl=${x.publicUrl}`,
 					},
 				]),
 			),

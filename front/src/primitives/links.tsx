@@ -34,7 +34,7 @@ export function useLinkTo({
 			e?.preventDefault();
 			if (href.startsWith("http")) {
 				Platform.OS === "web"
-					? window.open(href, "_blank")
+					? window.open(href, replace ? "_self" : "_blank")
 					: Linking.openURL(href);
 			} else {
 				replace ? router.replace(href) : router.push(href);

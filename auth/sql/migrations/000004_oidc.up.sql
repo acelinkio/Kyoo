@@ -6,7 +6,7 @@ create table keibi.oidc_login(
 	opaque varchar(128) not null unique,
 	provider varchar(256) not null,
 	redirect_url text not null,
-	tenant text,
+	tenant varchar(256) not null,
 	code text,
 	created_at timestamptz not null default now()::timestamptz
 );

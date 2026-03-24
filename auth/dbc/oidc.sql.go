@@ -33,9 +33,9 @@ returning
 `
 
 type ConsumeOidcLoginParams struct {
-	Opaque   string  `json:"opaque"`
-	Provider string  `json:"provider"`
-	Tenant   *string `json:"tenant"`
+	Opaque   string `json:"opaque"`
+	Provider string `json:"provider"`
+	Tenant   string `json:"tenant"`
 }
 
 func (q *Queries) ConsumeOidcLogin(ctx context.Context, arg ConsumeOidcLoginParams) (OidcLogin, error) {
@@ -62,10 +62,10 @@ returning
 `
 
 type CreateOidcLoginParams struct {
-	Provider    string  `json:"provider"`
-	Opaque      string  `json:"opaque"`
-	RedirectUrl string  `json:"redirectUrl"`
-	Tenant      *string `json:"tenant"`
+	Provider    string `json:"provider"`
+	Opaque      string `json:"opaque"`
+	RedirectUrl string `json:"redirectUrl"`
+	Tenant      string `json:"tenant"`
 }
 
 func (q *Queries) CreateOidcLogin(ctx context.Context, arg CreateOidcLoginParams) (OidcLogin, error) {

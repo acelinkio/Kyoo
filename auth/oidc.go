@@ -55,11 +55,6 @@ func (h *Handler) OidcLogin(c *echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Missing redirectUrl")
 	}
 
-	var tenant *string
-	if t := c.QueryParam("tenant"); t != "" {
-		tenant = &t
-	}
-
 	opaque := make([]byte, 64)
 	_, err = rand.Read(opaque)
 	if err != nil {
@@ -70,7 +65,7 @@ func (h *Handler) OidcLogin(c *echo.Context) error {
 		Provider:    provider.Id,
 		Opaque:      base64.RawURLEncoding.EncodeToString(opaque),
 		RedirectUrl: redirectURL,
-		Tenant:      tenant,
+		Tenant:      c.QueryParam("tenant"),
 	})
 	if err != nil {
 		return err
@@ -147,6 +142,7 @@ func (h *Handler) OidcLogged(c *echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Invalid OIDC redirect URL")
 	}
 	params := ret.Query()
+	params.Set("provider", provider.Id)
 	params.Set("token", login.Opaque)
 	params.Set("error", providerErr)
 	ret.RawQuery = params.Encode()
@@ -171,15 +167,11 @@ func (h *Handler) OidcCallback(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	var tenant *string
-	if t := c.QueryParam("tenant"); t != "" {
-		tenant = &t
-	}
 
 	login, err := h.db.ConsumeOidcLogin(ctx, dbc.ConsumeOidcLoginParams{
 		Opaque:   c.QueryParam("token"),
 		Provider: provider.Id,
-		Tenant:   tenant,
+		Tenant:   c.QueryParam("tenant"),
 	})
 	if err == pgx.ErrNoRows {
 		return echo.NewHTTPError(http.StatusGone, "Login token expired or already used")
@@ -400,8 +392,13 @@ func (h *Handler) CreateUserByOidc(
 			return err
 		}
 
+		username := strings.ReplaceAll(profile.Username, "@", "-")
+		if len(username) > 256 {
+			username = username[:256]
+		}
+
 		user, err = h.db.CreateUser(ctx, dbc.CreateUserParams{
-			Username:    strings.TrimSpace(strings.ReplaceAll(profile.Username, "@", "-"))[:256],
+			Username:    username,
 			Email:       profile.Email,
 			Password:    nil,
 			Claims:      h.config.DefaultClaims,

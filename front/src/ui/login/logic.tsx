@@ -60,7 +60,7 @@ export const oidcLogin = async (
 	apiUrl ??= defaultApiUrl;
 	try {
 		const { token } = await queryFn({
-			method: "POST",
+			method: "GET",
 			url: `${apiUrl}/auth/oidc/callback/${provider}?token=${code}`,
 			authToken: null,
 			parser: z.object({ token: z.string() }),

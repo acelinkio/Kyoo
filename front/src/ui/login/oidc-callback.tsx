@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
 import { P } from "~/primitives";
 import { useQueryState } from "~/utils";
+import { oidcLogin } from "./logic";
 
 export const OidcCallbackPage = () => {
 	const [apiUrl] = useQueryState("apiUrl", undefined!);

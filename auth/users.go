@@ -74,7 +74,7 @@ func MapDbUser(user *dbc.User) User {
 		CreatedDate: user.CreatedDate,
 		LastSeen:    user.LastSeen,
 		Claims:      user.Claims,
-		Oidc:        nil,
+		Oidc:        make(map[string]OidcHandle),
 	}
 }
 

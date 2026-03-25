@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v5"
 	"github.com/zoriya/kyoo/keibi/dbc"
+	"github.com/zoriya/kyoo/keibi/models"
 )
 
 type OidcProvider struct {
@@ -341,15 +342,6 @@ func (h *Handler) LinkOidcTo(
 	uid uuid.UUID,
 ) error {
 	ctx := c.Request().Context()
-	rows, err := h.db.GetUser(ctx, dbc.GetUserParams{
-		UseId: true,
-		Id:    uid,
-	})
-	if err != nil {
-		return err
-	}
-	user := rows[0].User
-
 	existing, err := h.db.GetUserByOidc(ctx, dbc.GetUserByOidcParams{
 		Provider: provider.Id,
 		Id:       profile.Sub,
@@ -366,8 +358,16 @@ func (h *Handler) LinkOidcTo(
 		expireAt = new(time.Now().UTC().Add(time.Duration(token.ExpiresIn * float64(time.Second))))
 	}
 
+	dbuser, err := h.db.GetUser(ctx, dbc.GetUserParams{
+		UseId: true,
+		Id:    uid,
+	})
+	if err != nil {
+		return err
+	}
+
 	err = h.db.UpsertOidcHandle(ctx, dbc.UpsertOidcHandleParams{
-		UserPk:       user.Pk,
+		UserPk:       dbuser.User.Pk,
 		Provider:     provider.Id,
 		Id:           profile.Sub,
 		Username:     profile.Username,
@@ -379,7 +379,14 @@ func (h *Handler) LinkOidcTo(
 	if err != nil {
 		return err
 	}
-	return c.JSON(http.StatusOK, MapDbUser(&user))
+	ret := MapDbUser(&dbuser.User)
+	ret.Oidc = dbuser.Oidc
+	ret.Oidc[provider.Id] = models.OidcHandle{
+		Id:         profile.Sub,
+		Username:   profile.Username,
+		ProfileUrl: nil,
+	}
+	return c.JSON(http.StatusOK, ret)
 }
 
 func (h *Handler) CreateUserByOidc(
@@ -460,16 +467,18 @@ func (h *Handler) OidcUnlink(c *echo.Context) error {
 	}
 	ctx := c.Request().Context()
 
-	rows, err := h.db.GetUser(ctx, dbc.GetUserParams{UseId: true, Id: uid})
+	user, err := h.db.GetUser(ctx, dbc.GetUserParams{UseId: true, Id: uid})
 	if err != nil {
 		return err
 	}
-	if len(rows) == 0 {
+	if err == pgx.ErrNoRows {
 		return echo.NewHTTPError(http.StatusNotFound, "No user found")
+	} else if err != nil {
+		return nil
 	}
 
 	err = h.db.DeleteOidcHandle(ctx, dbc.DeleteOidcHandleParams{
-		UserPk:   rows[0].User.Pk,
+		UserPk:   user.User.Pk,
 		Provider: providerName,
 	})
 	if err != nil {

@@ -1,6 +1,10 @@
 package main
 
-import "net/url"
+import (
+	"net/url"
+
+	. "github.com/zoriya/kyoo/keibi/models"
+)
 
 type Page[T any] struct {
 	Items []T     `json:"items"`

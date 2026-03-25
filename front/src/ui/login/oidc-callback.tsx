@@ -1,7 +1,9 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
 import { P } from "~/primitives";
 import { useToken } from "~/providers/account-context";
+import { toQueryKey } from "~/query";
 import { useQueryState } from "~/utils";
 import { oidcLogin } from "./logic";
 
@@ -14,6 +16,7 @@ export const OidcCallbackPage = () => {
 	const [link] = useQueryState("link", undefined!);
 
 	const router = useRouter();
+	const queryClient = useQueryClient();
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: useMountEffect
 	useEffect(() => {
@@ -28,7 +31,15 @@ export const OidcCallbackPage = () => {
 				apiUrl,
 			);
 			if (loginError) onError(loginError);
-			else router.replace(link ? "/settings" : "/");
+			else if (link) {
+				queryClient.invalidateQueries({
+					queryKey: toQueryKey({
+						apiUrl,
+						path: ["auth", "users", "me"],
+					}),
+				});
+				router.replace("/settings");
+			} else router.replace("/");
 		}
 
 		if (error) onError(error);

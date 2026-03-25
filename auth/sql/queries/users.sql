@@ -1,37 +1,83 @@
 -- name: GetAllUsers :many
 select
-	*
+	sqlc.embed(u),
+	coalesce(
+		jsonb_object_agg(
+			h.provider,
+			jsonb_build_object(
+				'id', h.id,
+				'username', h.username,
+				'profileUrl', h.profile_url
+			)
+		) filter (
+			where
+				h.provider is not null
+		),
+		'{}'::jsonb
+	)::keibi.user_oidc as oidc
 from
-	keibi.users
+	keibi.users as u
+	left join keibi.oidc_handle as h on u.pk = h.user_pk
+group by
+	u.pk
 order by
-	id
+	u.pk
 limit $1;
 
 -- name: GetAllUsersAfter :many
 select
-	*
+	sqlc.embed(u),
+	coalesce(
+		jsonb_object_agg(
+			h.provider,
+			jsonb_build_object(
+				'id', h.id,
+				'username', h.username,
+				'profileUrl', h.profile_url
+			)
+		) filter (
+			where
+				h.provider is not null
+		),
+		'{}'::jsonb
+	)::keibi.user_oidc as oidc
 from
-	keibi.users
+	keibi.users as u
+	left join keibi.oidc_handle as h on u.pk = h.user_pk
 where
-	id >= sqlc.arg(after_id)
+	u.pk >= sqlc.arg(after_pk)
+group by
+	u.pk
 order by
-	id
+	u.pk
 limit $1;
 
--- name: GetUser :many
+-- name: GetUser :one
 select
 	sqlc.embed(u),
-	h.provider,
-	h.id,
-	h.username,
-	h.profile_url
+	coalesce(
+		jsonb_object_agg(
+			h.provider,
+			jsonb_build_object(
+				'id', h.id,
+				'username', h.username,
+				'profileUrl', h.profile_url
+			)
+		) filter (
+			where
+				h.provider is not null
+		),
+		'{}'::jsonb
+	)::keibi.user_oidc as oidc
 from
 	keibi.users as u
 	left join keibi.oidc_handle as h on u.pk = h.user_pk
 where (@use_id::boolean
 	and u.id = @id)
 	or (not @use_id
-		and u.username = @username);
+		and u.username = @username)
+group by
+	u.pk;
 
 -- name: GetUserByLogin :one
 select

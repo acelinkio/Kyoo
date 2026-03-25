@@ -15,6 +15,7 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/mileusna/useragent"
 	"github.com/zoriya/kyoo/keibi/dbc"
+	. "github.com/zoriya/kyoo/keibi/models"
 )
 
 type Session struct {
@@ -161,7 +162,7 @@ func (h *Handler) ListMySessions(c *echo.Context) error {
 		return err
 	}
 
-	dbSessions, err := h.db.GetUserSessions(ctx, users[0].User.Pk)
+	dbSessions, err := h.db.GetUserSessions(ctx, users.User.Pk)
 	if err != nil {
 		return err
 	}
@@ -201,11 +202,13 @@ func (h *Handler) ListUserSessions(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	if len(users) == 0 {
+	if err == pgx.ErrNoRows {
 		return echo.NewHTTPError(http.StatusNotFound, "No user found with id or username")
+	} else if err != nil {
+		return err
 	}
 
-	dbSessions, err := h.db.GetUserSessions(ctx, users[0].User.Pk)
+	dbSessions, err := h.db.GetUserSessions(ctx, users.User.Pk)
 	if err != nil {
 		return err
 	}

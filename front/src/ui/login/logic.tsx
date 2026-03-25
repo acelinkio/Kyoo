@@ -55,22 +55,26 @@ export const login = async (
 export const oidcLogin = async (
 	provider: string,
 	code: string,
+	linkToToken: string | null,
 	apiUrl?: string,
 ) => {
 	apiUrl ??= defaultApiUrl;
 	try {
-		const { token } = await queryFn({
+		const ret = await queryFn({
 			method: "GET",
 			url: `${apiUrl}/auth/oidc/callback/${provider}?token=${code}`,
-			authToken: null,
-			parser: z.object({ token: z.string() }),
+			authToken: linkToToken,
+			parser: linkToToken ? z.object({ token: z.string() }) : User,
 		});
-		const user = await queryFn({
-			method: "GET",
-			url: `${apiUrl}/auth/users/me`,
-			authToken: token,
-			parser: User,
-		});
+		const token = linkToToken ?? (ret as { token: string }).token;
+		const user = linkToToken
+			? (ret as User)
+			: await queryFn({
+					method: "GET",
+					url: `${apiUrl}/auth/users/me`,
+					authToken: token,
+					parser: User,
+				});
 		const account: Account = { ...user, apiUrl, token, selected: true };
 		addAccount(account);
 		return { ok: true, value: account };

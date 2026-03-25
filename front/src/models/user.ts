@@ -2,8 +2,6 @@ import { z } from "zod/v4";
 
 export const User = z
 	.object({
-		// 	// keep a default for older versions of the api
-		// 	.default({}),
 		id: z.string(),
 		username: z.string(),
 		email: z.string(),
@@ -33,17 +31,17 @@ export const User = z
 					audioLanguage: "default",
 					subtitleLanguage: null,
 				}),
-			// externalId: z
-			// 	.record(
-			// 		z.string(),
-			// 		z.object({
-			// 			id: z.string(),
-			// 			username: z.string().nullable().default(""),
-			// 			profileUrl: z.string().nullable(),
-			// 		}),
-			// 	)
-			// 	.default({}),
 		}),
+		oidc: z
+			.record(
+				z.string(),
+				z.object({
+					id: z.string(),
+					username: z.string().nullable().default(""),
+					profileUrl: z.string().nullable(),
+				}),
+			)
+			.default({}),
 	})
 	.transform((x) => ({
 		...x,

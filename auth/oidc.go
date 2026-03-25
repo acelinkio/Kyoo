@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -241,15 +242,18 @@ func (h *Handler) exchangeOidcCode(c *echo.Context, provider OidcProviderConfig,
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		slog.Error("Error calling oidc token endpoint: %v", "err", err)
 		return Token{}, echo.NewHTTPError(http.StatusBadGateway, "Could not reach OIDC token endpoint")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		slog.Error("Error on oidc token endpoint: %v", "err", err)
 		return Token{}, echo.NewHTTPError(http.StatusBadGateway, "OIDC token exchange failed")
 	}
 
 	var ret Token
 	if err := json.NewDecoder(resp.Body).Decode(&ret); err != nil {
+		slog.Error("Couldn't decode token: %v", "err", err)
 		return Token{}, echo.NewHTTPError(http.StatusBadGateway, "Invalid OIDC token response")
 	}
 	return ret, nil
@@ -286,15 +290,18 @@ func (h *Handler) fetchOidcProfile(c *echo.Context, provider OidcProviderConfig,
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		slog.Error("Error calling oidc profile endpoint: %v", "err", err)
 		return Profile{}, echo.NewHTTPError(http.StatusInternalServerError, "Could not reach OIDC profile endpoint")
 	}
 	defer resp.Body.Close()
 
 	var profile RawProfile
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		slog.Error("Error on oidc profile endpoint: %v", "err", err)
 		return Profile{}, echo.NewHTTPError(http.StatusInternalServerError, "Could not fetch OIDC profile")
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&profile); err != nil {
+		slog.Error("Error parsing oidc profile: %v", "err", err)
 		return Profile{}, echo.NewHTTPError(http.StatusInternalServerError, "Invalid OIDC profile response")
 	}
 	sub := cmp.Or(profile.Sub, profile.Uid, profile.Id, profile.Guid)

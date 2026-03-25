@@ -37,7 +37,7 @@ export const OidcLogin = ({
 							<Button
 								as={Link}
 								key={id}
-								href={provider.link}
+								href={provider.connect}
 								replace
 								className="w-full sm:w-3/4"
 								left={
@@ -95,7 +95,7 @@ const AuthInfo = z
 		),
 	})
 	.transform((x) => {
-		const baseUrl = Platform.OS === "web" ? x.publicUrl : "kyoo://";
+		const redirect = `${Platform.OS === "web" ? x.publicUrl : "kyoo://"}/oidc-callback?apiUrl=${x.publicUrl}`;
 		return {
 			...x,
 			oidc: Object.fromEntries(
@@ -103,7 +103,8 @@ const AuthInfo = z
 					provider,
 					{
 						...info,
-						link: `${x.publicUrl}/auth/oidc/login/${provider}?redirectUrl=${baseUrl}/oidc-callback?apiUrl=${x.publicUrl}`,
+						connect: `${x.publicUrl}/auth/oidc/login/${provider}?redirectUrl=${encodeURIComponent(redirect)}`,
+						link: `${x.publicUrl}/auth/oidc/login/${provider}?redirectUrl=${encodeURIComponent(`${redirect}&link=true`)}`,
 					},
 				]),
 			),

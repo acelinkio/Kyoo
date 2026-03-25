@@ -217,6 +217,35 @@ func (h *Handler) TokenToJwt(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
+func (h *Handler) OptionalAuthToJwt(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c *echo.Context) error {
+		ctx := c.Request().Context()
+
+		auth := c.Request().Header.Get("Authorization")
+		if auth == "" {
+			return next(c)
+		}
+
+		if !strings.HasPrefix(auth, "Bearer ") {
+			return echo.NewHTTPError(http.StatusForbidden, "Invalid bearer format")
+		}
+		token := auth[len("Bearer "):]
+
+		// this is only used to check if it is a session token or a jwt
+		_, err := base64.RawURLEncoding.DecodeString(token)
+		if err != nil {
+			return next(c)
+		}
+
+		jwt, err := h.createJwt(ctx, token)
+		if err != nil {
+			return err
+		}
+		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", jwt))
+		return next(c)
+	}
+}
+
 // @title Keibi - Kyoo's auth
 // @version 1.0
 // @description Auth system made for kyoo.
@@ -348,14 +377,22 @@ func main() {
 	g.POST("/users", h.Register)
 
 	g.POST("/sessions", h.Login)
-	g.GET("/oidc/login/:provider", h.OidcLogin)
-	g.GET("/oidc/logged/:provider", h.OidcLogged)
-	g.GET("/oidc/callback/:provider", h.OidcCallback)
 	r.GET("/sessions", h.ListMySessions)
 	r.DELETE("/sessions", h.Logout)
 	r.DELETE("/sessions/:id", h.Logout)
-	r.DELETE("/oidc/login/:provider", h.OidcUnlink)
 	r.GET("/users/:id/sessions", h.ListUserSessions)
+
+	g.GET("/oidc/login/:provider", h.OidcLogin)
+	r.DELETE("/oidc/login/:provider", h.OidcUnlink)
+	g.GET("/oidc/logged/:provider", h.OidcLogged)
+
+	or := e.Group("/auth")
+	or.Use(h.OptionalAuthToJwt)
+	or.Use(echojwt.WithConfig(echojwt.Config{
+		SigningMethod: "RS256",
+		SigningKey:    h.config.JwtPublicKey,
+	}))
+	or.GET("/oidc/callback/:provider", h.OidcCallback)
 
 	r.GET("/keys", h.ListApiKey)
 	r.POST("/keys", h.CreateApiKey)

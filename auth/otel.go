@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"net/http"
 	"os"
 	"strings"
 
 	echootel "github.com/labstack/echo-opentelemetry"
 	"github.com/labstack/echo/v5"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
@@ -135,6 +137,7 @@ func setupOtel(ctx context.Context) (func(context.Context) error, error) {
 	logotelglobal.SetLoggerProvider(lp)
 	otel.SetMeterProvider(mp)
 	otel.SetTracerProvider(tp)
+	http.DefaultTransport = otelhttp.NewTransport(http.DefaultTransport)
 
 	// configure shutting down
 	// noop providers do not have a Shudown method

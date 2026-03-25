@@ -51,7 +51,6 @@ export const A = ({
 	...props
 }: TextProps & {
 	href?: string | null;
-	target?: string;
 	replace?: boolean;
 	children: ReactNode;
 }) => {
@@ -102,7 +101,6 @@ export const Link = ({
 	href?: string | null;
 	replace?: boolean;
 	download?: boolean;
-	target?: string;
 } & PressableProps) => {
 	const linkProps = useLinkTo({ href, replace });
 

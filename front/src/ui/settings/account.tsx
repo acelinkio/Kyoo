@@ -59,7 +59,7 @@ export const AccountSettings = () => {
 		compute: (body: { oldPassword: string; newPassword: string }) => ({
 			body,
 		}),
-		invalidate: null,
+		invalidate: ["auth", "users", "me"],
 	});
 
 	return (
@@ -189,7 +189,7 @@ export const AccountSettings = () => {
 							<ChangePasswordPopup
 								icon={Password}
 								label={t("settings.account.password.label")}
-								hasPassword={true}
+								hasPassword={account.hasPassword}
 								apply={async (op, np) =>
 									await editPassword({ oldPassword: op, newPassword: np })
 								}
@@ -273,6 +273,7 @@ const ChangePasswordPopup = ({
 					value={oldValue}
 					onChangeText={(v) => setOldValue(v)}
 					placeholder={t("settings.account.password.oldPassword")}
+					containerClassName="my-1"
 				/>
 			)}
 			<PasswordInput
@@ -280,9 +281,10 @@ const ChangePasswordPopup = ({
 				value={newValue}
 				onChangeText={(v) => setNewValue(v)}
 				placeholder={t("settings.account.password.newPassword")}
+				containerClassName="my-1"
 			/>
 			{error && <P className="text-red-500">{error}</P>}
-			<View className="flex-row gap-2 self-end">
+			<View className="my-1 flex-row gap-2 self-end">
 				<Button
 					text={t("misc.cancel")}
 					onPress={() => close()}

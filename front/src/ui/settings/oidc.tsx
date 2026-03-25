@@ -1,16 +1,18 @@
 import Badge from "@material-symbols/svg-400/outlined/badge.svg";
 import Remove from "@material-symbols/svg-400/outlined/close.svg";
 import OpenProfile from "@material-symbols/svg-400/outlined/open_in_new.svg";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Image } from "react-native";
+import { type KyooError, User } from "~/models";
 import { Button, IconButton, Link, P, Skeleton, tooltip } from "~/primitives";
 import { type QueryIdentifier, useFetch, useMutation } from "~/query";
-import { Preference, SettingsContainer } from "./base";
 import { OidcLogin } from "../login/oidc";
-import { User } from "~/models";
+import { Preference, SettingsContainer } from "./base";
 
 export const OidcSettings = () => {
 	const { t } = useTranslation();
+	const [unlinkError, setUnlinkError] = useState<string | null>(null);
 	const { data } = useFetch(OidcLogin.query());
 	const { data: user } = useFetch(OidcSettings.query());
 	const { mutateAsync: unlinkAccount } = useMutation({
@@ -23,6 +25,7 @@ export const OidcSettings = () => {
 
 	return (
 		<SettingsContainer title={t("settings.oidc.label")}>
+			{unlinkError && <P className="text-red-500">{unlinkError}</P>}
 			{data && user
 				? Object.entries(data.oidc).map(([id, x]) => {
 						const acc = user.oidc[id];
@@ -60,7 +63,14 @@ export const OidcSettings = () => {
 										)}
 										<IconButton
 											icon={Remove}
-											onPress={() => unlinkAccount(id)}
+											onPress={async () => {
+												setUnlinkError(null);
+												try {
+													await unlinkAccount(id);
+												} catch (e) {
+													setUnlinkError((e as KyooError).message);
+												}
+											}}
 											{...tooltip(
 												t("settings.oidc.delete", { provider: x.name }),
 											)}

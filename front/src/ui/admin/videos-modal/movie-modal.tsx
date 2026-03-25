@@ -76,6 +76,7 @@ const AddMovieVideoFooter = ({ slug }: { slug: string }) => {
 	return (
 		<ComboBox
 			Trigger={(props) => (
+				// @ts-expect-error prop mismatch due to generic
 				<Button
 					icon={LibraryAdd}
 					text={t("videos-map.add")}

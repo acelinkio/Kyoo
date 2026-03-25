@@ -468,13 +468,13 @@ func (h *Handler) OidcUnlink(c *echo.Context) error {
 	ctx := c.Request().Context()
 
 	user, err := h.db.GetUser(ctx, dbc.GetUserParams{UseId: true, Id: uid})
-	if err != nil {
-		return err
-	}
 	if err == pgx.ErrNoRows {
 		return echo.NewHTTPError(http.StatusNotFound, "No user found")
 	} else if err != nil {
 		return nil
+	}
+	if user.User.Password == nil {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, "You must configure a password before unlinking your OIDC provider")
 	}
 
 	err = h.db.DeleteOidcHandle(ctx, dbc.DeleteOidcHandleParams{

@@ -45,10 +45,10 @@ export const SettingsContainer = ({
 	extraTop,
 	...props
 }: {
-	children: ReactElement | (ReactElement | Falsy)[] | Falsy;
+	children: ReactNode;
 	title: string;
-	extra?: ReactElement;
-	extraTop?: ReactElement;
+	extra?: ReactNode;
+	extraTop?: ReactNode;
 }) => {
 	return (
 		<Container {...props}>

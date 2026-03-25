@@ -5,9 +5,9 @@ export const User = z
 		id: z.string(),
 		username: z.string(),
 		email: z.string(),
+		hasPassword: z.boolean().default(true),
 		claims: z.object({
 			permissions: z.array(z.string()),
-			// hasPassword: z.boolean().default(true),
 			settings: z
 				.object({
 					downloadQuality: z
@@ -37,7 +37,7 @@ export const User = z
 				z.string(),
 				z.object({
 					id: z.string(),
-					username: z.string().nullable().default(""),
+					username: z.string(),
 					profileUrl: z.string().nullable(),
 				}),
 			)

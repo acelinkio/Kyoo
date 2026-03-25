@@ -23,6 +23,7 @@ func MapDbUser(user *dbc.User) User {
 		Id:          user.Id,
 		Username:    user.Username,
 		Email:       user.Email,
+		HasPassword: user.Password != nil,
 		CreatedDate: user.CreatedDate,
 		LastSeen:    user.LastSeen,
 		Claims:      user.Claims,
@@ -474,15 +475,20 @@ func (h *Handler) ChangePassword(c *echo.Context) error {
 		return err
 	}
 
-	match, err := argon2id.ComparePasswordAndHash(
-		req.OldPassword,
-		*user.User.Password,
-	)
-	if err != nil {
-		return err
-	}
-	if !match {
-		return echo.NewHTTPError(http.StatusForbidden, "Invalid password")
+	if user.User.Password != nil {
+		if req.OldPassword == nil {
+			return echo.NewHTTPError(http.StatusUnprocessableEntity, "Missing old password")
+		}
+		match, err := argon2id.ComparePasswordAndHash(
+			*req.OldPassword,
+			*user.User.Password,
+		)
+		if err != nil {
+			return err
+		}
+		if !match {
+			return echo.NewHTTPError(http.StatusForbidden, "Invalid password")
+		}
 	}
 
 	pass, err := argon2id.CreateHash(req.NewPassword, argon2id.DefaultParams)

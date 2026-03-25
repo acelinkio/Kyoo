@@ -7,9 +7,9 @@ import { defaultApiUrl } from "~/providers/account-provider";
 import { useQueryState } from "~/utils";
 import { FormPage } from "./form";
 import { login } from "./logic";
+import { OidcLogin } from "./oidc";
 import { PasswordInput } from "./password-input";
 import { ServerUrlPage } from "./server-url";
-import { OidcLogin } from "./oidc";
 
 export const RegisterPage = () => {
 	const [apiUrl] = useQueryState("apiUrl", defaultApiUrl);

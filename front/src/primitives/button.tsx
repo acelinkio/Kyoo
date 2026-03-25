@@ -5,7 +5,7 @@ import type {
 	ReactNode,
 	Ref,
 } from "react";
-import { type Falsy, type PressableProps, View } from "react-native";
+import type { Falsy, PressableProps, View } from "react-native";
 import { cn } from "~/utils";
 import { Icon } from "./icons";
 import { PressableFeedback } from "./links";

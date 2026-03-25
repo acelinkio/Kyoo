@@ -16,6 +16,8 @@ type User struct {
 	Username string `json:"username" example:"zoriya"`
 	// Email of the user. Can be used as a login.
 	Email string `json:"email" format:"email" example:"kyoo@zoriya.dev"`
+	// False if the user has never setup a password and only used oidc.
+	HasPassword bool `json:"hasPassword"`
 	// When was this account created?
 	CreatedDate time.Time `json:"createdDate" example:"2025-03-29T18:20:05.267Z"`
 	// When was the last time this account made any authorized request?
@@ -52,7 +54,6 @@ type EditUserDto struct {
 }
 
 type EditPasswordDto struct {
-	OldPassword string `json:"oldPassword" validate:"required" example:"password1234"`
-	NewPassword string `json:"newPassword" validate:"required" example:"password1234"`
+	OldPassword *string `json:"oldPassword" example:"password1234"`
+	NewPassword string  `json:"newPassword" validate:"required" example:"password1234"`
 }
-

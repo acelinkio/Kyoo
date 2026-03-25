@@ -67,8 +67,6 @@ const SearchResultItem = ({
 						icon={OpenInNew}
 						as={Link}
 						href={externalHref}
-						target="_blank"
-						className="absolute top-1 right-1 bg-gray-800/70 hover:bg-gray-800 focus:bg-gray-800"
 						iconClassName="h-5 w-5 fill-slate-200 dark:fill-slate-200"
 					/>
 				)}

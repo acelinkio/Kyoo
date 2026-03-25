@@ -13,5 +13,5 @@ export const Fetch = <Data,>({
 	const { data } = useFetch(query);
 
 	if (!data) return <Loader />;
-	return <Render {...data} />;
+	return Render(data);
 };

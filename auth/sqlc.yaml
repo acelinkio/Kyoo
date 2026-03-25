@@ -30,6 +30,10 @@ sql:
         - db_type: "jsonb"
           go_type:
             type: "interface{}"
+        - db_type: "keibi.user_oidc"
+          go_type:
+            import: "github.com/zoriya/kyoo/keibi/models"
+            type: "OidcMap"
         - column: "keibi.users.claims"
           go_type:
             import: "github.com/golang-jwt/jwt/v5"
@@ -47,3 +51,4 @@ overrides:
       keibi_oidc_handle: OidcHandle
       keibi_session: Session
       keibi_user: User
+      keibi_oidc_login: OidcLogin

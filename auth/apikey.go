@@ -96,7 +96,7 @@ func (h *Handler) CreateApiKey(c *echo.Context) error {
 			UseId: true,
 			Id:    uid,
 		})
-		user = &u[0].User.Pk
+		user = &u.User.Pk
 	}
 
 	dbkey, err := h.db.CreateApiKey(ctx, dbc.CreateApiKeyParams{

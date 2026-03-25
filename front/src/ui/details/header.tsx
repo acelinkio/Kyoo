@@ -121,7 +121,6 @@ const ButtonList = ({
 					icon={Theaters}
 					as={Link}
 					href={trailerUrl}
-					target="_blank"
 					iconClassName={iconsClassName}
 					{...tooltip(t("show.trailer"))}
 				/>
@@ -340,7 +339,6 @@ const ExternalIdChip = ({
 		<Chip
 			label={name}
 			href={withLinks.length === 1 ? withLinks[0].link : null}
-			target="_blank"
 			size="small"
 			outline
 			className="m-1"
@@ -357,7 +355,6 @@ const ExternalIdChip = ({
 											<A
 												key={x.dataId}
 												href={x.link!}
-												target="_blank"
 												className="rounded p-4 hover:bg-popover"
 											>
 												{x.label ?? x.link}

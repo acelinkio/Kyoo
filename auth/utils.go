@@ -13,8 +13,8 @@ import (
 )
 
 func GetCurrentUserId(c *echo.Context) (uuid.UUID, error) {
-	user := c.Get("user").(*jwt.Token)
-	if user == nil {
+	user, ok := c.Get("user").(*jwt.Token)
+	if !ok || user == nil {
 		return uuid.UUID{}, echo.NewHTTPError(401, "Unauthorized")
 	}
 	sub, err := user.Claims.GetSubject()
@@ -29,8 +29,8 @@ func GetCurrentUserId(c *echo.Context) (uuid.UUID, error) {
 }
 
 func GetCurrentSessionId(c *echo.Context) (uuid.UUID, error) {
-	user := c.Get("user").(*jwt.Token)
-	if user == nil {
+	user, ok := c.Get("user").(*jwt.Token)
+	if !ok || user == nil {
 		return uuid.UUID{}, echo.NewHTTPError(401, "Unauthorized")
 	}
 	claims, ok := user.Claims.(jwt.MapClaims)

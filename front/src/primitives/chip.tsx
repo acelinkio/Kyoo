@@ -12,7 +12,6 @@ export const Chip = ({
 	label,
 	href,
 	replace,
-	target,
 	className,
 	...props
 }: {
@@ -21,7 +20,6 @@ export const Chip = ({
 	label: string;
 	href: string | null;
 	replace?: boolean;
-	target?: string;
 	onPress?: (e: GestureResponderEvent) => void;
 	className?: string;
 }) => {
@@ -29,7 +27,6 @@ export const Chip = ({
 		<Link
 			href={href}
 			replace={replace}
-			target={target}
 			className={cn(
 				"group justify-center overflow-hidden rounded-4xl border border-accent outline-0",
 				size === "small" && "px-2.5 py-1",

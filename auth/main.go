@@ -217,32 +217,34 @@ func (h *Handler) TokenToJwt(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func (h *Handler) OptionalAuthToJwt(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c *echo.Context) error {
-		ctx := c.Request().Context()
+func (h *Handler) OptionalAuthToJwt(jwtMiddlware echo.MiddlewareFunc) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c *echo.Context) error {
+			ctx := c.Request().Context()
 
-		auth := c.Request().Header.Get("Authorization")
-		if auth == "" {
-			return next(c)
-		}
+			auth := c.Request().Header.Get("Authorization")
+			if auth == "" {
+				return next(c)
+			}
 
-		if !strings.HasPrefix(auth, "Bearer ") {
-			return echo.NewHTTPError(http.StatusForbidden, "Invalid bearer format")
-		}
-		token := auth[len("Bearer "):]
+			if !strings.HasPrefix(auth, "Bearer ") {
+				return echo.NewHTTPError(http.StatusForbidden, "Invalid bearer format")
+			}
+			token := auth[len("Bearer "):]
 
-		// this is only used to check if it is a session token or a jwt
-		_, err := base64.RawURLEncoding.DecodeString(token)
-		if err != nil {
-			return next(c)
-		}
+			// this is only used to check if it is a session token or a jwt
+			_, err := base64.RawURLEncoding.DecodeString(token)
+			if err != nil {
+				return jwtMiddlware(next)(c)
+			}
 
-		jwt, err := h.createJwt(ctx, token)
-		if err != nil {
-			return err
+			jwt, err := h.createJwt(ctx, token)
+			if err != nil {
+				return err
+			}
+			c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", jwt))
+			return jwtMiddlware(next)(c)
 		}
-		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", jwt))
-		return next(c)
 	}
 }
 
@@ -353,13 +355,15 @@ func main() {
 	}
 	h.config = conf
 
+	jwtMiddleware := echojwt.WithConfig(echojwt.Config{
+		SigningMethod: "RS256",
+		SigningKey:    h.config.JwtPublicKey,
+	})
+
 	g := e.Group("/auth")
 	r := e.Group("/auth")
 	r.Use(h.TokenToJwt)
-	r.Use(echojwt.WithConfig(echojwt.Config{
-		SigningMethod: "RS256",
-		SigningKey:    h.config.JwtPublicKey,
-	}))
+	r.Use(jwtMiddleware)
 
 	g.GET("/health", h.CheckHealth)
 	g.GET("/ready", h.CheckReady)
@@ -390,11 +394,7 @@ func main() {
 	g.GET("/oidc/logged/:provider", h.OidcLogged)
 
 	or := e.Group("/auth")
-	or.Use(h.OptionalAuthToJwt)
-	or.Use(echojwt.WithConfig(echojwt.Config{
-		SigningMethod: "RS256",
-		SigningKey:    h.config.JwtPublicKey,
-	}))
+	or.Use(h.OptionalAuthToJwt(jwtMiddleware))
 	or.GET("/oidc/callback/:provider", h.OidcCallback)
 
 	r.GET("/keys", h.ListApiKey)

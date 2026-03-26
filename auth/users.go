@@ -159,9 +159,14 @@ func (h *Handler) GetMe(c *echo.Context) error {
 // @Param        user     body    RegisterDto  false  "Registration informations"
 // @Success      201  {object}  SessionWToken
 // @Success      409  {object}  KError "Duplicated email or username"
+// @Failure      403  {object}  KError "Registrations are disabled"
 // @Failure      422  {object}  KError "Invalid register body"
 // @Router /users [post]
 func (h *Handler) Register(c *echo.Context) error {
+	if h.config.DisableRegistration {
+		return echo.NewHTTPError(http.StatusForbidden, "Registrations are disabled")
+	}
+
 	ctx := c.Request().Context()
 	var req RegisterDto
 	err := c.Bind(&req)

@@ -250,7 +250,9 @@
 		"or-login": "Have an account already? <1>Log in</1>.",
 		"password-no-match": "Passwords do not match.",
 		"delete": "Delete your account",
-		"delete-confirmation": "This action can't be reverted. Are you sure?"
+		"delete-confirmation": "This action can't be reverted. Are you sure?",
+		"register-disabled": "Registrations are disabled.",
+		"register-disabled-oidc": "Password registration is disabled. Use OIDC."
 	},
 	"downloads": {
 		"empty": "Nothing downloaded yet, start browsing for something you like",

@@ -530,8 +530,9 @@ func (h *Handler) OidcUnlink(c *echo.Context) error {
 }
 
 type ServerInfo struct {
-	PublicUrl string              `json:"publicUrl"`
-	Oidc      map[string]OidcInfo `json:"oidc"`
+	PublicUrl     string              `json:"publicUrl"`
+	AllowRegister bool                `json:"allowRegister"`
+	Oidc          map[string]OidcInfo `json:"oidc"`
 }
 
 type OidcInfo struct {
@@ -547,8 +548,9 @@ type OidcInfo struct {
 // @Router /info [get]
 func (h *Handler) Info(c *echo.Context) error {
 	ret := ServerInfo{
-		PublicUrl: h.config.PublicUrl,
-		Oidc:      make(map[string]OidcInfo),
+		PublicUrl:     h.config.PublicUrl,
+		AllowRegister: !h.config.DisableRegistration,
+		Oidc:          make(map[string]OidcInfo),
 	}
 	for _, provider := range h.config.OidcProviders {
 		ret.Oidc[provider.Id] = OidcInfo{

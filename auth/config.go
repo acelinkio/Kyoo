@@ -14,6 +14,7 @@ import (
 	"maps"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -24,18 +25,19 @@ import (
 )
 
 type Configuration struct {
-	JwtPrivateKey      *rsa.PrivateKey
-	JwtPublicKey       *rsa.PublicKey
-	JwtKid             string
-	PublicUrl          string
-	OidcProviders      map[string]OidcProviderConfig
-	DefaultClaims      jwt.MapClaims
-	FirstUserClaims    jwt.MapClaims
-	GuestClaims        jwt.MapClaims
-	ProtectedClaims    []string
-	ExpirationDelay    time.Duration
-	EnvApiKeys         []ApiKeyWToken
-	ProfilePicturePath string
+	JwtPrivateKey       *rsa.PrivateKey
+	JwtPublicKey        *rsa.PublicKey
+	JwtKid              string
+	PublicUrl           string
+	OidcProviders       map[string]OidcProviderConfig
+	DefaultClaims       jwt.MapClaims
+	FirstUserClaims     jwt.MapClaims
+	GuestClaims         jwt.MapClaims
+	ProtectedClaims     []string
+	ExpirationDelay     time.Duration
+	EnvApiKeys          []ApiKeyWToken
+	ProfilePicturePath  string
+	DisableRegistration bool
 }
 
 type OidcAuthMethod string
@@ -75,6 +77,12 @@ func LoadConfiguration(ctx context.Context, db *dbc.Queries) (*Configuration, er
 		os.Getenv("PROFILE_PICTURE_PATH"),
 		"/profile_pictures",
 	)
+
+	disableRegistration, err := strconv.ParseBool(cmp.Or(os.Getenv("DISABLE_REGISTRATION"), "false"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid DISABLE_REGISTRATION value: %w", err)
+	}
+	ret.DisableRegistration = disableRegistration
 
 	claims := os.Getenv("EXTRA_CLAIMS")
 	if claims != "" {

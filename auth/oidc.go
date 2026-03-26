@@ -265,6 +265,9 @@ type RawProfile struct {
 	Uid               *string        `json:"uid"`
 	Id                *string        `json:"id"`
 	Guid              *string        `json:"guid"`
+	Picture           *string        `json:"picture"`
+	AvatarURL         *string        `json:"avatar_url"`
+	Avatar            *string        `json:"avatar"`
 	Username          *string        `json:"username"`
 	PreferredUsername *string        `json:"preferred_username"`
 	Login             *string        `json:"login"`
@@ -276,9 +279,10 @@ type RawProfile struct {
 }
 
 type Profile struct {
-	Sub      string `json:"sub,omitempty"`
-	Username string `json:"username,omitempty"`
-	Email    string `json:"email,omitempty"`
+	Sub        string `json:"sub,omitempty"`
+	Username   string `json:"username,omitempty"`
+	Email      string `json:"email,omitempty"`
+	PictureURL string `json:"pictureUrl,omitempty"`
 }
 
 func (h *Handler) fetchOidcProfile(c *echo.Context, provider OidcProviderConfig, accessToken string) (Profile, error) {
@@ -316,6 +320,25 @@ func (h *Handler) fetchOidcProfile(c *echo.Context, provider OidcProviderConfig,
 	if sub == nil {
 		return Profile{}, echo.NewHTTPError(http.StatusInternalServerError, "Missing sub or username")
 	}
+	picture := cmp.Or(profile.Picture, profile.AvatarURL, profile.Avatar)
+	if picture == nil {
+		if rawPicture, ok := profile.Account["picture"]; ok {
+			if pictureURL, ok := rawPicture.(string); ok {
+				picture = &pictureURL
+			}
+		}
+	}
+	if picture == nil {
+		if rawPicture, ok := profile.User["picture"]; ok {
+			if pictureURL, ok := rawPicture.(string); ok {
+				picture = &pictureURL
+			}
+		}
+	}
+	pictureURL := ""
+	if picture != nil {
+		pictureURL = *picture
+	}
 	return Profile{
 		Sub: *sub,
 		Username: *cmp.Or(
@@ -331,6 +354,7 @@ func (h *Handler) fetchOidcProfile(c *echo.Context, provider OidcProviderConfig,
 			*sub,
 			provider,
 		))),
+		PictureURL: pictureURL,
 	}, nil
 }
 
@@ -421,6 +445,24 @@ func (h *Handler) CreateUserByOidc(
 		if ErrIs(err, pgerrcode.UniqueViolation) {
 			return echo.NewHTTPError(http.StatusConflict, "A user already exists with the same username or email. If this is you, login via username and then link your account.")
 		}
+		if err != nil {
+			return err
+		}
+
+		if profile.PictureURL != "" {
+			if err := h.downloadLogo(ctx, user.Id, profile.PictureURL); err != nil {
+				slog.Warn(
+					"Could not download OIDC profile picture",
+					"provider",
+					provider.Id,
+					"sub",
+					profile.Sub,
+					"err",
+					err,
+				)
+			}
+		}
+
 	}
 
 	var expireAt *time.Time

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
@@ -79,6 +80,37 @@ func (h *Handler) writeManualLogo(id uuid.UUID, data []byte) error {
 		return err
 	}
 	return nil
+}
+
+func (h *Handler) downloadLogo(ctx context.Context, id uuid.UUID, logoURL string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, logoURL, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected logo response status: %d", resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(io.LimitReader(resp.Body, maxLogoSize+1))
+	if err != nil {
+		return err
+	}
+	if len(data) > maxLogoSize {
+		return fmt.Errorf("logo file too large")
+	}
+
+	if !slices.Contains(allowedLogoTypes, http.DetectContentType(data)) {
+		return fmt.Errorf("unsupported logo content type")
+	}
+
+	return h.writeManualLogo(id, data)
 }
 
 func (h *Handler) streamGravatar(c *echo.Context, email string) error {

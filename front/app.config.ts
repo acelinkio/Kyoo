@@ -107,6 +107,13 @@ export const expo: ExpoConfig = {
 				},
 			},
 		],
+		[
+			"expo-image-picker",
+			{
+				cameraPermission: false,
+				microphonePermission: false,
+			},
+		],
 	],
 	experiments: {
 		typedRoutes: true,

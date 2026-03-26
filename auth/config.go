@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"crypto"
 	"crypto/rand"
@@ -23,17 +24,18 @@ import (
 )
 
 type Configuration struct {
-	JwtPrivateKey   *rsa.PrivateKey
-	JwtPublicKey    *rsa.PublicKey
-	JwtKid          string
-	PublicUrl       string
-	OidcProviders   map[string]OidcProviderConfig
-	DefaultClaims   jwt.MapClaims
-	FirstUserClaims jwt.MapClaims
-	GuestClaims     jwt.MapClaims
-	ProtectedClaims []string
-	ExpirationDelay time.Duration
-	EnvApiKeys      []ApiKeyWToken
+	JwtPrivateKey      *rsa.PrivateKey
+	JwtPublicKey       *rsa.PublicKey
+	JwtKid             string
+	PublicUrl          string
+	OidcProviders      map[string]OidcProviderConfig
+	DefaultClaims      jwt.MapClaims
+	FirstUserClaims    jwt.MapClaims
+	GuestClaims        jwt.MapClaims
+	ProtectedClaims    []string
+	ExpirationDelay    time.Duration
+	EnvApiKeys         []ApiKeyWToken
+	ProfilePicturePath string
 }
 
 type OidcAuthMethod string
@@ -69,6 +71,10 @@ func LoadConfiguration(ctx context.Context, db *dbc.Queries) (*Configuration, er
 	ret := DefaultConfig
 
 	ret.PublicUrl = os.Getenv("PUBLIC_URL")
+	ret.ProfilePicturePath = cmp.Or(
+		os.Getenv("PROFILE_PICTURE_PATH"),
+		"/profile_pictures",
+	)
 
 	claims := os.Getenv("EXTRA_CLAIMS")
 	if claims != "" {

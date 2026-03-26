@@ -157,8 +157,12 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- if or .Values.global.extraVolumeMounts .Values.auth.kyoo_auth.extraVolumeMounts .Values.kyoo.auth.privatekey.existingSecret }}
+          {{- if or .Values.global.extraVolumeMounts .Values.auth.kyoo_auth.extraVolumeMounts .Values.kyoo.auth.privatekey.existingSecret .Values.auth.persistence.enabled }}
           volumeMounts:
+            {{- if .Values.auth.persistence.enabled }}
+            - name: profilepictures
+              mountPath: /profile_pictures
+            {{- end }}
             {{- with .Values.global.extraVolumeMounts }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -178,8 +182,19 @@ spec:
       initContainers:
         {{- tpl (toYaml .) $ | nindent 6 }}
       {{- end }}
-      {{- if or .Values.global.extraVolumes .Values.auth.extraVolumes .Values.kyoo.auth.privatekey.existingSecret }}
+      {{- if or .Values.global.extraVolumes .Values.auth.extraVolumes .Values.kyoo.auth.privatekey.existingSecret .Values.auth.persistence.enabled }}
       volumes:
+        {{- if .Values.auth.persistence.enabled }}
+        {{- if .Values.auth.persistence.existingClaim }}
+        - name: profilepictures
+          persistentVolumeClaim:
+            claimName: {{ .Values.auth.persistence.existingClaim }}
+        {{- else }}
+        - name: profilepictures
+          persistentVolumeClaim:
+            claimName: {{ include "kyoo.authprofilepictures.fullname" . }}
+        {{- end }}
+        {{- end }}
         {{- with .Values.global.extraVolumes }}
           {{- toYaml . | nindent 8 }}
         {{- end }}

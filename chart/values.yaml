@@ -278,6 +278,15 @@ auth:
   extraContainers: []
   extraInitContainers: []
   extraVolumes: []
+  # profile pictures of users
+  persistence:
+    enabled: true
+    size: 500Mi
+    annotations: {}
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    existingClaim: ""
 
 # front deployment configuration
 front:

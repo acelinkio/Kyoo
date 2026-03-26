@@ -38,6 +38,13 @@ Create kyoo auth name
 {{- end -}}
 
 {{/*
+Create kyoo auth-profile-pictures name
+*/}}
+{{- define "kyoo.authprofilepictures.fullname" -}}
+{{- printf "%s-%s%s" (include "kyoo.fullname" .) .Values.auth.name "profile-pictures" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
 Create the name of the auth service account to use
 */}}
 {{- define "kyoo.auth.serviceAccountName" -}}

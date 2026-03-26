@@ -1,10 +1,10 @@
 import Username from "@material-symbols/svg-400/outlined/badge.svg";
 import Mail from "@material-symbols/svg-400/outlined/mail.svg";
 import Password from "@material-symbols/svg-400/outlined/password.svg";
-// import AccountCircle from "@material-symbols/svg-400/rounded/account_circle-fill.svg";
+import AccountCircle from "@material-symbols/svg-400/rounded/account_circle-fill.svg";
 import Delete from "@material-symbols/svg-400/rounded/delete.svg";
 import Logout from "@material-symbols/svg-400/rounded/logout.svg";
-// import * as ImagePicker from "expo-image-picker";
+import * as ImagePicker from "expo-image-picker";
 import { type ComponentProps, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
@@ -12,6 +12,7 @@ import { useUniwind } from "uniwind";
 import type { KyooError, User } from "~/models";
 import {
 	Alert,
+	Avatar,
 	Button,
 	type Icon,
 	Input,
@@ -24,16 +25,6 @@ import { useMutation } from "~/query";
 import { deleteAccount, logout } from "../login/logic";
 import { PasswordInput } from "../login/password-input";
 import { Preference, SettingsContainer } from "./base";
-
-// function dataURItoBlob(dataURI: string) {
-// 	const byteString = atob(dataURI.split(",")[1]);
-// 	const ab = new ArrayBuffer(byteString.length);
-// 	const ia = new Uint8Array(ab);
-// 	for (let i = 0; i < byteString.length; i++) {
-// 		ia[i] = byteString.charCodeAt(i);
-// 	}
-// 	return new Blob([ab], { type: "image/jpeg" });
-// }
 
 export const AccountSettings = () => {
 	const account = useAccount()!;
@@ -60,6 +51,15 @@ export const AccountSettings = () => {
 			body,
 		}),
 		invalidate: ["auth", "users", "me"],
+	});
+
+	const { mutateAsync: editLogo } = useMutation({
+		path: ["auth", "users", "me", "logo"],
+		compute: (formData: FormData | null) => ({
+			method: formData ? "POST" : "DELETE",
+			formData: formData ?? undefined,
+		}),
+		invalidate: null,
 	});
 
 	return (
@@ -120,42 +120,41 @@ export const AccountSettings = () => {
 					}
 				/>
 			</Preference>
-			{/* <Preference */}
-			{/* 	icon={AccountCircle} */}
-			{/* 	customIcon={<Avatar src={account.logo} />} */}
-			{/* 	label={t("settings.account.avatar.label")} */}
-			{/* 	description={t("settings.account.avatar.description")} */}
-			{/* > */}
-			{/* 	<Button */}
-			{/* 		text={t("misc.edit")} */}
-			{/* 		onPress={async () => { */}
-			{/* 			const img = await ImagePicker.launchImageLibraryAsync({ */}
-			{/* 				mediaTypes: ImagePicker.MediaTypeOptions.Images, */}
-			{/* 				aspect: [1, 1], */}
-			{/* 				quality: 1, */}
-			{/* 				base64: true, */}
-			{/* 			}); */}
-			{/* 			if (img.canceled || img.assets.length !== 1) return; */}
-			{/* 			const data = dataURItoBlob(img.assets[0].uri); */}
-			{/* 			const formData = new FormData(); */}
-			{/* 			formData.append("picture", data); */}
-			{/* 			await queryFn({ */}
-			{/* 				method: "POST", */}
-			{/* 				path: ["auth", "me", "logo"], */}
-			{/* 				formData, */}
-			{/* 			}); */}
-			{/* 		}} */}
-			{/* 	/> */}
-			{/* 	<Button */}
-			{/* 		text={t("misc.delete")} */}
-			{/* 		onPress={async () => { */}
-			{/* 			await queryFn({ */}
-			{/* 				method: "DELETE", */}
-			{/* 				path: ["auth", "me", "logo"], */}
-			{/* 			}); */}
-			{/* 		}} */}
-			{/* 	/> */}
-			{/* </Preference> */}
+			<Preference
+				icon={AccountCircle}
+				customIcon={<Avatar src={account.logo} />}
+				label={t("settings.account.avatar.label")}
+				description={t("settings.account.avatar.description")}
+			>
+				<Button
+					text={t("misc.edit")}
+					onPress={async () => {
+						const img = await ImagePicker.launchImageLibraryAsync({
+							mediaTypes: "images",
+							allowsEditing: true,
+							aspect: [1, 1],
+							shape: "oval",
+							quality: 0,
+							base64: true,
+						});
+						if (img.canceled || img.assets.length !== 1) return;
+						const response = await fetch(img.assets[0].uri);
+						const formData = new FormData();
+						formData.append(
+							"logo",
+							await response.blob(),
+							img.assets[0].fileName ?? "logo.jpg",
+						);
+						await editLogo(formData);
+					}}
+				/>
+				<Button
+					text={t("misc.delete")}
+					onPress={async () => {
+						await editLogo(null);
+					}}
+				/>
+			</Preference>
 			<Preference
 				icon={Mail}
 				label={t("settings.account.email.label")}

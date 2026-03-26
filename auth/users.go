@@ -1,12 +1,9 @@
 package main
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
@@ -151,97 +148,6 @@ func (h *Handler) GetMe(c *echo.Context) error {
 	ret := MapDbUser(&dbuser.User)
 	ret.Oidc = dbuser.Oidc
 	return c.JSON(200, ret)
-}
-
-func (h *Handler) streamGravatar(c *echo.Context, email string) error {
-	hash := md5.Sum([]byte(strings.TrimSpace(strings.ToLower(email))))
-	url := fmt.Sprintf("https://www.gravatar.com/avatar/%s?d=404", hex.EncodeToString(hash[:]))
-
-	req, err := http.NewRequestWithContext(c.Request().Context(), http.MethodGet, url, nil)
-	if err != nil {
-		return err
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadGateway, "Could not fetch gravatar image")
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return echo.NewHTTPError(http.StatusNotFound, "No gravatar image found for this user")
-	}
-	if resp.StatusCode != http.StatusOK {
-		return echo.NewHTTPError(http.StatusBadGateway, "Could not fetch gravatar image")
-	}
-
-	contentType := resp.Header.Get("Content-Type")
-	if contentType == "" {
-		contentType = "application/octet-stream"
-	}
-
-	return c.Stream(http.StatusOK, contentType, resp.Body)
-}
-
-// @Summary      Get my logo
-// @Description  Get the current user's gravatar image
-// @Tags         users
-// @Produce      image/*
-// @Security     Jwt
-// @Success      200  {file}  binary
-// @Failure      401  {object}  KError "Missing jwt token"
-// @Failure      403  {object}  KError "Invalid jwt token (or expired)"
-// @Failure      404  {object}  KError "No gravatar image found for this user"
-// @Router /users/me/logo [get]
-func (h *Handler) GetMyLogo(c *echo.Context) error {
-	ctx := c.Request().Context()
-	id, err := GetCurrentUserId(c)
-	if err != nil {
-		return err
-	}
-
-	users, err := h.db.GetUser(ctx, dbc.GetUserParams{
-		UseId: true,
-		Id:    id,
-	})
-	if err != nil {
-		return err
-	}
-
-	return h.streamGravatar(c, users.User.Email)
-}
-
-// @Summary      Get user logo
-// @Description  Get a user's gravatar image
-// @Tags         users
-// @Produce      image/*
-// @Security     Jwt[users.read]
-// @Param        id   path      string    true  "The id or username of the user"
-// @Success      200  {file}  binary
-// @Failure      404  {object}  KError "No user found with id or username"
-// @Failure      404  {object}  KError "No gravatar image found for this user"
-// @Router /users/{id}/logo [get]
-func (h *Handler) GetUserLogo(c *echo.Context) error {
-	ctx := c.Request().Context()
-	err := CheckPermissions(c, []string{"users.read"})
-	if err != nil {
-		return err
-	}
-
-	id := c.Param("id")
-	uid, err := uuid.Parse(id)
-	users, err := h.db.GetUser(ctx, dbc.GetUserParams{
-		UseId:    err == nil,
-		Id:       uid,
-		Username: id,
-	})
-	if err == pgx.ErrNoRows {
-		return echo.NewHTTPError(404, fmt.Sprintf("No user found with id or username: '%s'.", id))
-	} else if err != nil {
-		return err
-	}
-
-	return h.streamGravatar(c, users.User.Email)
 }
 
 // @Summary      Register

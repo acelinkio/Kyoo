@@ -4,6 +4,7 @@ import { AccountSettings } from "./account";
 import { About, GeneralSettings } from "./general";
 import { OidcSettings } from "./oidc";
 import { PlaybackSettings } from "./playback";
+import { SessionsSettings } from "./sessions";
 
 export const SettingsPage = () => {
 	const account = useAccount();
@@ -12,6 +13,7 @@ export const SettingsPage = () => {
 			<GeneralSettings />
 			{account && <PlaybackSettings />}
 			{account && <AccountSettings />}
+			{account && <SessionsSettings />}
 			{account && <OidcSettings />}
 			<About />
 		</ScrollView>

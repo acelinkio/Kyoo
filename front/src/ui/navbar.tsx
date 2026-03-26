@@ -35,6 +35,7 @@ import {
 	A,
 	Avatar,
 	HR,
+	HRP,
 	IconButton,
 	Link,
 	Menu,
@@ -58,12 +59,6 @@ export const NavbarLeft = () => {
 				className="font-headers text-lg text-slate-200 uppercase dark:text-slate-200"
 			>
 				{t("navbar.browse")}
-			</A>
-			<A
-				href="/unmatched"
-				className="mx-2 font-headers text-lg text-slate-200 uppercase dark:text-slate-200"
-			>
-				{t("admin.unmatched.label")}
 			</A>
 		</View>
 	);
@@ -256,6 +251,17 @@ export const NavbarProfile = () => {
 						icon={Logout}
 						onSelect={logout}
 					/>
+				</>
+			)}
+			{account?.isAdmin && (
+				<>
+					<HRP text={t("navbar.admin")} />
+					<Menu.Item
+						label={t("admin.unmatched.label")}
+						icon={Search}
+						href="/unmatched"
+					/>
+					<Menu.Item label="Users" icon={Admin} href="/admin/users" />
 				</>
 			)}
 		</Menu>

@@ -132,7 +132,7 @@
 		"download": "Download",
 		"search": "Search",
 		"login": "Login",
-		"admin": "Admin panel"
+		"admin": "Admin"
 	},
 	"settings": {
 		"general": {
@@ -183,6 +183,12 @@
 				"oldPassword": "Old password",
 				"newPassword": "New password"
 			}
+		},
+		"sessions": {
+			"label": "Sessions",
+			"description": "Created {{createdDate}} - Last used {{lastUsed}}",
+			"current": "Current session",
+			"revoke": "Revoke"
 		},
 		"oidc": {
 			"label": "Linked accounts",
@@ -244,7 +250,9 @@
 		"or-login": "Have an account already? <1>Log in</1>.",
 		"password-no-match": "Passwords do not match.",
 		"delete": "Delete your account",
-		"delete-confirmation": "This action can't be reverted. Are you sure?"
+		"delete-confirmation": "This action can't be reverted. Are you sure?",
+		"register-disabled": "Registrations are disabled.",
+		"register-disabled-oidc": "Password registration is disabled. Use OIDC."
 	},
 	"downloads": {
 		"empty": "Nothing downloaded yet, start browsing for something you like",
@@ -297,7 +305,12 @@
 			"set-permissions": "Set permissions",
 			"delete": "Delete user",
 			"unverifed": "Unverifed",
-			"verify": "Verify user"
+			"verify": "Verify user",
+			"table": {
+				"username": "Username",
+				"lastSeen": "Last seen",
+				"oidc": "OIDC"
+			}
 		},
 		"scanner": {
 			"label": "Scanner",

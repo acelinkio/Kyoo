@@ -383,6 +383,7 @@ func main() {
 	r.DELETE("/sessions", h.Logout)
 	r.DELETE("/sessions/:id", h.Logout)
 	r.GET("/users/:id/sessions", h.ListUserSessions)
+	r.GET("/users/me/sessions", h.ListMySessions)
 
 	g.GET("/oidc/login/:provider", h.OidcLogin)
 	r.DELETE("/oidc/login/:provider", h.OidcUnlink)

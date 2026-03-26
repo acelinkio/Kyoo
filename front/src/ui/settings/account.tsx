@@ -122,7 +122,9 @@ export const AccountSettings = () => {
 			</Preference>
 			<Preference
 				icon={AccountCircle}
-				customIcon={<Avatar src={account.logo} />}
+				customIcon={
+					<Avatar src={account.logo} placeholder={account.username} />
+				}
 				label={t("settings.account.avatar.label")}
 				description={t("settings.account.avatar.description")}
 			>

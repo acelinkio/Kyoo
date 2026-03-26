@@ -58,7 +58,7 @@ export const Avatar = <AsProps = ViewProps>({
 					resizeMode="cover"
 					source={{ uri: src }}
 					alt={alt}
-					className="absolute inset-0"
+					className="absolute inset-0 bg-slate-200 dark:bg-slate-200"
 				/>
 			)}
 			{!src && !placeholder && (

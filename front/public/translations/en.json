@@ -297,7 +297,12 @@
 			"set-permissions": "Set permissions",
 			"delete": "Delete user",
 			"unverifed": "Unverifed",
-			"verify": "Verify user"
+			"verify": "Verify user",
+			"table": {
+				"username": "Username",
+				"lastSeen": "Last seen",
+				"oidc": "OIDC"
+			}
 		},
 		"scanner": {
 			"label": "Scanner",

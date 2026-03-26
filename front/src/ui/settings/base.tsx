@@ -55,12 +55,14 @@ export const SettingsContainer = ({
 			<H1 className="my-2 text-4xl">{title}</H1>
 			{extraTop}
 			<View className="rounded bg-card">
-				{Children.map(children, (x, i) => (
-					<Fragment key={i}>
-						{i !== 0 && <HR className="my-2" />}
-						{x}
-					</Fragment>
-				))}
+				{Children.toArray(children)
+					.filter((x) => x)
+					.map((x, i) => (
+						<Fragment key={i}>
+							{i !== 0 && <HR className="my-2" />}
+							{x}
+						</Fragment>
+					))}
 			</View>
 			{extra}
 		</Container>

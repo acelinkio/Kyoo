@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Image } from "react-native";
 import { type KyooError, User } from "~/models";
+import { AuthInfo } from "~/models/auth-info";
 import { Button, IconButton, Link, P, Skeleton, tooltip } from "~/primitives";
 import { type QueryIdentifier, useFetch, useMutation } from "~/query";
 import { Preference, SettingsContainer } from "./base";

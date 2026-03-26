@@ -1,5 +1,7 @@
 import { HR as EHR } from "@expo/html-elements";
+import { View } from "react-native";
 import { cn } from "~/utils";
+import { P } from "./text";
 
 export const HR = ({
 	orientation = "horizontal",
@@ -19,5 +21,15 @@ export const HR = ({
 			)}
 			{...props}
 		/>
+	);
+};
+
+export const HRP = ({ text }: { text: string }) => {
+	return (
+		<View className="my-2 w-full flex-row items-center">
+			<HR className="grow" />
+			<P className="uppercase">{text}</P>
+			<HR className="grow" />
+		</View>
 	);
 };

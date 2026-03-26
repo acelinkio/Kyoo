@@ -1,21 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { Image, View } from "react-native";
 import { AuthInfo } from "~/models/auth-info";
-import { Button, HR, Link, P, Skeleton } from "~/primitives";
+import { Button, HRP, Link, Skeleton } from "~/primitives";
 import { Fetch, type QueryIdentifier } from "~/query";
 
 export const OidcLogin = ({ apiUrl }: { apiUrl: string }) => {
 	const { t } = useTranslation();
-
-	const or = (
-		<>
-			<View className="my-2 w-full flex-row items-center">
-				<HR className="grow" />
-				<P>{t("misc.or")}</P>
-				<HR className="grow" />
-			</View>
-		</>
-	);
 
 	return (
 		<Fetch
@@ -43,7 +33,7 @@ export const OidcLogin = ({ apiUrl }: { apiUrl: string }) => {
 							/>
 						))}
 					</View>
-					{or}
+					<HRP text={t("misc.or")} />
 				</>
 			)}
 			Loader={() => (
@@ -55,7 +45,7 @@ export const OidcLogin = ({ apiUrl }: { apiUrl: string }) => {
 							</Button>
 						))}
 					</View>
-					{or}
+					<HRP text={t("misc.or")} />
 				</>
 			)}
 		/>

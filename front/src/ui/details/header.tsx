@@ -1,9 +1,11 @@
 import BookmarkAdd from "@material-symbols/svg-400/rounded/bookmark_add.svg";
+import Delete from "@material-symbols/svg-400/rounded/delete.svg";
 import MoreHoriz from "@material-symbols/svg-400/rounded/more_horiz.svg";
 import MovieInfo from "@material-symbols/svg-400/rounded/movie_info.svg";
 import PlayArrow from "@material-symbols/svg-400/rounded/play_arrow-fill.svg";
 import Theaters from "@material-symbols/svg-400/rounded/theaters-fill.svg";
 import VideoLibrary from "@material-symbols/svg-400/rounded/video_library-fill.svg";
+import { useRouter } from "expo-router";
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { View, type ViewProps } from "react-native";
@@ -22,6 +24,7 @@ import {
 import type { Metadata } from "~/models/utils/metadata";
 import {
 	A,
+	Alert,
 	Chip,
 	Container,
 	capitalize,
@@ -45,7 +48,7 @@ import {
 	usePopup,
 } from "~/primitives";
 import { useAccount } from "~/providers/account-context";
-import { Fetch, type QueryIdentifier } from "~/query";
+import { Fetch, type QueryIdentifier, useMutation } from "~/query";
 import { cn, displayRuntime, getDisplayDate } from "~/utils";
 import { PartOf } from "./part-of";
 
@@ -72,7 +75,13 @@ const ButtonList = ({
 }) => {
 	const account = useAccount();
 	const { t } = useTranslation();
+	const router = useRouter();
 	const [setPopup, closePopup] = usePopup();
+	const deleteMutation = useMutation({
+		method: "DELETE",
+		path: ["api", `${kind}s`, slug],
+		invalidate: ["api", "shows"],
+	});
 
 	// const metadataRefreshMutation = useMutation({
 	// 	method: "POST",
@@ -112,7 +121,6 @@ const ButtonList = ({
 					icon={Theaters}
 					as={Link}
 					href={trailerUrl}
-					target="_blank"
 					iconClassName={iconsClassName}
 					{...tooltip(t("show.trailer"))}
 				/>
@@ -153,6 +161,29 @@ const ButtonList = ({
 								label={t("show.videos-map")}
 								icon={VideoLibrary}
 								href={`/${kind === "movie" ? "movies" : "series"}/${slug}/videos`}
+							/>
+							{kind !== "collection" && <HR />}
+							<Menu.Item
+								label={t("misc.delete")}
+								icon={Delete}
+								onSelect={() => {
+									Alert.alert(
+										t("misc.delete-name", { name }),
+										t("login.delete-confirmation"),
+										[
+											{ text: t("misc.cancel"), style: "cancel" },
+											{
+												text: t("misc.delete"),
+												style: "destructive",
+												onPress: async () => {
+													await deleteMutation.mutateAsync();
+													router.back();
+												},
+											},
+										],
+										{ cancelable: true },
+									);
+								}}
 							/>
 							{/* <Menu.Item */}
 							{/* 	label={t("home.refreshMetadata")} */}
@@ -308,7 +339,6 @@ const ExternalIdChip = ({
 		<Chip
 			label={name}
 			href={withLinks.length === 1 ? withLinks[0].link : null}
-			target="_blank"
 			size="small"
 			outline
 			className="m-1"
@@ -325,7 +355,6 @@ const ExternalIdChip = ({
 											<A
 												key={x.dataId}
 												href={x.link!}
-												target="_blank"
 												className="rounded p-4 hover:bg-popover"
 											>
 												{x.label ?? x.link}

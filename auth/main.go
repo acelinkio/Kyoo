@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -38,6 +39,7 @@ func ErrorHandler(c *echo.Context, err error) {
 
 	code := http.StatusInternalServerError
 	var message string
+	var sc echo.HTTPStatusCoder
 
 	if he, ok := err.(*echo.HTTPError); ok {
 		code = he.Code
@@ -46,8 +48,12 @@ func ErrorHandler(c *echo.Context, err error) {
 		if message == "missing or malformed jwt" {
 			code = http.StatusUnauthorized
 		}
+	} else if errors.As(err, &sc) {
+		if tmp := sc.StatusCode(); tmp != 0 {
+			code = tmp
+		}
 	} else {
-		c.Logger().Error(err.Error())
+		c.Logger().Error("Unhandled error", slog.Any("err", err))
 	}
 
 	c.JSON(code, KError{
@@ -171,14 +177,25 @@ func (h *Handler) TokenToJwt(next echo.HandlerFunc) echo.HandlerFunc {
 			jwt = &token
 		} else {
 			auth := c.Request().Header.Get("Authorization")
+			var token string
 
-			if auth == "" || !strings.HasPrefix(auth, "Bearer ") {
+			if auth == "" {
+				cookie, _ := c.Request().Cookie("X-Bearer")
+				if cookie != nil {
+					token = cookie.Value
+				}
+			} else if strings.HasPrefix(auth, "Bearer ") {
+				token = auth[len("Bearer "):]
+			} else if auth != "" {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid bearer format.")
+			}
+
+			if token == "" {
 				jwt = h.createGuestJwt()
 				if jwt == nil {
 					return echo.NewHTTPError(http.StatusUnauthorized, "Guests not allowed.")
 				}
 			} else {
-				token := auth[len("Bearer "):]
 				// this is only used to check if it is a session token or a jwt
 				_, err := base64.RawURLEncoding.DecodeString(token)
 				if err != nil {
@@ -196,6 +213,35 @@ func (h *Handler) TokenToJwt(next echo.HandlerFunc) echo.HandlerFunc {
 		if jwt != nil {
 			c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", *jwt))
 		}
+		return next(c)
+	}
+}
+
+func (h *Handler) OptionalAuthToJwt(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c *echo.Context) error {
+		ctx := c.Request().Context()
+
+		auth := c.Request().Header.Get("Authorization")
+		if auth == "" {
+			return next(c)
+		}
+
+		if !strings.HasPrefix(auth, "Bearer ") {
+			return echo.NewHTTPError(http.StatusForbidden, "Invalid bearer format")
+		}
+		token := auth[len("Bearer "):]
+
+		// this is only used to check if it is a session token or a jwt
+		_, err := base64.RawURLEncoding.DecodeString(token)
+		if err != nil {
+			return next(c)
+		}
+
+		jwt, err := h.createJwt(ctx, token)
+		if err != nil {
+			return err
+		}
+		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", jwt))
 		return next(c)
 	}
 }
@@ -321,6 +367,8 @@ func main() {
 	r.GET("/users", h.ListUsers)
 	r.GET("/users/:id", h.GetUser)
 	r.GET("/users/me", h.GetMe)
+	r.GET("/users/me/logo", h.GetMyLogo)
+	r.GET("/users/:id/logo", h.GetUserLogo)
 	r.DELETE("/users/:id", h.DeleteUser)
 	r.DELETE("/users/me", h.DeleteSelf)
 	r.PATCH("/users/:id", h.EditUser)
@@ -329,8 +377,22 @@ func main() {
 	g.POST("/users", h.Register)
 
 	g.POST("/sessions", h.Login)
+	r.GET("/sessions", h.ListMySessions)
 	r.DELETE("/sessions", h.Logout)
 	r.DELETE("/sessions/:id", h.Logout)
+	r.GET("/users/:id/sessions", h.ListUserSessions)
+
+	g.GET("/oidc/login/:provider", h.OidcLogin)
+	r.DELETE("/oidc/login/:provider", h.OidcUnlink)
+	g.GET("/oidc/logged/:provider", h.OidcLogged)
+
+	or := e.Group("/auth")
+	or.Use(h.OptionalAuthToJwt)
+	or.Use(echojwt.WithConfig(echojwt.Config{
+		SigningMethod: "RS256",
+		SigningKey:    h.config.JwtPublicKey,
+	}))
+	or.GET("/oidc/callback/:provider", h.OidcCallback)
 
 	r.GET("/keys", h.ListApiKey)
 	r.POST("/keys", h.CreateApiKey)
@@ -340,6 +402,8 @@ func main() {
 	g.Any("/jwt/*", h.CreateJwt)
 	e.GET("/.well-known/jwks.json", h.GetJwks)
 	e.GET("/.well-known/openid-configuration", h.GetOidcConfig)
+
+	g.GET("/info", h.Info)
 
 	g.GET("/swagger/*", echoSwagger.WrapHandler)
 

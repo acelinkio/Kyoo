@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { View } from "react-native";
-import { type Entry, FullVideo, type Page } from "~/models";
-import { Modal, P } from "~/primitives";
+import { type Entry, type Episode, FullVideo, type Page } from "~/models";
+import { Modal } from "~/primitives";
 import {
 	InfiniteFetch,
 	type QueryIdentifier,
 	useFetch,
 	useMutation,
 } from "~/query";
+import { EmptyView } from "~/ui/empty-view";
 import { useQueryState } from "~/utils";
 import { Header } from "../../details/header";
 import { AddVideoFooter, VideoListHeader } from "./headers";
@@ -32,17 +32,17 @@ export const useEditLinks = (
 			body: [
 				{
 					id: video,
-					for: entries.map((x) =>
-						x.kind === "episode" && !x.slug
-							? {
-									serie: slug,
-									// @ts-expect-error: idk why it couldn't match x as an episode
-									season: x.seasonNumber,
-									// @ts-expect-error: idk why it couldn't match x as an episode
-									episode: x.episodeNumber,
-								}
-							: { slug: x.slug },
-					),
+					for: entries.map((x) => {
+						if (x.slug) return { slug: x.slug };
+						const ep = x as Episode;
+						if (!ep.seasonNumber)
+							return { serie: slug, special: ep.episodeNumber };
+						return {
+							serie: slug,
+							season: ep.seasonNumber,
+							episode: ep.episodeNumber,
+						};
+					}),
 				},
 			],
 		}),
@@ -102,11 +102,7 @@ export const VideosModal = () => {
 					/>
 				)}
 				Loader={PathItem.Loader}
-				Empty={
-					<View className="flex-1">
-						<P className="flex-1 self-center">{t("videos-map.no-video")}</P>
-					</View>
-				}
+				Empty={<EmptyView message={t("videos-map.no-video")} />}
 				Footer={<AddVideoFooter addTitle={addTitle} />}
 			/>
 		</Modal>

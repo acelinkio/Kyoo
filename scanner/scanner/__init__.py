@@ -18,7 +18,7 @@ from .routers.routes import router
 
 
 @asynccontextmanager
-async def lifespan(_):
+async def lifespan(app: FastAPI):
 	async with (
 		init_pool() as pool,
 		get_db() as db,
@@ -26,6 +26,7 @@ async def lifespan(_):
 		TVDB() as tvdb,
 		TheMovieDatabase() as tmdb,
 	):
+		app.state.provider = CompositeProvider(tvdb, tmdb)
 		# there's no way someone else used the same id, right?
 		is_master = await db.fetchval("select pg_try_advisory_lock(198347)")
 		is_http = not is_master and await db.fetchval(
@@ -39,7 +40,7 @@ async def lifespan(_):
 		processor = RequestProcessor(
 			pool,
 			client,
-			CompositeProvider(tvdb, tmdb),
+			app.state.provider,
 		)
 		scanner = FsScanner(client, RequestCreator(db))
 		tasks = create_task(

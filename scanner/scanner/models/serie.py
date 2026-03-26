@@ -57,6 +57,7 @@ class SerieTranslation(Model):
 
 
 class SearchSerie(Model):
+	id: str
 	slug: str
 	name: str
 	description: str | None

@@ -42,6 +42,19 @@ export const useLanguagePreference = (player: VideoPlayer, slug: string) => {
 		lang: account?.claims.settings.subtitleLanguage,
 		forced: false,
 	});
+	useEvent(player, "onTrackChange", (s) => {
+		if (!s) {
+			sub.current = { idx: null, lang: null, forced: false };
+			return;
+		}
+		if (!subtitles) return;
+		const idx = player.getAvailableTextTracks().findIndex((x) => x.selected);
+		sub.current = {
+			idx: idx,
+			lang: subtitles[idx].language,
+			forced: subtitles[idx].isForced,
+		};
+	});
 	useEffect(() => {
 		if (!subtitles || sub.current.idx === null) return;
 		let subRet = subtitles.findIndex(

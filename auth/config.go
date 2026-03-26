@@ -27,6 +27,7 @@ type Configuration struct {
 	JwtPublicKey    *rsa.PublicKey
 	JwtKid          string
 	PublicUrl       string
+	OidcProviders   map[string]OidcProviderConfig
 	DefaultClaims   jwt.MapClaims
 	FirstUserClaims jwt.MapClaims
 	GuestClaims     jwt.MapClaims
@@ -35,9 +36,30 @@ type Configuration struct {
 	EnvApiKeys      []ApiKeyWToken
 }
 
+type OidcAuthMethod string
+
+const (
+	OidcClientSecretBasic OidcAuthMethod = "ClientSecretBasic"
+	OidcClientSecretPost  OidcAuthMethod = "ClientSecretPost"
+)
+
+type OidcProviderConfig struct {
+	Id            string
+	Name          string
+	Logo          string
+	ClientId      string
+	Secret        string
+	Authorization string
+	Token         string
+	Profile       string
+	Scope         string
+	AuthMethod    OidcAuthMethod
+}
+
 var DefaultConfig = Configuration{
 	DefaultClaims:   make(jwt.MapClaims),
 	FirstUserClaims: make(jwt.MapClaims),
+	OidcProviders:   make(map[string]OidcProviderConfig),
 	ProtectedClaims: []string{"permissions"},
 	ExpirationDelay: 30 * 24 * time.Hour,
 	EnvApiKeys:      make([]ApiKeyWToken, 0),
@@ -162,6 +184,65 @@ func LoadConfiguration(ctx context.Context, db *dbc.Queries) (*Configuration, er
 				key.Name,
 			)
 		}
+	}
+
+	oidcProviders := make([]string, 0)
+	for _, env := range os.Environ() {
+		parts := strings.SplitN(env, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		k := parts[0]
+		if !strings.HasPrefix(k, "OIDC_") || !strings.HasSuffix(k, "_CLIENTID") {
+			continue
+		}
+		name := strings.TrimSuffix(strings.TrimPrefix(k, "OIDC_"), "_CLIENTID")
+		if name == "" {
+			continue
+		}
+		oidcProviders = append(oidcProviders, name)
+	}
+
+	for _, name := range oidcProviders {
+		providerId := strings.ToLower(name)
+		provider := OidcProviderConfig{
+			Id:            providerId,
+			Name:          os.Getenv(fmt.Sprintf("OIDC_%s_NAME", name)),
+			Logo:          os.Getenv(fmt.Sprintf("OIDC_%s_LOGO", name)),
+			ClientId:      os.Getenv(fmt.Sprintf("OIDC_%s_CLIENTID", name)),
+			Secret:        os.Getenv(fmt.Sprintf("OIDC_%s_SECRET", name)),
+			Authorization: os.Getenv(fmt.Sprintf("OIDC_%s_AUTHORIZATION", name)),
+			Token:         os.Getenv(fmt.Sprintf("OIDC_%s_TOKEN", name)),
+			Profile:       os.Getenv(fmt.Sprintf("OIDC_%s_PROFILE", name)),
+			Scope:         os.Getenv(fmt.Sprintf("OIDC_%s_SCOPE", name)),
+			AuthMethod:    OidcClientSecretBasic,
+		}
+
+		authMethod := os.Getenv(fmt.Sprintf("OIDC_%s_AUTHMETHOD", name))
+		if authMethod != "" {
+			switch OidcAuthMethod(authMethod) {
+			case OidcClientSecretBasic, OidcClientSecretPost:
+				provider.AuthMethod = OidcAuthMethod(authMethod)
+			default:
+				return nil, fmt.Errorf("invalid OIDC_%s_AUTHMETHOD: %s", name, authMethod)
+			}
+		}
+
+		if provider.Name == "" {
+			provider.Name = name
+		}
+		if provider.ClientId == "" ||
+			provider.Secret == "" ||
+			provider.Authorization == "" ||
+			provider.Token == "" ||
+			provider.Profile == "" {
+			return nil, fmt.Errorf("invalid oidc configuration for provider %s, missing required values", providerId)
+		}
+		if provider.Scope == "" {
+			provider.Scope = "openid profile email"
+		}
+
+		ret.OidcProviders[providerId] = provider
 	}
 
 	return &ret, nil

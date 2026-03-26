@@ -52,35 +52,35 @@ export const login = async (
 	}
 };
 
-// export const oidcLogin = async (
-// 	provider: string,
-// 	code: string,
-// 	apiUrl?: string,
-// ) => {
-// 	if (!apiUrl || apiUrl.length === 0) apiUrl = getCurrentApiUrl()!;
-// 	try {
-// 		const token = await queryFn(
-// 			{
-// 				path: ["auth", "callback", provider, `?code=${code}`],
-// 				method: "POST",
-// 				authenticated: false,
-// 				apiUrl,
-// 			},
-// 			TokenP,
-// 		);
-// 		const user = await queryFn(
-// 			{ path: ["auth", "me"], method: "GET", apiUrl },
-// 			UserP,
-// 			`Bearer ${token.access_token}`,
-// 		);
-// 		const account: Account = { ...user, apiUrl: apiUrl, token, selected: true };
-// 		addAccount(account);
-// 		return { ok: true, value: account };
-// 	} catch (e) {
-// 		console.error("oidcLogin", e);
-// 		return { ok: false, error: (e as KyooErrors).errors[0] };
-// 	}
-// };
+export const oidcLogin = async (
+	provider: string,
+	code: string,
+	linkToToken: string | null,
+	apiUrl?: string,
+) => {
+	apiUrl ??= defaultApiUrl;
+	try {
+		const { token } = await queryFn({
+			method: "GET",
+			url: `${apiUrl}/auth/oidc/callback/${provider}?token=${code}`,
+			authToken: linkToToken,
+			parser: linkToToken ? null : z.object({ token: z.string() }),
+		});
+		if (linkToToken) return { ok: true, value: null };
+		const user = await queryFn({
+			method: "GET",
+			url: `${apiUrl}/auth/users/me`,
+			authToken: token,
+			parser: User,
+		});
+		const account: Account = { ...user, apiUrl, token, selected: true };
+		addAccount(account);
+		return { ok: true, value: account };
+	} catch (e) {
+		console.error("oidcLogin", e);
+		return { ok: false, error: (e as KyooError).message };
+	}
+};
 
 export const logout = async () => {
 	const accounts = readAccounts();

@@ -25,7 +25,7 @@ const clientId = uuidv4();
 
 export const Player = () => {
 	const [slug, setSlug] = useQueryState<string>("slug", undefined!);
-	const [start, setStart] = useQueryState<number | undefined>("t", undefined);
+	const [start, setStart] = useQueryState<string | undefined>("t", undefined);
 
 	const { data } = useFetch(Player.query(slug));
 	const { data: info } = useFetch(Info.infoQuery(slug));
@@ -85,7 +85,7 @@ export const Player = () => {
 			p.playInBackground = true;
 			p.showNotificationControls = true;
 			enhanceSubtitles(p);
-			const seek = start ?? data?.progress.time;
+			const seek = start ? Number.parseInt(start, 10) : data?.progress.time;
 			// TODO: fix console.error bellow
 			if (seek) p.seekTo(seek);
 			else console.error("Player got ready before progress info was loaded.");
@@ -95,19 +95,21 @@ export const Player = () => {
 
 	// we'll also want to replace source here once https://github.com/TheWidlarzGroup/react-native-video/issues/4722 is ready
 	useEffect(() => {
-		if (Platform.OS === "web") player.__ass.fonts = info?.fonts ?? [];
+		if (Platform.OS !== "web") return;
+		enhanceSubtitles(player);
+		player.__ass.fonts = info?.fonts ?? [];
 	}, [player, info?.fonts]);
 
 	const router = useRouter();
 	const playPrev = useCallback(() => {
 		if (!data?.previous) return false;
-		setStart(0);
+		setStart("0");
 		setSlug(data.previous.video);
 		return true;
 	}, [data?.previous, setSlug, setStart]);
 	const playNext = useCallback(() => {
 		if (!data?.next) return false;
-		setStart(0);
+		setStart("0");
 		setSlug(data.next.video);
 		return true;
 	}, [data?.next, setSlug, setStart]);
@@ -180,7 +182,7 @@ export const Player = () => {
 				pictureInPicture
 				autoEnterPictureInPicture
 				resizeMode={"contain"}
-				style={StyleSheet.absoluteFillObject}
+				style={StyleSheet.absoluteFill}
 			/>
 			<LoadingIndicator player={player} />
 			<PlayModeContext.Provider value={playModeState}>
@@ -197,8 +199,8 @@ export const Player = () => {
 							: data?.path
 					}
 					chapters={info?.chapters ?? []}
-					previous={data?.previous?.video}
-					next={data?.next?.video}
+					playPrev={data?.previous?.video ? playPrev : null}
+					playNext={data?.next?.video ? playNext : null}
 				/>
 			</PlayModeContext.Provider>
 		</View>

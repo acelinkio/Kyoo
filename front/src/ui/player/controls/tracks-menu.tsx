@@ -2,7 +2,12 @@ import ClosedCaption from "@material-symbols/svg-400/rounded/closed_caption-fill
 import MusicNote from "@material-symbols/svg-400/rounded/music_note-fill.svg";
 import SettingsIcon from "@material-symbols/svg-400/rounded/settings-fill.svg";
 import VideoSettings from "@material-symbols/svg-400/rounded/video_settings-fill.svg";
-import { type ComponentProps, createContext, useContext } from "react";
+import {
+	type ComponentProps,
+	createContext,
+	useContext,
+	useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useEvent, type VideoPlayer } from "react-native-video";
 import { IconButton, Menu, tooltip } from "~/primitives";
@@ -22,17 +27,19 @@ export const SubtitleMenu = ({
 	const { t } = useTranslation();
 	const getDisplayName = useSubtitleName();
 
-	const rerender = useForceRerender();
-	useEvent(player, "onTrackChange", rerender);
+	const [selectedIdx, setSelectedIdx] = useState(
+		player.getAvailableTextTracks().findIndex((x) => x.selected),
+	);
+	useEvent(player, "onTrackChange", () => {
+		setSelectedIdx(
+			player.getAvailableTextTracks().findIndex((x) => x.selected),
+		);
+	});
 
 	const [slug] = useQueryState<string>("slug", undefined!);
 	const { data } = useFetch(Info.infoQuery(slug));
 
 	if (data?.subtitles.length === 0) return null;
-
-	const selectedIdx = player
-		.getAvailableTextTracks()
-		.findIndex((x) => x.selected);
 
 	return (
 		<Menu

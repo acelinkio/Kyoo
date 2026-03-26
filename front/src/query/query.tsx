@@ -148,7 +148,7 @@ export type QueryIdentifier<T = unknown> = {
 	};
 };
 
-const toQueryKey = (query: {
+export const toQueryKey = (query: {
 	apiUrl: string;
 	path: (string | undefined)[];
 	params?: {

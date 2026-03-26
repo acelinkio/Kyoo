@@ -7,9 +7,11 @@ package dbc
 
 import (
 	"context"
+	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/zoriya/kyoo/keibi/models"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -57,6 +59,23 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const deleteOidcHandle = `-- name: DeleteOidcHandle :exec
+delete from keibi.oidc_handle
+where
+	user_pk = $1
+	and provider = $2
+`
+
+type DeleteOidcHandleParams struct {
+	UserPk   int32  `json:"userPk"`
+	Provider string `json:"provider"`
+}
+
+func (q *Queries) DeleteOidcHandle(ctx context.Context, arg DeleteOidcHandleParams) error {
+	_, err := q.db.Exec(ctx, deleteOidcHandle, arg.UserPk, arg.Provider)
+	return err
+}
+
 const deleteUser = `-- name: DeleteUser :one
 delete from keibi.users
 where id = $1
@@ -82,32 +101,55 @@ func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) (User, error) {
 
 const getAllUsers = `-- name: GetAllUsers :many
 select
-	pk, id, username, email, password, claims, created_date, last_seen
+	u.pk, u.id, u.username, u.email, u.password, u.claims, u.created_date, u.last_seen,
+	coalesce(
+		jsonb_object_agg(
+			h.provider,
+			jsonb_build_object(
+				'id', h.id,
+				'username', h.username,
+				'profileUrl', h.profile_url
+			)
+		) filter (
+			where
+				h.provider is not null
+		),
+		'{}'::jsonb
+	)::keibi.user_oidc as oidc
 from
-	keibi.users
+	keibi.users as u
+	left join keibi.oidc_handle as h on u.pk = h.user_pk
+group by
+	u.pk
 order by
-	id
+	u.pk
 limit $1
 `
 
-func (q *Queries) GetAllUsers(ctx context.Context, limit int32) ([]User, error) {
+type GetAllUsersRow struct {
+	User User           `json:"user"`
+	Oidc models.OidcMap `json:"oidc"`
+}
+
+func (q *Queries) GetAllUsers(ctx context.Context, limit int32) ([]GetAllUsersRow, error) {
 	rows, err := q.db.Query(ctx, getAllUsers, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []User
+	var items []GetAllUsersRow
 	for rows.Next() {
-		var i User
+		var i GetAllUsersRow
 		if err := rows.Scan(
-			&i.Pk,
-			&i.Id,
-			&i.Username,
-			&i.Email,
-			&i.Password,
-			&i.Claims,
-			&i.CreatedDate,
-			&i.LastSeen,
+			&i.User.Pk,
+			&i.User.Id,
+			&i.User.Username,
+			&i.User.Email,
+			&i.User.Password,
+			&i.User.Claims,
+			&i.User.CreatedDate,
+			&i.User.LastSeen,
+			&i.Oidc,
 		); err != nil {
 			return nil, err
 		}
@@ -121,89 +163,52 @@ func (q *Queries) GetAllUsers(ctx context.Context, limit int32) ([]User, error) 
 
 const getAllUsersAfter = `-- name: GetAllUsersAfter :many
 select
-	pk, id, username, email, password, claims, created_date, last_seen
+	u.pk, u.id, u.username, u.email, u.password, u.claims, u.created_date, u.last_seen,
+	coalesce(
+		jsonb_object_agg(
+			h.provider,
+			jsonb_build_object(
+				'id', h.id,
+				'username', h.username,
+				'profileUrl', h.profile_url
+			)
+		) filter (
+			where
+				h.provider is not null
+		),
+		'{}'::jsonb
+	)::keibi.user_oidc as oidc
 from
-	keibi.users
+	keibi.users as u
+	left join keibi.oidc_handle as h on u.pk = h.user_pk
 where
-	id >= $2
+	u.pk >= $2
+group by
+	u.pk
 order by
-	id
+	u.pk
 limit $1
 `
 
 type GetAllUsersAfterParams struct {
-	Limit   int32     `json:"limit"`
-	AfterId uuid.UUID `json:"afterId"`
+	Limit   int32 `json:"limit"`
+	AfterPk int32 `json:"afterPk"`
 }
 
-func (q *Queries) GetAllUsersAfter(ctx context.Context, arg GetAllUsersAfterParams) ([]User, error) {
-	rows, err := q.db.Query(ctx, getAllUsersAfter, arg.Limit, arg.AfterId)
+type GetAllUsersAfterRow struct {
+	User User           `json:"user"`
+	Oidc models.OidcMap `json:"oidc"`
+}
+
+func (q *Queries) GetAllUsersAfter(ctx context.Context, arg GetAllUsersAfterParams) ([]GetAllUsersAfterRow, error) {
+	rows, err := q.db.Query(ctx, getAllUsersAfter, arg.Limit, arg.AfterPk)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []User
+	var items []GetAllUsersAfterRow
 	for rows.Next() {
-		var i User
-		if err := rows.Scan(
-			&i.Pk,
-			&i.Id,
-			&i.Username,
-			&i.Email,
-			&i.Password,
-			&i.Claims,
-			&i.CreatedDate,
-			&i.LastSeen,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getUser = `-- name: GetUser :many
-select
-	u.pk, u.id, u.username, u.email, u.password, u.claims, u.created_date, u.last_seen,
-	h.provider,
-	h.id,
-	h.username,
-	h.profile_url
-from
-	keibi.users as u
-	left join keibi.oidc_handle as h on u.pk = h.user_pk
-where ($1::boolean
-	and u.id = $2)
-	or (not $1
-		and u.username = $3)
-`
-
-type GetUserParams struct {
-	UseId    bool      `json:"useId"`
-	Id       uuid.UUID `json:"id"`
-	Username string    `json:"username"`
-}
-
-type GetUserRow struct {
-	User       User    `json:"user"`
-	Provider   *string `json:"provider"`
-	Id         *string `json:"id"`
-	Username   *string `json:"username"`
-	ProfileUrl *string `json:"profileUrl"`
-}
-
-func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) ([]GetUserRow, error) {
-	rows, err := q.db.Query(ctx, getUser, arg.UseId, arg.Id, arg.Username)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetUserRow
-	for rows.Next() {
-		var i GetUserRow
+		var i GetAllUsersAfterRow
 		if err := rows.Scan(
 			&i.User.Pk,
 			&i.User.Id,
@@ -213,10 +218,7 @@ func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) ([]GetUserRow,
 			&i.User.Claims,
 			&i.User.CreatedDate,
 			&i.User.LastSeen,
-			&i.Provider,
-			&i.Id,
-			&i.Username,
-			&i.ProfileUrl,
+			&i.Oidc,
 		); err != nil {
 			return nil, err
 		}
@@ -226,6 +228,88 @@ func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) ([]GetUserRow,
 		return nil, err
 	}
 	return items, nil
+}
+
+const getUser = `-- name: GetUser :one
+select
+	u.pk, u.id, u.username, u.email, u.password, u.claims, u.created_date, u.last_seen,
+	coalesce(
+		jsonb_object_agg(
+			h.provider,
+			jsonb_build_object(
+				'id', h.id,
+				'username', h.username,
+				'profileUrl', h.profile_url
+			)
+		) filter (
+			where
+				h.provider is not null
+		),
+		'{}'::jsonb
+	)::keibi.user_oidc as oidc
+from
+	keibi.users as u
+	left join keibi.oidc_handle as h on u.pk = h.user_pk
+where ($1::boolean
+	and u.id = $2)
+	or (not $1
+		and u.username = $3)
+group by
+	u.pk
+`
+
+type GetUserParams struct {
+	UseId    bool      `json:"useId"`
+	Id       uuid.UUID `json:"id"`
+	Username string    `json:"username"`
+}
+
+type GetUserRow struct {
+	User User           `json:"user"`
+	Oidc models.OidcMap `json:"oidc"`
+}
+
+func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) (GetUserRow, error) {
+	row := q.db.QueryRow(ctx, getUser, arg.UseId, arg.Id, arg.Username)
+	var i GetUserRow
+	err := row.Scan(
+		&i.User.Pk,
+		&i.User.Id,
+		&i.User.Username,
+		&i.User.Email,
+		&i.User.Password,
+		&i.User.Claims,
+		&i.User.CreatedDate,
+		&i.User.LastSeen,
+		&i.Oidc,
+	)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+select
+	pk, id, username, email, password, claims, created_date, last_seen
+from
+	keibi.users
+where
+	email = $1
+limit 1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.Pk,
+		&i.Id,
+		&i.Username,
+		&i.Email,
+		&i.Password,
+		&i.Claims,
+		&i.CreatedDate,
+		&i.LastSeen,
+	)
+	return i, err
 }
 
 const getUserByLogin = `-- name: GetUserByLogin :one
@@ -241,6 +325,39 @@ limit 1
 
 func (q *Queries) GetUserByLogin(ctx context.Context, login string) (User, error) {
 	row := q.db.QueryRow(ctx, getUserByLogin, login)
+	var i User
+	err := row.Scan(
+		&i.Pk,
+		&i.Id,
+		&i.Username,
+		&i.Email,
+		&i.Password,
+		&i.Claims,
+		&i.CreatedDate,
+		&i.LastSeen,
+	)
+	return i, err
+}
+
+const getUserByOidc = `-- name: GetUserByOidc :one
+select
+	u.pk, u.id, u.username, u.email, u.password, u.claims, u.created_date, u.last_seen
+from
+	keibi.users as u
+	inner join keibi.oidc_handle as h on u.pk = h.user_pk
+where
+	h.provider = $1
+	and h.id = $2
+limit 1
+`
+
+type GetUserByOidcParams struct {
+	Provider string `json:"provider"`
+	Id       string `json:"id"`
+}
+
+func (q *Queries) GetUserByOidc(ctx context.Context, arg GetUserByOidcParams) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByOidc, arg.Provider, arg.Id)
 	var i User
 	err := row.Scan(
 		&i.Pk,
@@ -311,4 +428,42 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.LastSeen,
 	)
 	return i, err
+}
+
+const upsertOidcHandle = `-- name: UpsertOidcHandle :exec
+insert into keibi.oidc_handle(user_pk, provider, id, username, profile_url, access_token, refresh_token, expire_at)
+	values ($1, $2, $3, $4, $5, $6, $7, $8)
+on conflict (user_pk, provider)
+	do update set
+		id = excluded.id,
+		username = excluded.username,
+		profile_url = excluded.profile_url,
+		access_token = excluded.access_token,
+		refresh_token = excluded.refresh_token,
+		expire_at = excluded.expire_at
+`
+
+type UpsertOidcHandleParams struct {
+	UserPk       int32      `json:"userPk"`
+	Provider     string     `json:"provider"`
+	Id           string     `json:"id"`
+	Username     string     `json:"username"`
+	ProfileUrl   *string    `json:"profileUrl"`
+	AccessToken  *string    `json:"accessToken"`
+	RefreshToken *string    `json:"refreshToken"`
+	ExpireAt     *time.Time `json:"expireAt"`
+}
+
+func (q *Queries) UpsertOidcHandle(ctx context.Context, arg UpsertOidcHandleParams) error {
+	_, err := q.db.Exec(ctx, upsertOidcHandle,
+		arg.UserPk,
+		arg.Provider,
+		arg.Id,
+		arg.Username,
+		arg.ProfileUrl,
+		arg.AccessToken,
+		arg.RefreshToken,
+		arg.ExpireAt,
+	)
+	return err
 }

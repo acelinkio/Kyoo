@@ -1,8 +1,11 @@
-import Elysia from "elysia";
+import { and, eq } from "drizzle-orm";
+import Elysia, { t } from "elysia";
+import { db } from "~/db";
+import { shows } from "~/db/schema";
 import { KError } from "~/models/error";
 import { SeedMovie } from "~/models/movie";
 import { SeedSerie } from "~/models/serie";
-import { Resource } from "~/models/utils";
+import { isUuid, Resource } from "~/models/utils";
 import { comment } from "~/utils";
 import { SeedMovieResponse, seedMovie } from "./movies";
 import { SeedSerieResponse, seedSerie } from "./series";
@@ -75,6 +78,123 @@ export const seed = new Elysia()
 					`,
 				},
 				422: KError,
+			},
+		},
+	)
+	.delete(
+		"/movies/:id",
+		async ({ params: { id }, status }) => {
+			const [deleted] = await db
+				.delete(shows)
+				.where(
+					and(
+						eq(shows.kind, "movie"),
+						isUuid(id) ? eq(shows.id, id) : eq(shows.slug, id),
+					),
+				)
+				.returning({ id: shows.id, slug: shows.slug });
+			if (!deleted) {
+				return status(404, {
+					status: 404,
+					message: "No movie found with the given id or slug.",
+				});
+			}
+			return deleted;
+		},
+		{
+			detail: {
+				tags: ["movies"],
+				description: "Delete a movie by id or slug.",
+			},
+			params: t.Object({
+				id: t.String({
+					description: "The id or slug of the movie to delete.",
+				}),
+			}),
+			response: {
+				200: Resource(),
+				404: {
+					...KError,
+					description: "No movie found with the given id or slug.",
+				},
+			},
+		},
+	)
+	.delete(
+		"/series/:id",
+		async ({ params: { id }, status }) => {
+			const [deleted] = await db
+				.delete(shows)
+				.where(
+					and(
+						eq(shows.kind, "serie"),
+						isUuid(id) ? eq(shows.id, id) : eq(shows.slug, id),
+					),
+				)
+				.returning({ id: shows.id, slug: shows.slug });
+			if (!deleted) {
+				return status(404, {
+					status: 404,
+					message: "No serie found with the given id or slug.",
+				});
+			}
+			return deleted;
+		},
+		{
+			detail: {
+				tags: ["series"],
+				description: "Delete a serie by id or slug.",
+			},
+			params: t.Object({
+				id: t.String({
+					description: "The id or slug of the serie to delete.",
+				}),
+			}),
+			response: {
+				200: Resource(),
+				404: {
+					...KError,
+					description: "No serie found with the given id or slug.",
+				},
+			},
+		},
+	)
+	.delete(
+		"/collections/:id",
+		async ({ params: { id }, status }) => {
+			const [deleted] = await db
+				.delete(shows)
+				.where(
+					and(
+						eq(shows.kind, "collection"),
+						isUuid(id) ? eq(shows.id, id) : eq(shows.slug, id),
+					),
+				)
+				.returning({ id: shows.id, slug: shows.slug });
+			if (!deleted) {
+				return status(404, {
+					status: 404,
+					message: "No collection found with the given id or slug.",
+				});
+			}
+			return deleted;
+		},
+		{
+			detail: {
+				tags: ["collections"],
+				description: "Delete a collection by id or slug.",
+			},
+			params: t.Object({
+				id: t.String({
+					description: "The id or slug of the collection to delete.",
+				}),
+			}),
+			response: {
+				200: Resource(),
+				404: {
+					...KError,
+					description: "No collection found with the given id or slug.",
+				},
 			},
 		},
 	);

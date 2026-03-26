@@ -55,17 +55,14 @@ export const About = () => {
 
 	return (
 		<SettingsContainer title={t("settings.about.label")}>
-			<Link
-				href="https://github.com/zoriya/kyoo/releases/latest/download/kyoo.apk"
-				target="_blank"
-			>
+			<Link href="https://github.com/zoriya/kyoo/releases/latest/download/kyoo.apk">
 				<Preference
 					icon={Android}
 					label={t("settings.about.android-app.label")}
 					description={t("settings.about.android-app.description")}
 				/>
 			</Link>
-			<Link href="https://github.com/zoriya/kyoo" target="_blank">
+			<Link href="https://github.com/zoriya/kyoo">
 				<Preference
 					icon={Public}
 					label={t("settings.about.git.label")}

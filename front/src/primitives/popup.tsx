@@ -12,12 +12,15 @@ export const Overlay = ({
 	close,
 	children,
 	scroll = true,
+	className,
+	...props
 }: {
 	icon?: IconType;
 	title: string;
 	close?: () => void;
 	children: ReactNode;
 	scroll?: boolean;
+	className?: string;
 }) => {
 	return (
 		<Pressable
@@ -39,9 +42,13 @@ export const Overlay = ({
 					{close && <IconButton icon={Close} onPress={close} />}
 				</View>
 				{scroll ? (
-					<ScrollView className="p-6">{children}</ScrollView>
+					<ScrollView className={cn("p-6", className)} {...props}>
+						{children}
+					</ScrollView>
 				) : (
-					<View className="flex-1">{children}</View>
+					<View className={cn("flex-1", className)} {...props}>
+						{children}
+					</View>
 				)}
 			</Pressable>
 		</Pressable>
@@ -54,15 +61,17 @@ export const Popup = ({
 	close,
 	children,
 	scroll,
+	...props
 }: {
 	icon?: IconType;
 	title: string;
 	close?: () => void;
 	children: ReactNode;
 	scroll?: boolean;
+	className?: string;
 }) => {
 	return (
-		<Overlay icon={icon} title={title} close={close} scroll={scroll}>
+		<Overlay icon={icon} title={title} close={close} scroll={scroll} {...props}>
 			{children}
 		</Overlay>
 	);

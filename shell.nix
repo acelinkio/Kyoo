@@ -12,6 +12,9 @@ pkgs.mkShell {
 
   packages = [
     pkgs.devspace
+    (pkgs.writeShellScriptBin "guess" ''
+      curl "localhost:8901/scanner/guess" -G --data-urlencode "path=$1" -H 'X-API-KEY: admin' | jq
+    '')
   ];
 
   # env vars aren't inherited from the `inputsFrom`

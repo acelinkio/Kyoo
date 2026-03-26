@@ -189,8 +189,6 @@ class FsScanner:
 							}
 						)
 					)
-
-		# TODO: handle specials & movie as episodes (needs animelist or thexem)
 		return video
 
 	def walk_fs(self, root_path: str) -> set[str]:

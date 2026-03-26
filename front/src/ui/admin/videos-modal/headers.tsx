@@ -101,6 +101,7 @@ export const AddVideoFooter = ({
 	return (
 		<ComboBox
 			Trigger={(props) => (
+				// @ts-expect-error prop mismatch due to generic
 				<Button
 					icon={LibraryAdd}
 					text={t("videos-map.add")}

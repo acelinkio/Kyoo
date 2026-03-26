@@ -171,14 +171,32 @@ class TVDB(Provider):
 		)
 		return [
 			SearchSerie(
+				id=x["id"],
 				slug=x["slug"],
-				name=x["name"],
-				description=x.get("overview"),
+				name=next(
+					(
+						x["translations"][lang.to_alpha3()]
+						for lang in language
+						if "translations" in x and lang.to_alpha3() in x["translations"]
+					),
+					x["name"],
+				),
+				description=next(
+					(
+						x["overviews"][lang.to_alpha3()]
+						for lang in language
+						if "overviews" in x and lang.to_alpha3() in x["overviews"]
+					),
+					x.get("overview"),
+				),
 				start_air=datetime.strptime(x["first_air_time"], "%Y-%m-%d").date()
 				if x.get("first_air_time")
 				else None,
 				end_air=None,
-				poster=x["image_url"],
+				poster=x["image_url"]
+				if x["image_url"]
+				!= "https://artworks.thetvdb.com/banners/images/missing/series.jpg"
+				else None,
 				original_language=Language.get(x["primary_language"]),
 				external_id={
 					self.name: [
@@ -223,7 +241,7 @@ class TVDB(Provider):
 			original_language=Language.get(ret["originalLanguage"]),
 			genres=[
 				cast(Genre, self._genre_map[x["slug"]])
-				for x in ret["genres"]
+				for x in ret.get("genres", [])
 				if self._genre_map[x["slug"]] is not None
 			],
 			rating={},  # TODO: maybe use the `score` value.
@@ -420,7 +438,7 @@ class TVDB(Provider):
 			original_language=Language.get(show["originalLanguage"]),
 			genres=[
 				cast(Genre, self._genre_map[x["slug"]])
-				for x in show["genres"]
+				for x in show.get("genres", [])
 				if self._genre_map[x["slug"]] is not None
 			],
 			rating={},
@@ -731,7 +749,7 @@ class TVDB(Provider):
 			original_language=Language.get(ret["originalLanguage"]),
 			genres=[
 				cast(Genre, self._genre_map[x["slug"]])
-				for x in ret["genres"]
+				for x in ret.get("genres", [])
 				if self._genre_map[x["slug"]] is not None
 			],
 			rating={},  # TODO: maybe use the `score` value.

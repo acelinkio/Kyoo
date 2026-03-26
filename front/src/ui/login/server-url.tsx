@@ -1,8 +1,9 @@
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Platform, View } from "react-native";
+import { RetryableError } from "~/models/retryable-error";
 import { Button, H1, Input, Link, P } from "~/primitives";
-import { type QueryIdentifier, useFetch } from "~/query";
 
 export const cleanApiUrl = (apiUrl: string) => {
 	if (Platform.OS === "web") return undefined;
@@ -13,9 +14,22 @@ export const cleanApiUrl = (apiUrl: string) => {
 export const ServerUrlPage = () => {
 	const [_apiUrl, setApiUrl] = useState("");
 	const apiUrl = cleanApiUrl(_apiUrl);
-	const { data, error } = useFetch({
-		...ServerUrlPage.query,
-		options: { apiUrl, authToken: null, returnError: true },
+	const { data, error } = useQuery({
+		queryKey: [apiUrl, "api", "health"],
+		queryFn: async (ctx) => {
+			try {
+				const resp = await fetch(`${apiUrl}/api/health`, {
+					method: "GET",
+					signal: ctx.signal,
+				});
+				return resp.url.replace("/api/health", "");
+			} catch (e) {
+				console.log("server select fetch error", e);
+				throw new RetryableError({
+					key: "offline",
+				});
+			}
+		},
 	});
 	const { t } = useTranslation();
 
@@ -43,14 +57,14 @@ export const ServerUrlPage = () => {
 					<Button
 						text={t("login.login")}
 						as={Link}
-						href={`/login?apiUrl=${apiUrl}`}
+						href={`/login?apiUrl=${data}`}
 						disabled={data == null}
 						className="flex-1"
 					/>
 					<Button
 						text={t("login.register")}
 						as={Link}
-						href={`/register?apiUrl=${apiUrl}`}
+						href={`/register?apiUrl=${data}`}
 						disabled={data == null}
 						className="flex-1"
 					/>
@@ -60,8 +74,3 @@ export const ServerUrlPage = () => {
 		</View>
 	);
 };
-
-ServerUrlPage.query = {
-	path: ["api", "health"],
-	parser: null,
-} satisfies QueryIdentifier;

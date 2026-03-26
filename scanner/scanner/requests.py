@@ -8,7 +8,7 @@ from opentelemetry import trace
 from pydantic import TypeAdapter
 
 from .client import KyooClient
-from .models.request import Request
+from .models.request import Request, RequestRet
 from .models.videos import Resource
 from .providers.provider import Provider, ProviderError
 
@@ -21,13 +21,15 @@ class RequestCreator:
 		self._database = database
 
 	async def enqueue(self, requests: list[Request]):
-		await self._database.executemany(
+		ret = await self._database.fetchmany(
 			"""
 			insert into scanner.requests(kind, title, year, external_id, videos)
 				values ($1, $2, $3, $4, $5)
 			on conflict (kind, title, year)
 				do update set
 					videos = requests.videos || excluded.videos
+			returning
+				pk::text as id
 			""",
 			[
 				[x["kind"], x["title"], x["year"], x["external_id"], x["videos"]]
@@ -35,6 +37,19 @@ class RequestCreator:
 			],
 		)
 		_ = await self._database.execute("notify scanner_requests")
+		return [
+			RequestRet(
+				id=x["id"],
+				kind=req.kind,
+				title=req.title,
+				year=req.year,
+				status="pending",
+				videos=[v.id for v in req.videos],
+				error=None,
+				started_at=None,
+			)
+			for req, x in zip(requests, ret)
+		]
 
 	async def clear_failed(self):
 		_ = await self._database.execute(

@@ -9,7 +9,6 @@ export const expo: ExpoConfig = {
 	slug: "kyoo",
 	scheme: "kyoo",
 	version: "1.0.0",
-	newArchEnabled: true,
 	platforms: ["web", "ios", "android"],
 	orientation: "default",
 	icon: "./public/favicon-96x96-dark.png",
@@ -23,7 +22,6 @@ export const expo: ExpoConfig = {
 			foregroundImage: "./public/android-adaptive-icon.png",
 			backgroundColor: "#6b00b8",
 		},
-		edgeToEdgeEnabled: true,
 	},
 	web: {
 		bundler: "metro",

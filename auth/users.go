@@ -1,66 +1,21 @@
 package main
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"net/http"
-	"time"
+	"strconv"
+	"strings"
 
 	"github.com/alexedwards/argon2id"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v5"
 	"github.com/zoriya/kyoo/keibi/dbc"
+	. "github.com/zoriya/kyoo/keibi/models"
 )
-
-type User struct {
-	// Primary key in database
-	Pk int32 `json:"-"`
-	// Id of the user.
-	Id uuid.UUID `json:"id" example:"e05089d6-9179-4b5b-a63e-94dd5fc2a397"`
-	// Username of the user. Can be used as a login.
-	Username string `json:"username" example:"zoriya"`
-	// Email of the user. Can be used as a login.
-	Email string `json:"email" format:"email" example:"kyoo@zoriya.dev"`
-	// When was this account created?
-	CreatedDate time.Time `json:"createdDate" example:"2025-03-29T18:20:05.267Z"`
-	// When was the last time this account made any authorized request?
-	LastSeen time.Time `json:"lastSeen" example:"2025-03-29T18:20:05.267Z"`
-	// List of custom claims JWT created via get /jwt will have
-	Claims jwt.MapClaims `json:"claims" example:"isAdmin: true"`
-	// List of other login method available for this user. Access tokens wont be returned here.
-	Oidc map[string]OidcHandle `json:"oidc,omitempty"`
-}
-
-type OidcHandle struct {
-	// Id of this oidc handle.
-	Id string `json:"id" example:"e05089d6-9179-4b5b-a63e-94dd5fc2a397"`
-	// Username of the user on the external service.
-	Username string `json:"username" example:"zoriya"`
-	// Link to the profile of the user on the external service. Null if unknown or irrelevant.
-	ProfileUrl *string `json:"profileUrl" format:"url" example:"https://myanimelist.net/profile/zoriya"`
-}
-
-type RegisterDto struct {
-	// Username of the new account, can't contain @ signs. Can be used for login.
-	Username string `json:"username" validate:"required,excludes=@" example:"zoriya"`
-	// Valid email that could be used for forgotten password requests. Can be used for login.
-	Email string `json:"email" validate:"required,email" format:"email" example:"kyoo@zoriya.dev"`
-	// Password to use.
-	Password string `json:"password" validate:"required" example:"password1234"`
-}
-
-type EditUserDto struct {
-	Username *string       `json:"username,omitempty" validate:"omitnil,excludes=@" example:"zoriya"`
-	Email    *string       `json:"email,omitempty" validate:"omitnil,email" example:"kyoo@zoriya.dev"`
-	Claims   jwt.MapClaims `json:"claims,omitempty" example:"preferOriginal: true"`
-}
-
-type EditPasswordDto struct {
-	OldPassword string `json:"oldPassword" validate:"required" example:"password1234"`
-	NewPassword string `json:"newPassword" validate:"required" example:"password1234"`
-}
 
 func MapDbUser(user *dbc.User) User {
 	return User{
@@ -68,18 +23,11 @@ func MapDbUser(user *dbc.User) User {
 		Id:          user.Id,
 		Username:    user.Username,
 		Email:       user.Email,
+		HasPassword: user.Password != nil,
 		CreatedDate: user.CreatedDate,
 		LastSeen:    user.LastSeen,
 		Claims:      user.Claims,
 		Oidc:        nil,
-	}
-}
-
-func MapOidc(oidc *dbc.GetUserRow) OidcHandle {
-	return OidcHandle{
-		Id:         *oidc.Id,
-		Username:   *oidc.Username,
-		ProfileUrl: oidc.ProfileUrl,
 	}
 }
 
@@ -104,29 +52,40 @@ func (h *Handler) ListUsers(c *echo.Context) error {
 	limit := int32(20)
 	id := c.Param("after")
 
-	var users []dbc.User
 	if id == "" {
-		users, err = h.db.GetAllUsers(ctx, limit)
-	} else {
-		uid, uerr := uuid.Parse(id)
-		if uerr != nil {
-			return echo.NewHTTPError(http.StatusUnprocessableEntity, "Invalid `after` parameter, uuid was expected")
+		users, err := h.db.GetAllUsers(ctx, limit)
+		if err != nil {
+			return err
 		}
-		users, err = h.db.GetAllUsersAfter(ctx, dbc.GetAllUsersAfterParams{
+
+		ret := make([]User, 0, len(users))
+		for _, user := range users {
+			u := MapDbUser(&user.User)
+			u.Oidc = user.Oidc
+			ret = append(ret, u)
+		}
+		return c.JSON(200, NewPage(ret, c.Request().URL, limit))
+	} else {
+		pk, err := strconv.Atoi(id)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusUnprocessableEntity, "Invalid `after` parameter")
+		}
+		users, err := h.db.GetAllUsersAfter(ctx, dbc.GetAllUsersAfterParams{
 			Limit:   limit,
-			AfterId: uid,
+			AfterPk: int32(pk),
 		})
-	}
+		if err != nil {
+			return err
+		}
 
-	if err != nil {
-		return err
+		ret := make([]User, 0, len(users))
+		for _, user := range users {
+			u := MapDbUser(&user.User)
+			u.Oidc = user.Oidc
+			ret = append(ret, u)
+		}
+		return c.JSON(200, NewPage(ret, c.Request().URL, limit))
 	}
-
-	var ret []User
-	for _, user := range users {
-		ret = append(ret, MapDbUser(&user))
-	}
-	return c.JSON(200, NewPage(ret, c.Request().URL, limit))
 }
 
 // @Summary      Get user
@@ -147,27 +106,21 @@ func (h *Handler) GetUser(c *echo.Context) error {
 	}
 
 	id := c.Param("id")
-	uid, err := uuid.Parse(c.Param("id"))
+	uid, err := uuid.Parse(id)
 	dbuser, err := h.db.GetUser(ctx, dbc.GetUserParams{
 		UseId:    err == nil,
 		Id:       uid,
 		Username: id,
 	})
-	if err != nil {
+	if err == pgx.ErrNoRows {
+		return echo.NewHTTPError(404, fmt.Sprintf("No user found with id or username: '%s'.", id))
+	} else if err != nil {
 		return err
 	}
-	if len(dbuser) == 0 {
-		return echo.NewHTTPError(404, fmt.Sprintf("No user found with id or username: '%s'.", id))
-	}
 
-	user := MapDbUser(&dbuser[0].User)
-	for _, oidc := range dbuser {
-		if oidc.Provider != nil {
-			user.Oidc[*oidc.Provider] = MapOidc(&oidc)
-		}
-	}
-
-	return c.JSON(200, user)
+	ret := MapDbUser(&dbuser.User)
+	ret.Oidc = dbuser.Oidc
+	return c.JSON(200, ret)
 }
 
 // @Summary      Get me
@@ -189,21 +142,106 @@ func (h *Handler) GetMe(c *echo.Context) error {
 		UseId: true,
 		Id:    id,
 	})
+	if err == pgx.ErrNoRows {
+		return c.JSON(403, "Invalid jwt token, couldn't find user.")
+	} else if err != nil {
+		return err
+	}
+
+	ret := MapDbUser(&dbuser.User)
+	ret.Oidc = dbuser.Oidc
+	return c.JSON(200, ret)
+}
+
+func (h *Handler) streamGravatar(c *echo.Context, email string) error {
+	hash := md5.Sum([]byte(strings.TrimSpace(strings.ToLower(email))))
+	url := fmt.Sprintf("https://www.gravatar.com/avatar/%s?d=404", hex.EncodeToString(hash[:]))
+
+	req, err := http.NewRequestWithContext(c.Request().Context(), http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
-	if len(dbuser) == 0 {
-		return c.JSON(403, "Invalid jwt token, couldn't find user.")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadGateway, "Could not fetch gravatar image")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return echo.NewHTTPError(http.StatusNotFound, "No gravatar image found for this user")
+	}
+	if resp.StatusCode != http.StatusOK {
+		return echo.NewHTTPError(http.StatusBadGateway, "Could not fetch gravatar image")
 	}
 
-	user := MapDbUser(&dbuser[0].User)
-	for _, oidc := range dbuser {
-		if oidc.Provider != nil {
-			user.Oidc[*oidc.Provider] = MapOidc(&oidc)
-		}
+	contentType := resp.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = "application/octet-stream"
 	}
 
-	return c.JSON(200, user)
+	return c.Stream(http.StatusOK, contentType, resp.Body)
+}
+
+// @Summary      Get my logo
+// @Description  Get the current user's gravatar image
+// @Tags         users
+// @Produce      image/*
+// @Security     Jwt
+// @Success      200  {file}  binary
+// @Failure      401  {object}  KError "Missing jwt token"
+// @Failure      403  {object}  KError "Invalid jwt token (or expired)"
+// @Failure      404  {object}  KError "No gravatar image found for this user"
+// @Router /users/me/logo [get]
+func (h *Handler) GetMyLogo(c *echo.Context) error {
+	ctx := c.Request().Context()
+	id, err := GetCurrentUserId(c)
+	if err != nil {
+		return err
+	}
+
+	users, err := h.db.GetUser(ctx, dbc.GetUserParams{
+		UseId: true,
+		Id:    id,
+	})
+	if err != nil {
+		return err
+	}
+
+	return h.streamGravatar(c, users.User.Email)
+}
+
+// @Summary      Get user logo
+// @Description  Get a user's gravatar image
+// @Tags         users
+// @Produce      image/*
+// @Security     Jwt[users.read]
+// @Param        id   path      string    true  "The id or username of the user"
+// @Success      200  {file}  binary
+// @Failure      404  {object}  KError "No user found with id or username"
+// @Failure      404  {object}  KError "No gravatar image found for this user"
+// @Router /users/{id}/logo [get]
+func (h *Handler) GetUserLogo(c *echo.Context) error {
+	ctx := c.Request().Context()
+	err := CheckPermissions(c, []string{"users.read"})
+	if err != nil {
+		return err
+	}
+
+	id := c.Param("id")
+	uid, err := uuid.Parse(id)
+	users, err := h.db.GetUser(ctx, dbc.GetUserParams{
+		UseId:    err == nil,
+		Id:       uid,
+		Username: id,
+	})
+	if err == pgx.ErrNoRows {
+		return echo.NewHTTPError(404, fmt.Sprintf("No user found with id or username: '%s'.", id))
+	} else if err != nil {
+		return err
+	}
+
+	return h.streamGravatar(c, users.User.Email)
 }
 
 // @Summary      Register
@@ -437,15 +475,20 @@ func (h *Handler) ChangePassword(c *echo.Context) error {
 		return err
 	}
 
-	match, err := argon2id.ComparePasswordAndHash(
-		req.OldPassword,
-		*user[0].User.Password,
-	)
-	if err != nil {
-		return err
-	}
-	if !match {
-		return echo.NewHTTPError(http.StatusForbidden, "Invalid password")
+	if user.User.Password != nil {
+		if req.OldPassword == nil {
+			return echo.NewHTTPError(http.StatusUnprocessableEntity, "Missing old password")
+		}
+		match, err := argon2id.ComparePasswordAndHash(
+			*req.OldPassword,
+			*user.User.Password,
+		)
+		if err != nil {
+			return err
+		}
+		if !match {
+			return echo.NewHTTPError(http.StatusForbidden, "Invalid password")
+		}
 	}
 
 	pass, err := argon2id.CreateHash(req.NewPassword, argon2id.DefaultParams)

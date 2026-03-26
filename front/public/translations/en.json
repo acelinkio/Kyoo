@@ -184,6 +184,12 @@
 				"newPassword": "New password"
 			}
 		},
+		"sessions": {
+			"label": "Sessions",
+			"description": "Created {{createdDate}} - Last used {{lastUsed}}",
+			"current": "Current session",
+			"revoke": "Revoke"
+		},
 		"oidc": {
 			"label": "Linked accounts",
 			"connected": "Connected as {{username}}.",

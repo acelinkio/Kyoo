@@ -34,6 +34,11 @@ type SessionWToken struct {
 	Token string `json:"token" example:"lyHzTYm9yi+pkEv3m2tamAeeK7Dj7N3QRP7xv7dPU5q9MAe8tU4ySwYczE0RaMr4fijsA=="`
 }
 
+type SessionWCurrent struct {
+	Session
+	Current bool `json:"current"`
+}
+
 func MapSession(ses *dbc.Session) Session {
 	dev := ses.Device
 	if ses.Device != nil {
@@ -143,7 +148,7 @@ func (h *Handler) createSession(c *echo.Context, user *User) error {
 // @Tags         sessions
 // @Produce      json
 // @Security     Jwt
-// @Success      200  {array}   Session
+// @Success      200  {array}   SessionWCurrent
 // @Failure      401  {object}  KError "Missing jwt token"
 // @Failure      403  {object}  KError "Invalid jwt token (or expired)"
 // @Router /sessions [get]
@@ -167,9 +172,14 @@ func (h *Handler) ListMySessions(c *echo.Context) error {
 		return err
 	}
 
-	ret := make([]Session, 0, len(dbSessions))
+	sid, _ := GetCurrentSessionId(c)
+
+	ret := make([]SessionWCurrent, 0, len(dbSessions))
 	for _, ses := range dbSessions {
-		ret = append(ret, MapSession(&ses))
+		ret = append(ret, SessionWCurrent{
+			Session: MapSession(&ses),
+			Current: ses.Id == sid,
+		})
 	}
 
 	return c.JSON(http.StatusOK, ret)
@@ -199,9 +209,6 @@ func (h *Handler) ListUserSessions(c *echo.Context) error {
 		Id:       uid,
 		Username: id,
 	})
-	if err != nil {
-		return err
-	}
 	if err == pgx.ErrNoRows {
 		return echo.NewHTTPError(http.StatusNotFound, "No user found with id or username")
 	} else if err != nil {

@@ -1,5 +1,7 @@
 from asyncio import CancelledError, TaskGroup, create_task, sleep
 from contextlib import asynccontextmanager
+from types import CoroutineType
+from typing import Any
 
 from asyncpg import Connection
 from fastapi import FastAPI
@@ -9,6 +11,7 @@ from scanner.fsscan import FsScanner
 from scanner.log import configure_logging
 from scanner.otel import instrument, setup_otelproviders
 from scanner.providers.composite import CompositeProvider
+from scanner.refresh import ShowRefresh
 from scanner.providers.themoviedatabase import TheMovieDatabase
 from scanner.providers.thetvdb import TVDB
 from scanner.requests import RequestCreator, RequestProcessor
@@ -50,10 +53,13 @@ async def lifespan(app: FastAPI):
 			client,
 			app.state.provider,
 		)
-		scanner = FsScanner(client, RequestCreator(db))
+		requests = RequestCreator(db)
+		scanner = FsScanner(client, requests)
+		refresh = ShowRefresh(client, requests)
 		tasks = create_task(
 			background_startup(
 				scanner,
+				refresh,
 				processor,
 				leader_db,
 				is_master,
@@ -65,14 +71,15 @@ async def lifespan(app: FastAPI):
 
 async def background_startup(
 	scanner: FsScanner,
+	refresh: ShowRefresh,
 	processor: RequestProcessor,
 	leader_db: Connection,
 	is_master: bool | None,
 ):
-	async def scan():
+	async def delay(task: CoroutineType[Any, Any, None]):
 		# wait for everything to startup & resume before scanning
 		await sleep(30)
-		await scanner.scan(remove_deleted=True)
+		await task
 
 	async def leader_worker(tg: TaskGroup):
 		nonlocal is_master
@@ -83,7 +90,8 @@ async def background_startup(
 			)
 
 		_ = tg.create_task(scanner.monitor())
-		_ = tg.create_task(scan())
+		_ = tg.create_task(delay(scanner.scan(remove_deleted=True)))
+		_ = tg.create_task(delay(refresh.monitor()))
 
 	async with TaskGroup() as tg:
 		_ = tg.create_task(processor.listen(tg))

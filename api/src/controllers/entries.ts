@@ -99,7 +99,6 @@ export const entrySort = Sort(
 		episodeNumber: entries.episodeNumber,
 		number: entries.episodeNumber,
 		airDate: entries.airDate,
-		nextRefresh: entries.nextRefresh,
 		playedDate: entryProgressQ.playedDate,
 	},
 	{

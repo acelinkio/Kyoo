@@ -87,8 +87,9 @@ func (s *MetadataService) extractThumbnail(ctx context.Context, path string, sha
 	vttPath := getThumbVttPath(sha)
 	spritePath := getThumbPath(sha)
 
-	alreadyOk, _ := s.storage.DoesItemExist(ctx, spritePath)
-	if alreadyOk {
+	spriteOk, _ := s.storage.DoesItemExist(ctx, spritePath)
+	vttOk, _ := s.storage.DoesItemExist(ctx, vttPath)
+	if spriteOk && vttOk {
 		return nil
 	}
 

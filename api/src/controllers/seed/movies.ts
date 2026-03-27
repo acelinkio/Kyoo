@@ -53,7 +53,7 @@ export const seedMovie = async (
 	}
 
 	const { translations, videos, collection, studios, staff, ...movie } = seed;
-	const nextRefresh = guessNextRefresh(movie.airDate ?? new Date());
+	const nextRefresh = guessNextRefresh({ ...seed, kind: "movie" });
 	const ori = translations[movie.originalLanguage];
 	const original = ori
 		? {

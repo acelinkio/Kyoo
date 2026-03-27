@@ -35,7 +35,6 @@ const seasonSort = Sort(
 		endAir: seasons.endAir,
 		entriesCount: seasons.entriesCount,
 		availableCount: seasons.availableCount,
-		nextRefresh: seasons.nextRefresh,
 	},
 	{
 		default: ["seasonNumber"],

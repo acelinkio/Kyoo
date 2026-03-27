@@ -43,7 +43,7 @@ const BaseSerie = t.Object({
 	),
 	startAir: t.Nullable(t.String({ format: "date" })),
 	endAir: t.Nullable(t.String({ format: "date" })),
-	nextRefresh: t.Date(),
+	nextRefresh: t.Nullable(t.String({ format: "date" })),
 	externalId: ExternalId(),
 });
 

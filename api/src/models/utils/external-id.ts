@@ -7,7 +7,7 @@ export const ExternalId = () =>
 		t.Array(
 			t.Object({
 				dataId: t.String(),
-				link: t.Nullable(t.String({ format: "uri" })),
+				link: t.Nullable(t.String({ format: "url" })),
 				label: t.Optional(t.Nullable(t.String())),
 			}),
 		),
@@ -29,7 +29,7 @@ export const EpisodeId = t.Record(
 				}),
 			),
 			episode: t.Integer(),
-			link: t.Nullable(t.String({ format: "uri" })),
+			link: t.Nullable(t.String({ format: "url" })),
 			label: t.Optional(t.Nullable(t.String())),
 		}),
 	),
@@ -42,7 +42,7 @@ export const MovieEpisodeId = t.Record(
 		t.Union([
 			t.Object({
 				dataId: t.String(),
-				link: t.Nullable(t.String({ format: "uri" })),
+				link: t.Nullable(t.String({ format: "url" })),
 				label: t.Optional(t.Nullable(t.String())),
 			}),
 			t.Object({
@@ -59,7 +59,7 @@ export const MovieEpisodeId = t.Record(
 					}),
 				),
 				episode: t.Integer(),
-				link: t.Nullable(t.String({ format: "uri" })),
+				link: t.Nullable(t.String({ format: "url" })),
 				label: t.Optional(t.Nullable(t.String())),
 			}),
 		]),
@@ -77,7 +77,7 @@ export const SeasonId = t.Record(
 			`,
 			}),
 			season: t.Integer(),
-			link: t.Nullable(t.String({ format: "uri" })),
+			link: t.Nullable(t.String({ format: "url" })),
 		}),
 	),
 );

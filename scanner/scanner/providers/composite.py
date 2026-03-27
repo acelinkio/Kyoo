@@ -36,6 +36,7 @@ class CompositeProvider(Provider):
 		info = await self._tvdb.get_movie(MetadataId.map_dict(ret.external_id))
 		if info is None:
 			return ret
+		ret.staff = info.staff
 		if info.collection is not None:
 			ret.collection = info.collection
 		ret.external_id = MetadataId.merge(ret.external_id, info.external_id)
@@ -68,6 +69,7 @@ class CompositeProvider(Provider):
 		)
 		if info is None:
 			return ret
+		info.staff = ret.staff
 		info.seasons = ret.seasons
 		info.entries = ret.entries
 		info.extras = ret.extras

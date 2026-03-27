@@ -17,7 +17,8 @@ from ..models.metadataid import EpisodeId, MetadataId, SeasonId
 from ..models.movie import Movie, MovieStatus, MovieTranslation, SearchMovie
 from ..models.season import Season, SeasonTranslation
 from ..models.serie import SearchSerie, Serie, SerieStatus, SerieTranslation
-from ..models.staff import Role
+from ..models.staff import Character, Person, Role, Staff
+from ..utils import to_slug
 from .names import ProviderName
 from .provider import Provider, ProviderError
 
@@ -313,11 +314,10 @@ class TVDB(Provider):
 			if not skip_entries
 			else [],
 			entries=entries,
-			# TODO: map extra entries in extra instead of entries
 			extras=[],
 			collection=await self._get_collection(ret),
 			studios=[],
-			staff=[],
+			staff=self._parse_staff(ret),
 		)
 
 	def _pick_image(
@@ -812,5 +812,37 @@ class TVDB(Provider):
 			},
 			collection=await self._get_collection(ret),
 			studios=[],
-			staff=[],
+			staff=self._parse_staff(ret),
 		)
+
+	def _parse_staff(self, show: dict[str, Any]) -> list[Staff]:
+		if not "characters" in show or not show["characters"]:
+			return []
+		return [
+			Staff(
+				kind=self._roles_map.get(x["peopleType"], Role.OTHER),
+				character=Character(
+					name=x["name"],
+					latin_name=None,
+					image=img if (img := x["image"]) else None,
+				),
+				staff=Person(
+					slug=to_slug(x["personName"]),
+					name=x["personName"],
+					latin_name=None,
+					image=img if (img := x["personImgURL"]) else None,
+					external_id={
+						self.name: [
+							MetadataId(
+								data_id=x["peopleId"],
+								link=x["url"]
+								if x["url"].startswith("http")
+								else f"https://thetvdb.com/people/{x['url']}",
+							),
+						]
+					},
+				),
+			)
+			for x in show["characters"]
+			if x["name"] and x["personName"]
+		]

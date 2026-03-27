@@ -30,7 +30,7 @@ Kyoo does not have a plugin system and aim to have every features built-in (see 
 
 - **Helm Chart:** Deploy Kyoo to your Kubernetes cluster today!  There is an official Helm chart.  Multiple replicas is a WIP!
 
-- ~**OIDC Connection:** Connect using any OIDC compliant service (Google, Discord, Authelia, you name it).~ (soon, not reimplemented in v5 yet)
+- **OIDC Connection:** Connect using any OIDC compliant service (Google, Discord, Authelia, you name it).
 
 - ~**Watch List Scrubbing Support:** Your watch list is automatically synced to connected services (SIMKL and soon others [#351](https://github.com/zoriya/Kyoo/issues/351), [#352](https://github.com/zoriya/Kyoo/issues/352)). No need to manually mark episodes as watched.~ (soon, not reimplemented in v5 yet)
 

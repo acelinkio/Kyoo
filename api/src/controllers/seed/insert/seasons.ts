@@ -4,7 +4,6 @@ import { conflictUpdateAllExcept, unnestValues } from "~/db/utils";
 import type { SeedSeason } from "~/models/season";
 import { record } from "~/otel";
 import { enqueueOptImage, flushImageQueue, type ImageTask } from "../images";
-import { guessNextRefresh } from "../refresh";
 
 type SeasonI = typeof seasons.$inferInsert;
 type SeasonTransI = typeof seasonTranslations.$inferInsert;
@@ -25,7 +24,6 @@ export const insertSeasons = record(
 						season.seasonNumber === 0
 							? `${show.slug}-specials`
 							: `${show.slug}-s${season.seasonNumber}`,
-					nextRefresh: guessNextRefresh(season.startAir ?? new Date()),
 				};
 			});
 			const ret = await tx

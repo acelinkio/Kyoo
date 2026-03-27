@@ -33,7 +33,7 @@ const BaseMovie = t.Object({
 		t.Number({ minimum: 0, description: "Runtime of the movie in minutes." }),
 	),
 	airDate: t.Nullable(t.String({ format: "date" })),
-	nextRefresh: t.Date(),
+	nextRefresh: t.Nullable(t.String({ format: "date" })),
 	externalId: ExternalId(),
 });
 

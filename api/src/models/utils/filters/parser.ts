@@ -34,7 +34,7 @@ export type Property = {
 export type Value =
 	| { type: "int"; value: number }
 	| { type: "float"; value: number }
-	| { type: "date"; value: string }
+	| { type: "date"; value: Date }
 	| { type: "string"; value: string }
 	| { type: "enum"; value: string }
 	| { type: "bool"; value: boolean };
@@ -92,7 +92,7 @@ const dateVal = t(
 		),
 		map(([year, month, day]) => ({
 			type: "date" as const,
-			value: `${year}-${month}-${day}`,
+			value: new Date(`${year}-${month}-${day}`),
 		})),
 	),
 ).expects("a date");

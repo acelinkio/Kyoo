@@ -93,7 +93,7 @@ export const shows = schema.table(
 		updatedAt: timestamp({ withTimezone: true, precision: 3 })
 			.notNull()
 			.$onUpdate(() => new Date()),
-		nextRefresh: timestamp({ withTimezone: true, precision: 3 }).notNull(),
+		nextRefresh: date().notNull(),
 	},
 	(t) => [
 		unique("kind_slug").on(t.kind, t.slug),

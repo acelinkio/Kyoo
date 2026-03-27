@@ -32,7 +32,6 @@ const BaseCollection = t.Object({
 			descrpition: "Date of the last item of the collection",
 		}),
 	),
-	nextRefresh: t.Date(),
 	externalId: ExternalId(),
 });
 

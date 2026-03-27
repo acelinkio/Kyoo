@@ -126,7 +126,7 @@ export const VideoMenu = ({
 					key={x.id}
 					label={getDisplayName({ title: x.label, language: x.language })}
 					selected={x.selected}
-					onSelect={() => player.selectAudioTrack(x)}
+					onSelect={() => player.selectVideoTrack(x)}
 				/>
 			))}
 		</Menu>

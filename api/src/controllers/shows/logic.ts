@@ -91,6 +91,7 @@ export const showFilters: FilterDef = {
 		column: (source: string) => sql`(${shows.rating}->>${source})::int`,
 		type: "int",
 	},
+	nextRefresh: { column: shows.nextRefresh, type: "date" },
 };
 export const showSort = Sort(
 	{

@@ -241,7 +241,7 @@ class TVDB(Provider):
 			original_language=Language.get(ret["originalLanguage"]),
 			genres=[
 				cast(Genre, self._genre_map[x["slug"]])
-				for x in ret.get("genres", [])
+				for x in (ret.get("genres", []) or [])
 				if self._genre_map[x["slug"]] is not None
 			],
 			rating={},  # TODO: maybe use the `score` value.
@@ -438,7 +438,7 @@ class TVDB(Provider):
 			original_language=Language.get(show["originalLanguage"]),
 			genres=[
 				cast(Genre, self._genre_map[x["slug"]])
-				for x in show.get("genres", [])
+				for x in (show.get("genres", []) or [])
 				if self._genre_map[x["slug"]] is not None
 			],
 			rating={},
@@ -749,7 +749,7 @@ class TVDB(Provider):
 			original_language=Language.get(ret["originalLanguage"]),
 			genres=[
 				cast(Genre, self._genre_map[x["slug"]])
-				for x in ret.get("genres", [])
+				for x in (ret.get("genres", []) or [])
 				if self._genre_map[x["slug"]] is not None
 			],
 			rating={},  # TODO: maybe use the `score` value.

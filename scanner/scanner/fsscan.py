@@ -128,7 +128,7 @@ class FsScanner:
 				[v for v in vids if v is not None]
 			)
 
-			await self._requests.enqueue(
+			_ = await self._requests.enqueue(
 				[
 					Request(
 						kind=x.guess.kind,

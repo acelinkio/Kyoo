@@ -89,7 +89,7 @@ export const seedSerie = async (
 		staff,
 		...serie
 	} = seed;
-	const nextRefresh = guessNextRefresh(serie.startAir ?? new Date());
+	const nextRefresh = guessNextRefresh({ ...seed, kind: "serie" });
 	const ori = translations[serie.originalLanguage];
 	const original = ori
 		? {

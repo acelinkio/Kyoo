@@ -53,7 +53,7 @@ describe("Parse filter", () => {
 				type: "op",
 				operator: "ge",
 				property: { name: "airDate" },
-				value: { type: "date", value: "2022-10-12" },
+				value: { type: "date", value: new Date("2022-10-12") },
 			},
 		});
 	});

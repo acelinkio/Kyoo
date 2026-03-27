@@ -205,9 +205,7 @@ async def refresh_movie_by_slug(
 			Request(
 				kind="movie",
 				title=show.name,
-				year=show.air_date.year
-				if show.air_date is not None
-				else None,
+				year=show.air_date.year if show.air_date is not None else None,
 				external_id=MetadataId.map_dict(show.external_id),
 				videos=[],
 			)
@@ -237,9 +235,7 @@ async def refresh_serie_by_slug(
 			Request(
 				kind="episode",
 				title=show.name,
-				year=show.start_air.year
-				if show.start_air is not None
-				else None,
+				year=show.start_air.year if show.start_air is not None else None,
 				external_id=MetadataId.map_dict(show.external_id),
 				videos=[],
 			)

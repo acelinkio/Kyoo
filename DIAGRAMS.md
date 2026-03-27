@@ -132,8 +132,10 @@ C4Component
   Container_Boundary(auth, "auth") {
     Component(auth_c1, "kyoo_auth", "Go", "")
     ComponentDb(auth_db1, "kelbi", "Postgres", "")
+    Component(auth_c2, "AuthProfilePicture", "Volume", "Distributed Profile Picture")
   }
   Rel(auth_c1, auth_db1, "")
+  Rel(auth_c1, auth_c2, "")
 ```
 
 #### Api

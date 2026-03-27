@@ -12,7 +12,6 @@ import { KErrorT } from "~/models/error";
 import { record } from "~/otel";
 import { duplicates } from "~/utils";
 import { enqueueOptImage, flushImageQueue, type ImageTask } from "../images";
-import { guessNextRefresh } from "../refresh";
 import { updateAvailableCount, updateAvailableSince } from "./shows";
 
 type SeedEntry = SEntry & {
@@ -66,10 +65,6 @@ export const insertEntries = record(
 						url: seed.thumbnail,
 						column: entries.thumbnail,
 					}),
-					nextRefresh:
-						entry.kind !== "extra"
-							? guessNextRefresh(entry.airDate ?? new Date())
-							: guessNextRefresh(new Date()),
 					episodeNumber:
 						entry.kind === "episode"
 							? entry.episodeNumber

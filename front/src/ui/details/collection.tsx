@@ -71,5 +71,8 @@ export const CollectionDetails = () => {
 CollectionDetails.query = (slug: string): QueryIdentifier<Show> => ({
 	parser: Show,
 	path: ["api", "collections", slug, "shows"],
+	params: {
+		sort: ["airDate"],
+	},
 	infinite: true,
 });

@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timezone
 from logging import getLogger
 from types import TracebackType
 from typing import Literal
@@ -7,8 +8,10 @@ from aiohttp import ClientResponse, ClientResponseError, ClientSession
 from pydantic import TypeAdapter
 
 from .models.movie import Movie
+from .models.page import Page
 from .models.request import Request
 from .models.serie import Serie
+from .models.show import Show
 from .models.videos import For, Resource, Video, VideoCreated, VideoInfo, VideoLink
 from .utils import Singleton
 
@@ -85,6 +88,24 @@ class KyooClient(metaclass=Singleton):
 		) as r:
 			await self.raise_for_status(r)
 			return Resource.model_validate(await r.json())
+
+	async def get_shows_to_refresh(self, next: str | None) -> Page[Show]:
+		now = datetime.now(timezone.utc).date()
+		async with self._client.get(
+			next or f"shows?sort=nextRefresh&filter=nextRefresh le {now}"
+		) as r:
+			await self.raise_for_status(r)
+			return Page[Show].model_validate(await r.json())
+
+	async def get_movie(self, slug: str) -> Show:
+		async with self._client.get(f"movies/{slug}") as r:
+			await self.raise_for_status(r)
+			return Show.model_validate(await r.json())
+
+	async def get_serie(self, slug: str) -> Show:
+		async with self._client.get(f"series/{slug}") as r:
+			await self.raise_for_status(r)
+			return Show.model_validate(await r.json())
 
 	async def link_videos(
 		self,

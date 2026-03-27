@@ -6,7 +6,10 @@ export const User = z
 		username: z.string(),
 		email: z.string(),
 		hasPassword: z.boolean().default(true),
+		createdDate: z.coerce.date().default(new Date()),
+		lastSeen: z.coerce.date().default(new Date()),
 		claims: z.object({
+			verified: z.boolean().default(true),
 			permissions: z.array(z.string()),
 			settings: z
 				.object({
@@ -45,9 +48,8 @@ export const User = z
 	})
 	.transform((x) => ({
 		...x,
-		logo: `auth/users/${x.id}/logo`,
-		// isVerified: x.permissions.length > 0,
-		isAdmin: true, //x.permissions?.includes("admin.write"),
+		logo: `/auth/users/${x.id}/logo`,
+		isAdmin: x.claims.permissions.includes("users.write"),
 	}));
 export type User = z.infer<typeof User>;
 

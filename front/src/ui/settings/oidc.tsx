@@ -5,15 +5,15 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Image } from "react-native";
 import { type KyooError, User } from "~/models";
+import { AuthInfo } from "~/models/auth-info";
 import { Button, IconButton, Link, P, Skeleton, tooltip } from "~/primitives";
 import { type QueryIdentifier, useFetch, useMutation } from "~/query";
-import { OidcLogin } from "../login/oidc";
 import { Preference, SettingsContainer } from "./base";
 
 export const OidcSettings = () => {
 	const { t } = useTranslation();
 	const [unlinkError, setUnlinkError] = useState<string | null>(null);
-	const { data } = useFetch(OidcLogin.query());
+	const { data } = useFetch(OidcSettings.authQuery());
 	const { data: user } = useFetch(OidcSettings.query());
 	const { mutateAsync: unlinkAccount } = useMutation({
 		method: "DELETE",
@@ -103,4 +103,9 @@ export const OidcSettings = () => {
 OidcSettings.query = (): QueryIdentifier<User> => ({
 	path: ["auth", "users", "me"],
 	parser: User,
+});
+
+OidcSettings.authQuery = (): QueryIdentifier<AuthInfo> => ({
+	path: ["auth", "info"],
+	parser: AuthInfo,
 });

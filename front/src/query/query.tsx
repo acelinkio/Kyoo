@@ -41,17 +41,12 @@ export const queryFn = async <Parser extends z.ZodTypeAny>(context: {
 	try {
 		resp = await fetch(context.url, {
 			method: context.method,
-			body:
-				"body" in context && context.body
-					? JSON.stringify(context.body)
-					: "formData" in context && context.formData
-						? context.formData
-						: undefined,
+			body: context.body ? JSON.stringify(context.body) : context.formData,
 			headers: {
 				...(context.authToken
 					? { Authorization: `Bearer ${context.authToken}` }
 					: {}),
-				...("body" in context ? { "Content-Type": "application/json" } : {}),
+				...(context.body ? { "Content-Type": "application/json" } : {}),
 			},
 			signal: context.signal,
 		});
@@ -319,6 +314,7 @@ type MutationParams = {
 		[query: string]: boolean | number | string | string[] | undefined;
 	};
 	body?: object;
+	formData?: FormData;
 };
 
 export const useMutation = <T = void, QueryRet = void>({
@@ -337,7 +333,7 @@ export const useMutation = <T = void, QueryRet = void>({
 	const queryClient = useQueryClient();
 	const mutation = useRQMutation({
 		mutationFn: (param: T) => {
-			const { method, path, params, body } = {
+			const { method, path, params, body, formData } = {
 				...queryParams,
 				...compute?.(param),
 			} as Required<MutationParams>;
@@ -346,6 +342,7 @@ export const useMutation = <T = void, QueryRet = void>({
 				method,
 				url: keyToUrl(toQueryKey({ apiUrl, path, params })),
 				body,
+				formData,
 				authToken,
 				parser: null,
 			});

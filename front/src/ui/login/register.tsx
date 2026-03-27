@@ -4,6 +4,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { Platform } from "react-native";
 import { A, Button, H1, Input, P } from "~/primitives";
 import { defaultApiUrl } from "~/providers/account-provider";
+import { useFetch } from "~/query";
 import { useQueryState } from "~/utils";
 import { FormPage } from "./form";
 import { login } from "./logic";
@@ -21,63 +22,84 @@ export const RegisterPage = () => {
 
 	const router = useRouter();
 	const { t } = useTranslation();
+	const { data: info } = useFetch(OidcLogin.query(apiUrl));
 
 	if (Platform.OS !== "web" && !apiUrl) return <ServerUrlPage />;
-
-	return (
-		<FormPage apiUrl={apiUrl!}>
-			<H1 className="pb-4">{t("login.register")}</H1>
-			<OidcLogin apiUrl={apiUrl}>
-				<P className="pl-2">{t("login.username")}</P>
-				<Input
-					autoComplete="username"
-					onChangeText={(value) => setUsername(value)}
-				/>
-
-				<P className="pt-2 pl-2">{t("login.email")}</P>
-				<Input autoComplete="email" onChangeText={(value) => setEmail(value)} />
-
-				<P className="pt-2 pl-2">{t("login.password")}</P>
-				<PasswordInput
-					autoComplete="new-password"
-					onChangeText={(value) => setPassword(value)}
-				/>
-
-				<P className="pt-2 pl-2">{t("login.confirm")}</P>
-				<PasswordInput
-					autoComplete="new-password"
-					onChangeText={(value) => setConfirm(value)}
-				/>
-
-				{password !== confirm && (
-					<P className="text-red-500 dark:text-red-500">
-						{t("login.password-no-match")}
-					</P>
-				)}
-				{error && <P className="text-red-500 dark:text-red-500">{error}</P>}
-				<Button
-					text={t("login.register")}
-					disabled={password !== confirm}
-					onPress={async () => {
-						const { error } = await login("register", {
-							email,
-							username,
-							password,
-							apiUrl,
-						});
-						setError(error);
-						if (error) return;
-						router.replace("/");
-					}}
-					className="m-2 my-6 w-60 self-center"
-				/>
+	if (info?.allowRegister === false) {
+		return (
+			<FormPage apiUrl={apiUrl!}>
+				<OidcLogin apiUrl={apiUrl} />
+				<H1 className="pb-4">{t("login.register")}</H1>
+				<P className="mb-6">
+					{t(
+						Object.values(info.oidc).length > 0
+							? "login.register-disabled-oidc"
+							: "login.register-disabled",
+					)}
+				</P>
 				<P>
 					<Trans i18nKey="login.or-login">
 						Have an account already?
 						<A href={`/login?apiUrl=${apiUrl}`}>Log in</A>.
 					</Trans>
 				</P>
-			</OidcLogin>
+			</FormPage>
+		);
+	}
+
+	return (
+		<FormPage apiUrl={apiUrl!}>
+			<H1 className="pb-4">{t("login.register")}</H1>
+			<OidcLogin apiUrl={apiUrl} />
+			<P className="pl-2">{t("login.username")}</P>
+			<Input
+				autoComplete="username"
+				onChangeText={(value) => setUsername(value)}
+			/>
+
+			<P className="pt-2 pl-2">{t("login.email")}</P>
+			<Input autoComplete="email" onChangeText={(value) => setEmail(value)} />
+
+			<P className="pt-2 pl-2">{t("login.password")}</P>
+			<PasswordInput
+				autoComplete="new-password"
+				onChangeText={(value) => setPassword(value)}
+			/>
+
+			<P className="pt-2 pl-2">{t("login.confirm")}</P>
+			<PasswordInput
+				autoComplete="new-password"
+				onChangeText={(value) => setConfirm(value)}
+			/>
+
+			{password !== confirm && (
+				<P className="text-red-500 dark:text-red-500">
+					{t("login.password-no-match")}
+				</P>
+			)}
+			{error && <P className="text-red-500 dark:text-red-500">{error}</P>}
+			<Button
+				text={t("login.register")}
+				disabled={password !== confirm}
+				onPress={async () => {
+					const { error } = await login("register", {
+						email,
+						username,
+						password,
+						apiUrl,
+					});
+					setError(error);
+					if (error) return;
+					router.replace("/");
+				}}
+				className="m-2 my-6 w-60 self-center"
+			/>
+			<P>
+				<Trans i18nKey="login.or-login">
+					Have an account already?
+					<A href={`/login?apiUrl=${apiUrl}`}>Log in</A>.
+				</Trans>
+			</P>
 		</FormPage>
 	);
 };

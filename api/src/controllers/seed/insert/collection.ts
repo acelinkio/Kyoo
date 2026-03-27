@@ -20,7 +20,7 @@ export const insertCollection = record(
 			| ({ kind: "movie" } & SeedMovie)
 			| ({ kind: "serie" } & SeedSerie)
 		) & {
-			nextRefresh: Date;
+			nextRefresh: string;
 		},
 		original: Original,
 	) => {

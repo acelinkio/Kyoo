@@ -11,8 +11,6 @@ export const BaseEntry = () =>
 			}),
 		),
 		thumbnail: t.Nullable(Image),
-
-		nextRefresh: t.Date(),
 	});
 
 export const EntryTranslation = () =>

@@ -51,7 +51,6 @@ export const seasons = schema.table(
 		updatedAt: timestamp({ withTimezone: true, precision: 3 })
 			.notNull()
 			.$onUpdate(() => new Date()),
-		nextRefresh: timestamp({ withTimezone: true, precision: 3 }).notNull(),
 	},
 	(t) => [
 		unique().on(t.showPk, t.seasonNumber),

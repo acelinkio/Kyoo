@@ -64,6 +64,8 @@ services:
       - "4568:4568"
     env_file:
       - ./.env
+    volumes:
+      - profile_pictures:/profile_pictures
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.auth.rule=PathPrefix(`/auth/`) || PathPrefix(`/.well-known/`)"
@@ -213,4 +215,5 @@ services:
 volumes:
   db:
   images:
+  profile_pictures:
   transcoder_metadata:

@@ -1,3 +1,4 @@
+import Refresh from "@material-symbols/svg-400/rounded/autorenew.svg";
 import BookmarkAdd from "@material-symbols/svg-400/rounded/bookmark_add.svg";
 import Delete from "@material-symbols/svg-400/rounded/delete.svg";
 import MoreHoriz from "@material-symbols/svg-400/rounded/more_horiz.svg";
@@ -83,11 +84,11 @@ const ButtonList = ({
 		invalidate: ["api", "shows"],
 	});
 
-	// const metadataRefreshMutation = useMutation({
-	// 	method: "POST",
-	// 	path: [kind, slug, "refresh"],
-	// 	invalidate: null,
-	// });
+	const metadataRefreshMutation = useMutation({
+		method: "POST",
+		path: ["scanner", `${kind}s`, slug, "refresh"],
+		invalidate: null,
+	});
 
 	return (
 		<View className="flex-row items-center justify-center">
@@ -163,6 +164,13 @@ const ButtonList = ({
 								href={`/${kind === "movie" ? "movies" : "series"}/${slug}/videos`}
 							/>
 							{kind !== "collection" && <HR />}
+							{kind !== "collection" && (
+								<Menu.Item
+									label={t("home.refreshMetadata")}
+									icon={Refresh}
+									onSelect={() => metadataRefreshMutation.mutate()}
+								/>
+							)}
 							<Menu.Item
 								label={t("misc.delete")}
 								icon={Delete}
@@ -185,11 +193,6 @@ const ButtonList = ({
 									);
 								}}
 							/>
-							{/* <Menu.Item */}
-							{/* 	label={t("home.refreshMetadata")} */}
-							{/* 	icon={Refresh} */}
-							{/* 	onSelect={() => metadataRefreshMutation.mutate()} */}
-							{/* /> */}
 						</>
 					)}
 				</Menu>

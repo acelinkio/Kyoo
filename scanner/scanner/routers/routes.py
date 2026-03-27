@@ -4,23 +4,33 @@ from fastapi import (
 	APIRouter,
 	BackgroundTasks,
 	Depends,
-	Request as HttpRequest,
 	Security,
 )
+from fastapi import (
+	Request as HttpRequest,
+)
 
+from ..client import KyooClient
 from ..fsscan import create_scanner
 from ..identifiers.identify import identify
 from ..jwt import validate_bearer
+from ..models.metadataid import MetadataId
 from ..models.movie import SearchMovie
 from ..models.page import Page
 from ..models.request import CreateRequest, Request, RequestRet
 from ..models.serie import SearchSerie
+from ..models.show import Show
 from ..models.videos import Video
 from ..providers.composite import CompositeProvider
 from ..requests import RequestCreator
 from ..status import StatusService
 from ..utils import Language
-from .dependencies import get_preferred_languages, get_provider, get_request_creator
+from .dependencies import (
+	get_client,
+	get_preferred_languages,
+	get_provider,
+	get_request_creator,
+)
 
 router = APIRouter()
 
@@ -168,6 +178,70 @@ async def create_serie(
 				year=body.year,
 				external_id=body.external_id,
 				videos=body.videos,
+			)
+		]
+	)
+	return ret
+
+
+@router.post(
+	"/movies/{slug}/refresh",
+	status_code=201,
+	response_description="Movie refresh request created.",
+)
+async def refresh_movie_by_slug(
+	slug: str,
+	client: Annotated[KyooClient, Depends(get_client)],
+	requests: Annotated[RequestCreator, Depends(get_request_creator)],
+	_: Annotated[None, Security(validate_bearer, scopes=["scanner.add"])],
+) -> RequestRet:
+	"""
+	Refresh an existing movie
+	"""
+
+	show = await client.get_movie(slug)
+	[ret] = await requests.enqueue(
+		[
+			Request(
+				kind="movie",
+				title=show.name,
+				year=show.air_date.year
+				if show.air_date is not None
+				else None,
+				external_id=MetadataId.map_dict(show.external_id),
+				videos=[],
+			)
+		]
+	)
+	return ret
+
+
+@router.post(
+	"/series/{slug}/refresh",
+	status_code=201,
+	response_description="Series refresh request created.",
+)
+async def refresh_serie_by_slug(
+	slug: str,
+	client: Annotated[KyooClient, Depends(get_client)],
+	requests: Annotated[RequestCreator, Depends(get_request_creator)],
+	_: Annotated[None, Security(validate_bearer, scopes=["scanner.add"])],
+) -> RequestRet:
+	"""
+	Refresh an existing serie
+	"""
+
+	show = await client.get_serie(slug)
+	[ret] = await requests.enqueue(
+		[
+			Request(
+				kind="episode",
+				title=show.name,
+				year=show.start_air.year
+				if show.start_air is not None
+				else None,
+				external_id=MetadataId.map_dict(show.external_id),
+				videos=[],
 			)
 		]
 	)

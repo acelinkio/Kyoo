@@ -97,6 +97,16 @@ class KyooClient(metaclass=Singleton):
 			await self.raise_for_status(r)
 			return Page[Show].model_validate(await r.json())
 
+	async def get_movie(self, slug: str) -> Show:
+		async with self._client.get(f"movies/{slug}") as r:
+			await self.raise_for_status(r)
+			return Show.model_validate(await r.json())
+
+	async def get_serie(self, slug: str) -> Show:
+		async with self._client.get(f"series/{slug}") as r:
+			await self.raise_for_status(r)
+			return Show.model_validate(await r.json())
+
 	async def link_videos(
 		self,
 		kind: Literal["movie", "serie"],

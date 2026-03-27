@@ -7,10 +7,14 @@ export const guessNextRefresh = (
 	if (show.kind === "movie") {
 		return fromAirDate(show.airDate ?? new Date());
 	}
-	const lastAirDate = show.entries
+	const dates = show.entries
 		.filter((x) => x.airDate)
-		.map((x) => new Date(x.airDate!))
-		.reduce((max, cur) => (cur > max ? cur : max));
+		.map((x) => new Date(x.airDate!));
+	const after = dates.filter((x) => x.getTime() > Date.now());
+	const lastAirDate =
+		after.length > 0
+			? after.reduce((min, cur) => (cur < min ? cur : min))
+			: dates.reduce((max, cur) => (cur > max ? cur : max));
 	return fromAirDate(lastAirDate);
 };
 

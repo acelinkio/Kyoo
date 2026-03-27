@@ -33,7 +33,7 @@ export const OidcLogin = ({ apiUrl }: { apiUrl: string }) => {
 							/>
 						))}
 					</View>
-					<HRP text={t("misc.or")} />
+					{Object.keys(info.oidc).length > 0 && <HRP text={t("misc.or")} />}
 				</>
 			)}
 			Loader={() => (

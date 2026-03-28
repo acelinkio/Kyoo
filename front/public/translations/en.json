@@ -47,7 +47,8 @@
 		"videosCount": "{{number}} videos",
 		"version": "Version {{number}}",
 		"part": "Part {{number}}",
-		"videos-map": "Edit video mappings"
+		"videos-map": "Edit video mappings",
+		"staff-as":"as {{character}}"
 	},
 	"videos-map": {
 		"none": "NONE",

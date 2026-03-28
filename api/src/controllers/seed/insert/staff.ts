@@ -43,14 +43,16 @@ export const insertStaff = record(
 				staffPk: ret.find((y) => y.slug === x.staff.slug)!.pk,
 				kind: x.kind,
 				order: i,
-				character: {
-					...x.character,
-					image: enqueueOptImage(imgQueue, {
-						url: x.character.image,
-						table: roles,
-						column: sql`${roles.character}['image']`,
-					}),
-				},
+				character: x.character
+					? {
+							...x.character,
+							image: enqueueOptImage(imgQueue, {
+								url: x.character.image,
+								table: roles,
+								column: sql`${roles.character}['image']`,
+							}),
+						}
+					: null,
 			}));
 
 			await flushImageQueue(tx, imgQueue, -200);

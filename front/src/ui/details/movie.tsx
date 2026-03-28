@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQueryState } from "~/utils";
 import { HeaderBackground, useScrollNavbar } from "../navbar";
 import { Header } from "./header";
+import { Staff } from "./staff";
 
 export const MovieDetails = () => {
 	const [slug] = useQueryState("slug", undefined!);
@@ -24,6 +25,7 @@ export const MovieDetails = () => {
 					slug={slug}
 					onImageLayout={(e) => setHeight(e.nativeEvent.layout.height)}
 				/>
+				<Staff kind="movie" slug={slug} />
 			</Animated.ScrollView>
 		</>
 	);

@@ -35,12 +35,14 @@ export type Staff = typeof Staff.static;
 export const SeedStaff = t.Composite([
 	t.Omit(Role, ["character"]),
 	t.Object({
-		character: t.Composite([
-			t.Omit(Character, ["image"]),
-			t.Object({
-				image: t.Nullable(SeedImage),
-			}),
-		]),
+		character: t.Nullable(
+			t.Composite([
+				t.Omit(Character, ["image"]),
+				t.Object({
+					image: t.Nullable(SeedImage),
+				}),
+			]),
+		),
 		staff: t.Composite([
 			t.Object({
 				slug: t.String({ format: "slug" }),

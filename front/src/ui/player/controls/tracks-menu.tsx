@@ -176,6 +176,7 @@ export const QualityMenu = ({
 				}}
 			/>
 			{lvls
+				.reverse()
 				.map((x) => (
 					<Menu.Item
 						key={x.id}

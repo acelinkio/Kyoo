@@ -1,0 +1,1164 @@
+basePath: /auth
+definitions:
+  main.ApiKey:
+    properties:
+      claims:
+        additionalProperties:
+          type: string
+        example:
+          isAdmin: ' true'
+        type: object
+      createAt:
+        example: "2025-03-29T18:20:05.267Z"
+        type: string
+      id:
+        example: e05089d6-9179-4b5b-a63e-94dd5fc2a397
+        type: string
+      lastUsed:
+        example: "2025-03-29T18:20:05.267Z"
+        type: string
+      name:
+        example: myapp
+        type: string
+    type: object
+  main.ApiKeyDto:
+    properties:
+      claims:
+        additionalProperties:
+          type: string
+        example:
+          isAdmin: ' true'
+        type: object
+      name:
+        example: myapp
+        type: string
+    type: object
+  main.ApiKeyWToken:
+    properties:
+      claims:
+        additionalProperties:
+          type: string
+        example:
+          isAdmin: ' true'
+        type: object
+      createAt:
+        example: "2025-03-29T18:20:05.267Z"
+        type: string
+      id:
+        example: e05089d6-9179-4b5b-a63e-94dd5fc2a397
+        type: string
+      lastUsed:
+        example: "2025-03-29T18:20:05.267Z"
+        type: string
+      name:
+        example: myapp
+        type: string
+      token:
+        example: myapp-lyHzTYm9yi+pkEv3m2tamAeeK7Dj7N3QRP7xv7dPU5q9MAe8tU4ySwYczE0RaMr4fijsA==
+        type: string
+    type: object
+  main.JwkSet:
+    properties:
+      keys:
+        items:
+          properties:
+            e:
+              example: AQAB
+              type: string
+            key_ops:
+              example:
+              - '[verify]'
+              items:
+                type: string
+              type: array
+            kty:
+              example: RSA
+              type: string
+            "n":
+              example: oBcXcJUR-Sb8_b4qIj28LRAPxdF_6odRr52K5-ymiEkR2DOlEuXBtM-biWxPESW-U-zhfHzdVLf6ioy5xL0bJTh8BMIorkrDliN3vb81jCvyOMgZ7ATMJpMAQMmSDN7sL3U45r22FaoQufCJMQHmUsZPecdQSgj2aFBiRXxsLleYlSezdBVT_gKH-coqeYXSC_hk-ezSq4aDZ10BlDnZ-FA7-ES3T7nBmJEAU7KDAGeSvbYAfYimOW0r-Vc0xQNuwGCfzZtSexKXDbYbNwOVo3SjfCabq-gMfap_owcHbKicGBZu1LDlh7CpkmLQf_kv6GihM2LWFFh6Vwg2cltiwF22EIPlUDtYTkUR0qRkdNJaNkwV5Vv_6r3pzSmu5ovRriKtlrvJMjlTnLb4_ltsge3fw5Z34cJrsp094FbUc2O6Or4FGEXUldieJCnVRhs2_h6SDcmeMXs1zfvE5GlDnq8tZV6WMJ5Sb4jNO7rs_hTkr23_E6mVg-DdtozGfqzRzhIjPym6D_jVfR6dZv5W0sKwOHRmT7nYq-C7b2sAwmNNII296M4Rq-jn0b5pgSeMDYbIpbIA4thU8LYU0lBZp_ZVwWKG1RFZDxz3k9O5UVth2kTpTWlwn0hB1aAvgXHo6in1CScITGA72p73RbDieNnLFaCK4xUVstkWAKLqPxs
+              type: string
+            use:
+              example: sig
+              type: string
+          type: object
+        type: array
+    type: object
+  main.Jwt:
+    properties:
+      token:
+        description: The jwt token you can use for all authorized call to either keibi
+          or other services.
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30
+        type: string
+    type: object
+  main.KError:
+    properties:
+      details: {}
+      message:
+        example: No user found with this id
+        type: string
+      status:
+        example: 404
+        type: integer
+    type: object
+  main.LoginDto:
+    properties:
+      login:
+        description: Either the email or the username.
+        example: zoriya
+        type: string
+      password:
+        description: Password of the account.
+        example: password1234
+        type: string
+    required:
+    - login
+    - password
+    type: object
+  main.OidcInfo:
+    properties:
+      logo:
+        type: string
+      name:
+        type: string
+    type: object
+  main.Page-main_ApiKey:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/main.ApiKey'
+        type: array
+      next:
+        example: https://kyoo.zoriya.dev/auth/users?after=aoeusth
+        type: string
+      this:
+        example: https://kyoo.zoriya.dev/auth/users
+        type: string
+    type: object
+  main.Page-models_User:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/models.User'
+        type: array
+      next:
+        example: https://kyoo.zoriya.dev/auth/users?after=aoeusth
+        type: string
+      this:
+        example: https://kyoo.zoriya.dev/auth/users
+        type: string
+    type: object
+  main.ServerInfo:
+    properties:
+      allowRegister:
+        type: boolean
+      oidc:
+        additionalProperties:
+          $ref: '#/definitions/main.OidcInfo'
+        type: object
+      publicUrl:
+        type: string
+    type: object
+  main.Session:
+    properties:
+      createdDate:
+        description: When was the session first opened
+        example: "2025-03-29T18:20:05.267Z"
+        type: string
+      device:
+        description: Device that created the session.
+        example: Web - Firefox
+        type: string
+      id:
+        description: Unique id of this session. Can be used for calls to DELETE
+        example: e05089d6-9179-4b5b-a63e-94dd5fc2a397
+        type: string
+      lastUsed:
+        description: Last date this session was used to access a service.
+        example: "2025-03-29T18:20:05.267Z"
+        type: string
+    type: object
+  main.SessionWCurrent:
+    properties:
+      createdDate:
+        description: When was the session first opened
+        example: "2025-03-29T18:20:05.267Z"
+        type: string
+      current:
+        type: boolean
+      device:
+        description: Device that created the session.
+        example: Web - Firefox
+        type: string
+      id:
+        description: Unique id of this session. Can be used for calls to DELETE
+        example: e05089d6-9179-4b5b-a63e-94dd5fc2a397
+        type: string
+      lastUsed:
+        description: Last date this session was used to access a service.
+        example: "2025-03-29T18:20:05.267Z"
+        type: string
+    type: object
+  main.SessionWToken:
+    properties:
+      createdDate:
+        description: When was the session first opened
+        example: "2025-03-29T18:20:05.267Z"
+        type: string
+      device:
+        description: Device that created the session.
+        example: Web - Firefox
+        type: string
+      id:
+        description: Unique id of this session. Can be used for calls to DELETE
+        example: e05089d6-9179-4b5b-a63e-94dd5fc2a397
+        type: string
+      lastUsed:
+        description: Last date this session was used to access a service.
+        example: "2025-03-29T18:20:05.267Z"
+        type: string
+      token:
+        example: lyHzTYm9yi+pkEv3m2tamAeeK7Dj7N3QRP7xv7dPU5q9MAe8tU4ySwYczE0RaMr4fijsA==
+        type: string
+    type: object
+  models.EditPasswordDto:
+    properties:
+      newPassword:
+        example: password1234
+        type: string
+      oldPassword:
+        example: password1234
+        type: string
+    required:
+    - newPassword
+    type: object
+  models.EditUserDto:
+    properties:
+      claims:
+        additionalProperties:
+          type: string
+        example:
+          preferOriginal: ' true'
+        type: object
+      email:
+        example: kyoo@zoriya.dev
+        type: string
+      username:
+        example: zoriya
+        type: string
+    type: object
+  models.OidcHandle:
+    properties:
+      id:
+        description: Id of this oidc handle.
+        example: e05089d6-9179-4b5b-a63e-94dd5fc2a397
+        type: string
+      profileUrl:
+        description: Link to the profile of the user on the external service. Null
+          if unknown or irrelevant.
+        example: https://myanimelist.net/profile/zoriya
+        format: url
+        type: string
+      username:
+        description: Username of the user on the external service.
+        example: zoriya
+        type: string
+    type: object
+  models.RegisterDto:
+    properties:
+      email:
+        description: Valid email that could be used for forgotten password requests.
+          Can be used for login.
+        example: kyoo@zoriya.dev
+        format: email
+        type: string
+      password:
+        description: Password to use.
+        example: password1234
+        type: string
+      username:
+        description: Username of the new account, can't contain @ signs. Can be used
+          for login.
+        example: zoriya
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  models.User:
+    properties:
+      claims:
+        additionalProperties:
+          type: string
+        description: List of custom claims JWT created via get /jwt will have
+        example:
+          isAdmin: ' true'
+        type: object
+      createdDate:
+        description: When was this account created?
+        example: "2025-03-29T18:20:05.267Z"
+        type: string
+      email:
+        description: Email of the user. Can be used as a login.
+        example: kyoo@zoriya.dev
+        format: email
+        type: string
+      hasPassword:
+        description: False if the user has never setup a password and only used oidc.
+        type: boolean
+      id:
+        description: Id of the user.
+        example: e05089d6-9179-4b5b-a63e-94dd5fc2a397
+        type: string
+      lastSeen:
+        description: When was the last time this account made any authorized request?
+        example: "2025-03-29T18:20:05.267Z"
+        type: string
+      oidc:
+        additionalProperties:
+          $ref: '#/definitions/models.OidcHandle'
+        description: List of other login method available for this user. Access tokens
+          wont be returned here.
+        type: object
+      username:
+        description: Username of the user. Can be used as a login.
+        example: zoriya
+        type: string
+    type: object
+host: kyoo.zoriya.dev
+info:
+  contact:
+    name: Repository
+    url: https://github.com/zoriya/kyoo
+  description: Auth system made for kyoo.
+  license:
+    name: GPL-3.0
+    url: https://www.gnu.org/licenses/gpl-3.0.en.html
+  title: Keibi - Kyoo's auth
+  version: "1.0"
+paths:
+  /.well-known/jwks.json:
+    get:
+      description: Get the jwks info, used to validate jwts.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.JwkSet'
+      summary: Jwks
+      tags:
+      - jwt
+  /info:
+    get:
+      description: List keibi's settings (oidc providers, public url...)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.ServerInfo'
+      summary: Auth info
+      tags:
+      - oidc
+  /jwt:
+    get:
+      description: Convert a session token or an API key to a short lived JWT.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Authorization:
+              description: Jwt (same value as the returned token)
+              type: string
+          schema:
+            $ref: '#/definitions/main.Jwt'
+        "403":
+          description: Invalid session token (or expired)
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Token: []
+      summary: Get JWT
+      tags:
+      - jwt
+  /keys:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing API key
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.ApiKey'
+        "404":
+          description: Invalid id
+          schema:
+            $ref: '#/definitions/main.KError'
+        "422":
+          description: Invalid id format
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt:
+        - apikeys.write
+      summary: Delete API key
+      tags:
+      - apikeys
+    get:
+      consumes:
+      - application/json
+      description: List all api keys
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Page-main_ApiKey'
+      security:
+      - Jwt:
+        - apikeys.read
+      summary: List API keys
+      tags:
+      - apikeys
+    post:
+      consumes:
+      - application/json
+      description: Create a new API key
+      parameters:
+      - description: Api key info
+        in: body
+        name: key
+        schema:
+          $ref: '#/definitions/main.ApiKeyDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.ApiKeyWToken'
+        "409":
+          description: Duplicated api key
+          schema:
+            $ref: '#/definitions/main.KError'
+        "422":
+          description: Invalid create body
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt:
+        - apikeys.write
+      summary: Create API key
+      tags:
+      - apikeys
+  /oidc/callback/{provider}:
+    get:
+      description: Exchange an opaque OIDC token for a local session.
+      parameters:
+      - description: OIDC provider id
+        example: google
+        in: path
+        name: provider
+        required: true
+        type: string
+      - description: Opaque token returned by /oidc/logged/:provider
+        in: query
+        name: token
+        required: true
+        type: string
+      - description: Optional tenant passthrough for federated setups
+        in: query
+        name: tenant
+        type: string
+      - description: Bearer token to link provider to current account
+        in: header
+        name: Authorization
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.SessionWToken'
+        "404":
+          description: Unknown OIDC provider
+          schema:
+            $ref: '#/definitions/main.KError'
+        "410":
+          description: Login token expired or already used
+          schema:
+            $ref: '#/definitions/main.KError'
+      summary: OIDC callback
+      tags:
+      - oidc
+  /oidc/logged/{provider}:
+    get:
+      description: Callback endpoint called by OIDC providers after login.
+      parameters:
+      - description: OIDC provider id
+        example: google
+        in: path
+        name: provider
+        required: true
+        type: string
+      - description: State value returned by the provider
+        in: query
+        name: state
+        required: true
+        type: string
+      - description: Authorization code
+        in: query
+        name: code
+        type: string
+      - description: Provider callback error
+        in: query
+        name: error
+        type: string
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Found
+        "400":
+          description: Invalid state
+          schema:
+            $ref: '#/definitions/main.KError'
+        "404":
+          description: Unknown OIDC provider
+          schema:
+            $ref: '#/definitions/main.KError'
+      summary: OIDC logged callback
+      tags:
+      - oidc
+  /oidc/login/{provider}:
+    delete:
+      description: Remove an OIDC provider from the current account.
+      parameters:
+      - description: OIDC provider id
+        example: google
+        in: path
+        name: provider
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Unknown OIDC provider
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt: []
+      summary: OIDC unlink provider
+      tags:
+      - oidc
+    get:
+      description: Start an OIDC login with a provider.
+      parameters:
+      - description: OIDC provider id
+        example: google
+        in: path
+        name: provider
+        required: true
+        type: string
+      - description: URL to redirect the browser to after provider callback
+        in: query
+        name: redirectUrl
+        required: true
+        type: string
+      - description: Optional tenant passthrough for federated setups
+        in: query
+        name: tenant
+        type: string
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Found
+        "400":
+          description: Missing redirectUrl
+          schema:
+            $ref: '#/definitions/main.KError'
+        "404":
+          description: Unknown OIDC provider
+          schema:
+            $ref: '#/definitions/main.KError'
+      summary: OIDC login
+      tags:
+      - oidc
+  /sessions:
+    get:
+      description: List all active sessions for the currently connected user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.SessionWCurrent'
+            type: array
+        "401":
+          description: Missing jwt token
+          schema:
+            $ref: '#/definitions/main.KError'
+        "403":
+          description: Invalid jwt token (or expired)
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt: []
+      summary: List my sessions
+      tags:
+      - sessions
+    post:
+      consumes:
+      - application/json
+      description: Login to your account and open a session
+      parameters:
+      - description: The device the created session will be used on
+        example: android tv
+        in: query
+        name: device
+        type: string
+      - description: Account informations
+        in: body
+        name: login
+        schema:
+          $ref: '#/definitions/main.LoginDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.SessionWToken'
+        "403":
+          description: Invalid password
+          schema:
+            $ref: '#/definitions/main.KError'
+        "404":
+          description: Account does not exists
+          schema:
+            $ref: '#/definitions/main.KError'
+        "422":
+          description: User does not have a password (registered via oidc, please
+            login via oidc)
+          schema:
+            $ref: '#/definitions/main.KError'
+      summary: Login
+      tags:
+      - sessions
+  /sessions/{id}:
+    delete:
+      description: Delete a session and logout
+      parameters:
+      - description: The id of the session to delete
+        example: e05089d6-9179-4b5b-a63e-94dd5fc2a397
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Session'
+        "404":
+          description: Session not found with specified id (if not using the /current
+            route)
+          schema:
+            $ref: '#/definitions/main.KError'
+        "422":
+          description: Invalid session id
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt: []
+      summary: Delete other session
+      tags:
+      - sessions
+  /sessions/current:
+    delete:
+      description: Delete a session and logout
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Session'
+        "401":
+          description: Missing jwt token
+          schema:
+            $ref: '#/definitions/main.KError'
+        "403":
+          description: Invalid jwt token (or expired)
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt: []
+      summary: Logout
+      tags:
+      - sessions
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: List all users existing in this instance.
+      parameters:
+      - description: used for pagination.
+        in: query
+        name: after
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Page-models_User'
+        "422":
+          description: Invalid after id
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt:
+        - users.read
+      summary: List all users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Register as a new user and open a session for it
+      parameters:
+      - description: The device the created session will be used on
+        example: android
+        in: query
+        name: device
+        type: string
+      - description: Registration informations
+        in: body
+        name: user
+        schema:
+          $ref: '#/definitions/models.RegisterDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.SessionWToken'
+        "403":
+          description: Registrations are disabled
+          schema:
+            $ref: '#/definitions/main.KError'
+        "409":
+          description: Duplicated email or username
+          schema:
+            $ref: '#/definitions/main.KError'
+        "422":
+          description: Invalid register body
+          schema:
+            $ref: '#/definitions/main.KError'
+      summary: Register
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an account and all it's sessions.
+      parameters:
+      - description: User id of the user to delete
+        format: uuid
+        in: path
+        name: id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "404":
+          description: Invalid user id
+          schema:
+            $ref: '#/definitions/main.KError'
+        "422":
+          description: Invalid id format
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt:
+        - users.delete
+      summary: Delete user
+      tags:
+      - users
+    get:
+      description: Get informations about a user from it's id
+      parameters:
+      - description: The id of the user
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "404":
+          description: No user with the given id found
+          schema:
+            $ref: '#/definitions/main.KError'
+        "422":
+          description: Invalid id (not a uuid)
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt:
+        - users.read
+      summary: Get user
+      tags:
+      - users
+    patch:
+      consumes:
+      - application/json
+      description: Edit an account info or permissions
+      parameters:
+      - description: User id of the user to edit
+        format: uuid
+        in: path
+        name: id
+        type: string
+      - description: Edited user info
+        in: body
+        name: user
+        schema:
+          $ref: '#/definitions/models.EditUserDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "403":
+          description: You don't have permissions to edit another account
+          schema:
+            $ref: '#/definitions/main.KError'
+        "422":
+          description: Invalid body
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt:
+        - users.write
+      summary: Edit user
+      tags:
+      - users
+  /users/{id}/logo:
+    get:
+      description: Get a user's logo (manual upload if available, gravatar otherwise)
+      parameters:
+      - description: The id or username of the user
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - image/*
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "404":
+          description: No gravatar image found for this user
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt:
+        - users.read
+      summary: Get user logo
+      tags:
+      - users
+  /users/{id}/sessions:
+    get:
+      description: List all active sessions for a user. Listing someone else's sessions
+        requires users.read.
+      parameters:
+      - description: The id or username of the user
+        example: e05089d6-9179-4b5b-a63e-94dd5fc2a397
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Session'
+            type: array
+        "401":
+          description: Missing jwt token
+          schema:
+            $ref: '#/definitions/main.KError'
+        "403":
+          description: 'Missing permissions: users.read.'
+          schema:
+            $ref: '#/definitions/main.KError'
+        "404":
+          description: No user found with id or username
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt: []
+      summary: List user sessions
+      tags:
+      - sessions
+  /users/me:
+    delete:
+      consumes:
+      - application/json
+      description: Delete your account and all your sessions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      security:
+      - Jwt: []
+      summary: Delete self
+      tags:
+      - users
+    get:
+      description: Get informations about the currently connected user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "401":
+          description: Missing jwt token
+          schema:
+            $ref: '#/definitions/main.KError'
+        "403":
+          description: Invalid jwt token (or expired)
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt: []
+      summary: Get me
+      tags:
+      - users
+    patch:
+      consumes:
+      - application/json
+      description: Edit your account's info
+      parameters:
+      - description: Edited user info
+        in: body
+        name: user
+        schema:
+          $ref: '#/definitions/models.EditUserDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "403":
+          description: You can't edit a protected claim
+          schema:
+            $ref: '#/definitions/main.KError'
+        "422":
+          description: Invalid body
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt: []
+      summary: Edit self
+      tags:
+      - users
+  /users/me/{id}:
+    delete:
+      description: Delete the user's manually uploaded profile picture
+      parameters:
+      - description: The id or username of the user
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Missing jwt token
+          schema:
+            $ref: '#/definitions/main.KError'
+        "403":
+          description: Invalid jwt token (or expired)
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt: []
+      summary: Delete user logo
+      tags:
+      - users
+  /users/me/logo:
+    delete:
+      description: Delete the current user's manually uploaded profile picture
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Missing jwt token
+          schema:
+            $ref: '#/definitions/main.KError'
+        "403":
+          description: Invalid jwt token (or expired)
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt: []
+      summary: Delete my logo
+      tags:
+      - users
+    get:
+      description: Get the current user's logo (manual upload if available, gravatar
+        otherwise)
+      produces:
+      - image/*
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "401":
+          description: Missing jwt token
+          schema:
+            $ref: '#/definitions/main.KError'
+        "403":
+          description: Invalid jwt token (or expired)
+          schema:
+            $ref: '#/definitions/main.KError'
+        "404":
+          description: No gravatar image found for this user
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt: []
+      summary: Get my logo
+      tags:
+      - users
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a manual profile picture for the current user
+      parameters:
+      - description: Profile picture image (jpeg/png/gif/webp, max 5MB)
+        in: formData
+        name: logo
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Missing jwt token
+          schema:
+            $ref: '#/definitions/main.KError'
+        "403":
+          description: Invalid jwt token (or expired)
+          schema:
+            $ref: '#/definitions/main.KError'
+        "413":
+          description: File too large
+          schema:
+            $ref: '#/definitions/main.KError'
+        "422":
+          description: Missing or invalid logo file
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt: []
+      summary: Upload my logo
+      tags:
+      - users
+  /users/me/password:
+    patch:
+      consumes:
+      - application/json
+      description: Edit your password
+      parameters:
+      - default: true
+        description: Invalidate other sessions
+        in: query
+        name: invalidate
+        type: boolean
+      - description: New password
+        in: body
+        name: user
+        schema:
+          $ref: '#/definitions/models.EditPasswordDto'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "422":
+          description: Invalid body
+          schema:
+            $ref: '#/definitions/main.KError'
+      security:
+      - Jwt: []
+      summary: Edit password
+      tags:
+      - users
+securityDefinitions:
+  Jwt:
+    in: header
+    name: Authorization
+    type: apiKey
+  Token:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

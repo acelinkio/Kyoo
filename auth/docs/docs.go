@@ -42,6 +42,26 @@ const docTemplate = `{
                 }
             }
         },
+        "/info": {
+            "get": {
+                "description": "List keibi's settings (oidc providers, public url...)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oidc"
+                ],
+                "summary": "Auth info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.ServerInfo"
+                        }
+                    }
+                }
+            }
+        },
         "/jwt": {
             "get": {
                 "security": [
@@ -199,7 +219,252 @@ const docTemplate = `{
                 }
             }
         },
+        "/oidc/callback/{provider}": {
+            "get": {
+                "description": "Exchange an opaque OIDC token for a local session.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oidc"
+                ],
+                "summary": "OIDC callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "google",
+                        "description": "OIDC provider id",
+                        "name": "provider",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Opaque token returned by /oidc/logged/:provider",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Optional tenant passthrough for federated setups",
+                        "name": "tenant",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bearer token to link provider to current account",
+                        "name": "Authorization",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/main.SessionWToken"
+                        }
+                    },
+                    "404": {
+                        "description": "Unknown OIDC provider",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    },
+                    "410": {
+                        "description": "Login token expired or already used",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    }
+                }
+            }
+        },
+        "/oidc/logged/{provider}": {
+            "get": {
+                "description": "Callback endpoint called by OIDC providers after login.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oidc"
+                ],
+                "summary": "OIDC logged callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "google",
+                        "description": "OIDC provider id",
+                        "name": "provider",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "State value returned by the provider",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization code",
+                        "name": "code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Provider callback error",
+                        "name": "error",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Found"
+                    },
+                    "400": {
+                        "description": "Invalid state",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    },
+                    "404": {
+                        "description": "Unknown OIDC provider",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    }
+                }
+            }
+        },
+        "/oidc/login/{provider}": {
+            "get": {
+                "description": "Start an OIDC login with a provider.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oidc"
+                ],
+                "summary": "OIDC login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "google",
+                        "description": "OIDC provider id",
+                        "name": "provider",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "URL to redirect the browser to after provider callback",
+                        "name": "redirectUrl",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Optional tenant passthrough for federated setups",
+                        "name": "tenant",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Found"
+                    },
+                    "400": {
+                        "description": "Missing redirectUrl",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    },
+                    "404": {
+                        "description": "Unknown OIDC provider",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Jwt": []
+                    }
+                ],
+                "description": "Remove an OIDC provider from the current account.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oidc"
+                ],
+                "summary": "OIDC unlink provider",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "google",
+                        "description": "OIDC provider id",
+                        "name": "provider",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Unknown OIDC provider",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    }
+                }
+            }
+        },
         "/sessions": {
+            "get": {
+                "security": [
+                    {
+                        "Jwt": []
+                    }
+                ],
+                "description": "List all active sessions for the currently connected user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sessions"
+                ],
+                "summary": "List my sessions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.SessionWCurrent"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing jwt token",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid jwt token (or expired)",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Login to your account and open a session",
                 "consumes": [
@@ -374,7 +639,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.Page-main_User"
+                            "$ref": "#/definitions/main.Page-models_User"
                         }
                     },
                     "422": {
@@ -410,7 +675,7 @@ const docTemplate = `{
                         "name": "user",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/main.RegisterDto"
+                            "$ref": "#/definitions/models.RegisterDto"
                         }
                     }
                 ],
@@ -419,6 +684,12 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/main.SessionWToken"
+                        }
+                    },
+                    "403": {
+                        "description": "Registrations are disabled",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
                         }
                     },
                     "409": {
@@ -455,7 +726,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.User"
+                            "$ref": "#/definitions/models.User"
                         }
                     },
                     "401": {
@@ -493,7 +764,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.User"
+                            "$ref": "#/definitions/models.User"
                         }
                     }
                 }
@@ -521,7 +792,7 @@ const docTemplate = `{
                         "name": "user",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/main.EditUserDto"
+                            "$ref": "#/definitions/models.EditUserDto"
                         }
                     }
                 ],
@@ -529,7 +800,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.User"
+                            "$ref": "#/definitions/models.User"
                         }
                     },
                     "403": {
@@ -540,6 +811,137 @@ const docTemplate = `{
                     },
                     "422": {
                         "description": "Invalid body",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/logo": {
+            "get": {
+                "security": [
+                    {
+                        "Jwt": []
+                    }
+                ],
+                "description": "Get the current user's logo (manual upload if available, gravatar otherwise)",
+                "produces": [
+                    "image/*"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get my logo",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Missing jwt token",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid jwt token (or expired)",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    },
+                    "404": {
+                        "description": "No gravatar image found for this user",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Jwt": []
+                    }
+                ],
+                "description": "Upload a manual profile picture for the current user",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Upload my logo",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Profile picture image (jpeg/png/gif/webp, max 5MB)",
+                        "name": "logo",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Missing jwt token",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid jwt token (or expired)",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    },
+                    "413": {
+                        "description": "File too large",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid logo file",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Jwt": []
+                    }
+                ],
+                "description": "Delete the current user's manually uploaded profile picture",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Delete my logo",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Missing jwt token",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid jwt token (or expired)",
                         "schema": {
                             "$ref": "#/definitions/main.KError"
                         }
@@ -578,7 +980,7 @@ const docTemplate = `{
                         "name": "user",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/main.EditPasswordDto"
+                            "$ref": "#/definitions/models.EditPasswordDto"
                         }
                     }
                 ],
@@ -588,6 +990,49 @@ const docTemplate = `{
                     },
                     "422": {
                         "description": "Invalid body",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "Jwt": []
+                    }
+                ],
+                "description": "Delete the user's manually uploaded profile picture",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Delete user logo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The id or username of the user",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Missing jwt token",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid jwt token (or expired)",
                         "schema": {
                             "$ref": "#/definitions/main.KError"
                         }
@@ -626,7 +1071,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.User"
+                            "$ref": "#/definitions/models.User"
                         }
                     },
                     "404": {
@@ -675,7 +1120,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.User"
+                            "$ref": "#/definitions/models.User"
                         }
                     },
                     "404": {
@@ -724,7 +1169,7 @@ const docTemplate = `{
                         "name": "user",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/main.EditUserDto"
+                            "$ref": "#/definitions/models.EditUserDto"
                         }
                     }
                 ],
@@ -732,7 +1177,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.User"
+                            "$ref": "#/definitions/models.User"
                         }
                     },
                     "403": {
@@ -743,6 +1188,104 @@ const docTemplate = `{
                     },
                     "422": {
                         "description": "Invalid body",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}/logo": {
+            "get": {
+                "security": [
+                    {
+                        "Jwt": [
+                            "users.read"
+                        ]
+                    }
+                ],
+                "description": "Get a user's logo (manual upload if available, gravatar otherwise)",
+                "produces": [
+                    "image/*"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get user logo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The id or username of the user",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "404": {
+                        "description": "No gravatar image found for this user",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}/sessions": {
+            "get": {
+                "security": [
+                    {
+                        "Jwt": []
+                    }
+                ],
+                "description": "List all active sessions for a user. Listing someone else's sessions requires users.read.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sessions"
+                ],
+                "summary": "List user sessions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "e05089d6-9179-4b5b-a63e-94dd5fc2a397",
+                        "description": "The id or username of the user",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Session"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing jwt token",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permissions: users.read.",
+                        "schema": {
+                            "$ref": "#/definitions/main.KError"
+                        }
+                    },
+                    "404": {
+                        "description": "No user found with id or username",
                         "schema": {
                             "$ref": "#/definitions/main.KError"
                         }
@@ -834,40 +1377,6 @@ const docTemplate = `{
                 }
             }
         },
-        "main.EditPasswordDto": {
-            "type": "object",
-            "required": [
-                "password"
-            ],
-            "properties": {
-                "password": {
-                    "type": "string",
-                    "example": "password1234"
-                }
-            }
-        },
-        "main.EditUserDto": {
-            "type": "object",
-            "properties": {
-                "claims": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    },
-                    "example": {
-                        "preferOriginal": " true"
-                    }
-                },
-                "email": {
-                    "type": "string",
-                    "example": "kyoo@zoriya.dev"
-                },
-                "username": {
-                    "type": "string",
-                    "example": "zoriya"
-                }
-            }
-        },
         "main.JwkSet": {
             "type": "object",
             "properties": {
@@ -949,24 +1458,14 @@ const docTemplate = `{
                 }
             }
         },
-        "main.OidcHandle": {
+        "main.OidcInfo": {
             "type": "object",
             "properties": {
-                "id": {
-                    "description": "Id of this oidc handle.",
-                    "type": "string",
-                    "example": "e05089d6-9179-4b5b-a63e-94dd5fc2a397"
+                "logo": {
+                    "type": "string"
                 },
-                "profileUrl": {
-                    "description": "Link to the profile of the user on the external service. Null if unknown or irrelevant.",
-                    "type": "string",
-                    "format": "url",
-                    "example": "https://myanimelist.net/profile/zoriya"
-                },
-                "username": {
-                    "description": "Username of the user on the external service.",
-                    "type": "string",
-                    "example": "zoriya"
+                "name": {
+                    "type": "string"
                 }
             }
         },
@@ -989,13 +1488,13 @@ const docTemplate = `{
                 }
             }
         },
-        "main.Page-main_User": {
+        "main.Page-models_User": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/main.User"
+                        "$ref": "#/definitions/models.User"
                     }
                 },
                 "next": {
@@ -1008,29 +1507,20 @@ const docTemplate = `{
                 }
             }
         },
-        "main.RegisterDto": {
+        "main.ServerInfo": {
             "type": "object",
-            "required": [
-                "email",
-                "password",
-                "username"
-            ],
             "properties": {
-                "email": {
-                    "description": "Valid email that could be used for forgotten password requests. Can be used for login.",
-                    "type": "string",
-                    "format": "email",
-                    "example": "kyoo@zoriya.dev"
+                "allowRegister": {
+                    "type": "boolean"
                 },
-                "password": {
-                    "description": "Password to use.",
-                    "type": "string",
-                    "example": "password1234"
+                "oidc": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/main.OidcInfo"
+                    }
                 },
-                "username": {
-                    "description": "Username of the new account, can't contain @ signs. Can be used for login.",
-                    "type": "string",
-                    "example": "zoriya"
+                "publicUrl": {
+                    "type": "string"
                 }
             }
         },
@@ -1041,6 +1531,34 @@ const docTemplate = `{
                     "description": "When was the session first opened",
                     "type": "string",
                     "example": "2025-03-29T18:20:05.267Z"
+                },
+                "device": {
+                    "description": "Device that created the session.",
+                    "type": "string",
+                    "example": "Web - Firefox"
+                },
+                "id": {
+                    "description": "Unique id of this session. Can be used for calls to DELETE",
+                    "type": "string",
+                    "example": "e05089d6-9179-4b5b-a63e-94dd5fc2a397"
+                },
+                "lastUsed": {
+                    "description": "Last date this session was used to access a service.",
+                    "type": "string",
+                    "example": "2025-03-29T18:20:05.267Z"
+                }
+            }
+        },
+        "main.SessionWCurrent": {
+            "type": "object",
+            "properties": {
+                "createdDate": {
+                    "description": "When was the session first opened",
+                    "type": "string",
+                    "example": "2025-03-29T18:20:05.267Z"
+                },
+                "current": {
+                    "type": "boolean"
                 },
                 "device": {
                     "description": "Device that created the session.",
@@ -1088,7 +1606,92 @@ const docTemplate = `{
                 }
             }
         },
-        "main.User": {
+        "models.EditPasswordDto": {
+            "type": "object",
+            "required": [
+                "newPassword"
+            ],
+            "properties": {
+                "newPassword": {
+                    "type": "string",
+                    "example": "password1234"
+                },
+                "oldPassword": {
+                    "type": "string",
+                    "example": "password1234"
+                }
+            }
+        },
+        "models.EditUserDto": {
+            "type": "object",
+            "properties": {
+                "claims": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        "preferOriginal": " true"
+                    }
+                },
+                "email": {
+                    "type": "string",
+                    "example": "kyoo@zoriya.dev"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "zoriya"
+                }
+            }
+        },
+        "models.OidcHandle": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "Id of this oidc handle.",
+                    "type": "string",
+                    "example": "e05089d6-9179-4b5b-a63e-94dd5fc2a397"
+                },
+                "profileUrl": {
+                    "description": "Link to the profile of the user on the external service. Null if unknown or irrelevant.",
+                    "type": "string",
+                    "format": "url",
+                    "example": "https://myanimelist.net/profile/zoriya"
+                },
+                "username": {
+                    "description": "Username of the user on the external service.",
+                    "type": "string",
+                    "example": "zoriya"
+                }
+            }
+        },
+        "models.RegisterDto": {
+            "type": "object",
+            "required": [
+                "email",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "description": "Valid email that could be used for forgotten password requests. Can be used for login.",
+                    "type": "string",
+                    "format": "email",
+                    "example": "kyoo@zoriya.dev"
+                },
+                "password": {
+                    "description": "Password to use.",
+                    "type": "string",
+                    "example": "password1234"
+                },
+                "username": {
+                    "description": "Username of the new account, can't contain @ signs. Can be used for login.",
+                    "type": "string",
+                    "example": "zoriya"
+                }
+            }
+        },
+        "models.User": {
             "type": "object",
             "properties": {
                 "claims": {
@@ -1112,6 +1715,10 @@ const docTemplate = `{
                     "format": "email",
                     "example": "kyoo@zoriya.dev"
                 },
+                "hasPassword": {
+                    "description": "False if the user has never setup a password and only used oidc.",
+                    "type": "boolean"
+                },
                 "id": {
                     "description": "Id of the user.",
                     "type": "string",
@@ -1126,7 +1733,7 @@ const docTemplate = `{
                     "description": "List of other login method available for this user. Access tokens wont be returned here.",
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "#/definitions/main.OidcHandle"
+                        "$ref": "#/definitions/models.OidcHandle"
                     }
                 },
                 "username": {

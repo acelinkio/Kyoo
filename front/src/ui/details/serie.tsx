@@ -12,6 +12,7 @@ import { useQueryState } from "~/utils";
 import { HeaderBackground, useScrollNavbar } from "../navbar";
 import { Header } from "./header";
 import { EntryList } from "./season";
+import { Staff } from "./staff";
 
 export const SvgWave = (props: ComponentProps<typeof Svg>) => {
 	// aspect-[width/height]: width/height of the svg
@@ -101,7 +102,7 @@ const SerieHeader = ({
 				}}
 				Loader={NextUp.Loader}
 			/>
-			{/* <Staff slug={slug} /> */}
+			<Staff kind="serie" slug={slug} />
 			<SvgWave className="flex-1 shrink-0 fill-card" />
 		</View>
 	);

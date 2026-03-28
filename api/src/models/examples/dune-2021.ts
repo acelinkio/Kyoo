@@ -53,7 +53,7 @@ export const dune: SeedMovie = {
 		imdb: [
 			{
 				dataId: "tt1160419",
-				link: "https://www.imdb.com/title/tt1160419",
+				link: "https://thetvdb.com/people/353535-vincent-wong-ho-shun-王浩信",
 			},
 		],
 	},

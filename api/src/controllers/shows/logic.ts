@@ -1,4 +1,4 @@
-import { and, eq, exists, ne, type SQL, sql } from "drizzle-orm";
+import { and, eq, exists, ne, type SQL, sql, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "~/db";
 import {
@@ -364,7 +364,17 @@ export async function getShows({
 		.where(
 			and(
 				filter,
-				query ? sql`${transQ.name} %> ${query}::text` : undefined,
+				query
+					? or(
+							sql`${transQ.name} %> ${query}::text`,
+							exists(
+								db
+									.select()
+									.from(sql`unnest(${transQ.tags}) as tag`)
+									.where(sql`tag %> ${query}::text`),
+							),
+						)
+					: undefined,
 				keysetPaginate({ after, sort }),
 			),
 		)

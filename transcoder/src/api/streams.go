@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v5"
 	"github.com/zoriya/kyoo/transcoder/src"
@@ -41,7 +42,7 @@ func DirectStream(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.File(path)
+	return c.File(strings.TrimLeft(path, "/"))
 }
 
 // @Summary  Get master playlist
@@ -187,7 +188,7 @@ func (h *shandler) GetVideoSegment(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.File(ret)
+	return c.File(strings.TrimLeft(ret, "/"))
 }
 
 // Get audio chunk
@@ -224,7 +225,7 @@ func (h *shandler) GetAudioSegment(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.File(ret)
+	return c.File(strings.TrimLeft(ret, "/"))
 }
 
 func getClientId(c *echo.Context) (string, error) {

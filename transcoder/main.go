@@ -112,6 +112,9 @@ func main() {
 
 	e := echo.New()
 	e.Logger = slog.Default()
+	// workaround for not supporting absolute paths
+	// https://github.com/labstack/echo/issues/2922
+	e.Filesystem = os.DirFS("/")
 	instrument(e)
 
 	ignorepath := []string{

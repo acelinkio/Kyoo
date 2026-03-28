@@ -157,7 +157,7 @@ func (t *Tracker) KillAudioIfDead(sha string, path string, audio AudioKey) bool 
 			return false
 		}
 	}
-	log.Printf("Nobody is listening audio %d of %s. Killing it", audio, path)
+	log.Printf("Nobody is listening audio %d of %s. Killing it", audio.idx, path)
 
 	stream, ok := t.transcoder.streams.Get(sha)
 	if !ok {

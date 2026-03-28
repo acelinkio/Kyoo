@@ -544,7 +544,7 @@ type OidcInfo struct {
 // @Description  List keibi's settings (oidc providers, public url...)
 // @Tags         oidc
 // @Produce      json
-// @Success      200  ServerInfo
+// @Success      200  {object}  ServerInfo
 // @Router /info [get]
 func (h *Handler) Info(c *echo.Context) error {
 	ret := ServerInfo{

@@ -825,7 +825,9 @@ class TVDB(Provider):
 					name=x["name"],
 					latin_name=None,
 					image=img if (img := x["image"]) else None,
-				),
+				)
+				if x["name"]
+				else None,
 				staff=Person(
 					slug=to_slug(x["personName"]),
 					name=x["personName"],
@@ -844,5 +846,5 @@ class TVDB(Provider):
 				),
 			)
 			for x in show["characters"]
-			if x["name"] and x["personName"]
+			if x["personName"]
 		]

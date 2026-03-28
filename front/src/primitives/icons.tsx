@@ -71,12 +71,14 @@ export const IconButton = <AsProps = PressableProps>({
 	as,
 	className,
 	iconClassName,
+	disabled,
 	...asProps
 }: {
 	as?: ComponentType<AsProps>;
 	icon: Icon;
 	iconClassName?: string;
 	className?: string;
+	disabled?: boolean;
 } & AsProps) => {
 	const Container = as ?? PressableFeedback;
 
@@ -90,7 +92,13 @@ export const IconButton = <AsProps = PressableProps>({
 			)}
 			{...(asProps as AsProps)}
 		>
-			<Icon icon={icon} className={iconClassName} />
+			<Icon
+				icon={icon}
+				className={cn(
+					disabled && "fill-slate-400 dark:fill-slate-600",
+					iconClassName,
+				)}
+			/>
 		</Container>
 	);
 };

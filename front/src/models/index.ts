@@ -7,6 +7,7 @@ export * from "./search";
 export * from "./season";
 export * from "./serie";
 export * from "./show";
+export * from "./staff";
 export * from "./studio";
 export * from "./user";
 export * from "./utils/genre";

@@ -90,6 +90,7 @@ export const IconButton = <AsProps = PressableProps>({
 				"outline-0 hover:bg-gray-400/50 focus-visible:bg-gray-400/50",
 				className,
 			)}
+			disabled={disabled}
 			{...(asProps as AsProps)}
 		>
 			<Icon

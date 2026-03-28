@@ -48,7 +48,16 @@
 		"version": "Version {{number}}",
 		"part": "Part {{number}}",
 		"videos-map": "Edit video mappings",
-		"staff-as":"as {{character}}"
+		"staff-as":"as {{character}}",
+		"staff-kind": {
+			"actor": "Actor",
+			"director": "Director",
+			"writter": "Writer",
+			"producer": "Producer",
+			"music": "Music",
+			"crew": "Crew",
+			"other": "Other"
+		}
 	},
 	"videos-map": {
 		"none": "NONE",
@@ -87,6 +96,18 @@
 		},
 		"switchToGrid": "Switch to grid view",
 		"switchToList": "Switch to list view"
+	},
+	"profile": {
+		"history": "History",
+		"watchlist": "Watchlist",
+		"statuses": {
+			"all": "All",
+			"completed": "Completed",
+			"watching": "Watching",
+			"rewatching": "Rewatching",
+			"dropped": "Dropped",
+			"planned": "Planned"
+		}
 	},
 	"genres": {
 		"action": "Action",
@@ -130,6 +151,7 @@
 	"navbar": {
 		"home": "Home",
 		"browse": "Browse",
+		"profile": "Profile",
 		"download": "Download",
 		"search": "Search",
 		"login": "Login",

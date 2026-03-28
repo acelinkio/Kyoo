@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Role } from "~/models";
-import { Container, H2, Image, P, Poster, Skeleton, SubP } from "~/primitives";
+import { Container, H2, P, Poster, Skeleton, SubP } from "~/primitives";
 import { InfiniteGrid, type QueryIdentifier } from "~/query";
 import { EmptyView } from "../empty-view";
 

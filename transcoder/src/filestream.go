@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 
@@ -139,7 +140,6 @@ func (fs *FileStream) GetMaster(client string) string {
 		qualities := utils.Filter(VideoQualities, func(quality VideoQuality) bool {
 			return quality.Height() < def_video.Height
 		})
-		transcode_count := len(qualities)
 
 		// NoResize is the same idea as Original but we change the codec.
 		// This is only needed when the original's codec is different from what we would transcode it to.
@@ -172,9 +172,13 @@ func (fs *FileStream) GetMaster(client string) string {
 		master += "\n"
 
 		aspectRatio := float32(def_video.Width) / float32(def_video.Height)
-		for i, quality := range qualities {
-			if i >= transcode_count {
-				for _, audio_quality := range []AudioQuality{AOriginal, matchAudioQuality(def_video.Quality())} {
+		for _, quality := range slices.Backward(qualities) {
+			if quality == Original || quality == NoResize {
+				audios := []AudioQuality{AOriginal}
+				if def_audio != nil && (def_audio.MimeCodec == nil || *def_audio.MimeCodec != transcode_audio_codec) {
+					audios = append(audios, matchAudioQuality(def_video.Quality()))
+				}
+				for _, audio_quality := range audios {
 					// original & noresize streams
 					bitrate := float64(def_video.Bitrate)
 					master += "#EXT-X-STREAM-INF:"
